@@ -28,6 +28,213 @@
  *
  */
 
+#include <assert.h>
+#include <math.h>
+#include <stdbool.h>
+#include <stdlib.h>
+#include <string.h>
+
+#include "lv2/lv2plug.in/ns/ext/atom/atom-buffer.h"
+#include "lv2/lv2plug.in/ns/ext/atom/atom-helpers.h"
+#include "lv2/lv2plug.in/ns/ext/state/state.h"
+#include "lv2/lv2plug.in/ns/ext/urid/urid.h"
+#include "lv2/lv2plug.in/ns/lv2core/lv2.h"
+
+#include "lb303.h"
+
+
+static void
+connect_port(LV2_Handle instance,
+             uint32_t   port,
+             void*      data)
+{
+	LB303Synth* plugin = (LB303Synth*)instance;
+
+	switch (port) {
+		case LB303_CONTROL:
+			plugin->event_port = (LV2_Atom_Buffer*)data;
+			break;
+		case LB303_OUT:
+			plugin->output_port = (float*)data;
+			break;
+		default:
+			break;
+	}
+}
+
+
+static void
+cleanup(LV2_Handle instance)
+{
+	LB303Synth* plugin = (LB303Synth*)instance;
+	free(instance);
+}
+
+
+static LV2_Handle
+instantiate(const LV2_Descriptor*     descriptor,
+            double                    rate,
+            const char*               path,
+            const LV2_Feature* const* features)
+{
+	/* Malloc and initialize new Synth */
+	LB303Synth* plugin = (LB303Synth*)malloc(sizeof(LB303Synth));
+	if (!plugin) {
+		fprintf(stderr, "Could not allocate LB303Synth.\n");
+		return NULL;
+	}
+
+	memset(&plugin->uris, 0, sizeof(plugin->uris));
+
+	/* Scan host features for URID map and map everything */
+	for (int i = 0; features[i]; ++i) {
+		if (!strcmp(features[i]->URI, LV2_URID_URI "#map")) {
+			plugin->map = (LV2_URID_Map*)features[i]->data;
+			plugin->uris.midi_event = plugin->map->map(
+					plugin->map->handle, MIDI_EVENT_URI);
+			plugin->uris.atom_message = plugin->map->map(
+					plugin->map->handle, ATOM_MESSAGE_URI);
+		}
+	}
+
+	if (!plugin->map) {
+		fprintf(stderr, "Host does not support urid:map.\n");
+		goto fail;
+	}
+
+	return (LV2_Handle)plugin;
+
+fail:
+	free(plugin);
+	return 0;
+}
+
+
+static void
+run(LV2_Handle instance,
+    uint32_t   sample_count)
+{
+	LB303Synth* plugin      = (LB303Synth*)instance;
+	float*      output      = plugin->output_port;
+	uint32_t    start_frame = 0;
+	uint32_t    pos;
+
+	/* Read incoming events */
+	for (LV2_Atom_Buffer_Iterator i = lv2_atom_buffer_begin(plugin->event_port);
+			lv2_atom_buffer_is_valid(i);
+			i = lv2_atom_buffer_next(i)) {
+
+		LV2_Atom_Event* const ev = lv2_atom_buffer_get(i);
+		if (ev->body.type == plugin->uris.midi_event) {
+			uint8_t* const data = (uint8_t* const)(ev + 1);
+			if ((data[0] & 0xF0) == 0x90) {
+				start_frame   = ev->frames;
+				//plugin->frame = 0;
+				plugin->play  = true;
+			}
+		} else {
+			fprintf(stderr, "Unknown event type %d\n", ev->body.type);
+		}
+	}
+
+	/* Render the sample (possibly already in progress) */
+	if (plugin->play) {
+		uint32_t       f  = plugin->frame;
+		const uint32_t lf = 100; // Length of "sample"
+
+		for (pos = 0; pos < start_frame; ++pos) {
+			output[pos] = 0;
+		}
+
+		for (; pos < sample_count && f < lf; ++pos, ++f) {
+			output[pos] = 1; // plugin->samp->data[f];
+		}
+
+		plugin->frame = f;
+
+		if (f == lf) {
+			plugin->play = false;
+		}
+	}
+
+
+	/* Add zeros to end if sample not long enough (or not playing) */
+	for (; pos < sample_count; ++pos) {
+		output[pos] = 0.0f;
+	}
+}
+
+
+static uint32_t
+map_uri(LB303Synth* plugin, const char* uri)
+{
+	return plugin->map->map(plugin->map->handle, uri);
+}
+
+
+static void
+save(LV2_Handle                instance,
+     LV2_State_Store_Function  store,
+     void*                     callback_data,
+     uint32_t                  flags,
+     const LV2_Feature* const* features)
+{
+	LB303Synth* plugin = (LB303Synth*)instance;
+	// TODO: store(...)
+	printf("LB303 save stub.\n");
+}
+
+
+static void
+restore(LV2_Handle                  instance,
+        LV2_State_Retrieve_Function retrieve,
+        void*                       callback_data,
+        uint32_t                    flags,
+        const LV2_Feature* const*   features)
+{
+	LB303Synth* plugin = (LB303Synth*)instance;
+	// TODO: retrieve(...)
+	printf("LB303 restore stub.\n");
+}
+
+
+const void*
+extension_data(const char* uri)
+{
+	static const LV2_State_Interface state = { save, restore };
+	if (!strcmp(uri, LV2_STATE_URI)) {
+		return &state;
+	}
+	return NULL;
+}
+
+
+static const LV2_Descriptor descriptor = {
+	LB303_SYNTH_URI,
+	instantiate,
+	connect_port,
+	NULL, // activate,
+	run,
+	NULL, // deactivate,
+	cleanup,
+	extension_data
+};
+
+
+LV2_SYMBOL_EXPORT
+const LV2_Descriptor* lv2_descriptor(uint32_t index)
+{
+	switch (index) {
+		case 0:
+			return &descriptor;
+		default:
+			return NULL;
+	}
+}
+
+
+#if 0
+
 #include "lb302.h"
 #include "automatable_button.h"
 #include "engine.h"
@@ -42,7 +249,6 @@
 
 #include "embed.cpp"
 #include "moc_lb302.cxx"
-
 
 // Envelope Recalculation period
 #define ENVINC 64
@@ -988,4 +1194,5 @@ Plugin * PLUGIN_EXPORT lmms_plugin_main( Model *, void * _data )
 
 }
 
+#endif
 

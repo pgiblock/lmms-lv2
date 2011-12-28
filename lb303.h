@@ -29,8 +29,45 @@
  */
 
 
-#ifndef _LB302_H_
-#define _LB302_H_
+#ifndef LB303_H__
+#define LB303_H__
+
+#define NS_ATOM "http://lv2plug.in/ns/ext/atom#"
+#define NS_RDF  "http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+
+#define LB303_SYNTH_URI  "http://pgiblock.net/plugins/lb303-synth"
+#define MIDI_EVENT_URI   "http://lv2plug.in/ns/ext/midi#MidiEvent"
+#define ATOM_MESSAGE_URI "http://lv2plug.in/ns/ext/atom#Message"
+
+// PORTS
+enum {
+	LB303_CONTROL = 0,
+	LB303_OUT     = 1
+};
+
+
+typedef struct {
+	/* Features */
+	LV2_URID_Map* map;
+
+	/* Ports */
+	float*           output_port;
+	LV2_Atom_Buffer* event_port;
+
+	/* URIs */
+	struct {
+		LV2_URID midi_event;
+		LV2_URID atom_message;
+	} uris;
+
+	/* Playback state */
+	bool     play;
+	uint32_t frame; // TODO: frame_t
+} LB303Synth;
+
+
+#endif // LB303_H__
+#if 0
 
 #include "effect_lib.h"
 #include "Instrument.h"
@@ -103,7 +140,6 @@ class lb302Filter3Pole : public lb302Filter
 	public:
 	lb302Filter3Pole(lb302FilterKnobState* p_fs);
 
-	//virtual void recalc();
 	virtual void envRecalc();
 	virtual void recalc();
 	virtual float process(const float& samp);
@@ -189,9 +225,9 @@ private:
 	      vco_k,            // Raw oscillator sample [-0.5,0.5]
 	      vco_c;            // Raw oscillator sample [-0.5,0.5]
 
-	float vco_slide,        //* Current value of slide exponential curve. Nonzero=sliding
-	      vco_slideinc,     //* Slide base to use in next node. Nonzero=slide next note
-	      vco_slidebase;    //* The base vco_inc while sliding.
+	float vco_slide,        // Current value of slide exponential curve. Nonzero=sliding
+	      vco_slideinc,     // Slide base to use in next node. Nonzero=slide next note
+	      vco_slidebase;    // The base vco_inc while sliding.
 
 	float vco_detune;
 
