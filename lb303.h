@@ -39,10 +39,38 @@
 #define MIDI_EVENT_URI   "http://lv2plug.in/ns/ext/midi#MidiEvent"
 #define ATOM_MESSAGE_URI "http://lv2plug.in/ns/ext/atom#Message"
 
+// Envelope Recalculation period
+#define ENVINC 64
+
+//
+// New config
+//
+#define LB_24_IGNORE_ENVELOPE   
+#define LB_FILTERED 
+//#define LB_DECAY
+//#define LB_24_RES_TRICK         
+
+#define LB_DIST_RATIO    4.0
+#define LB_24_VOL_ADJUST 3.0
+//#define LB_DECAY_NOTES
+
+
+#ifndef MPI
+#define M_PI 3.14159265358979323846264338327
+#endif
+
 // PORTS
 enum {
-	LB303_CONTROL = 0,
-	LB303_OUT     = 1
+	LB303_CONTROL   = 0,
+	LB303_OUT       = 1,
+	LB303_VCF_CUT   = 2,
+	LB303_VCF_RES   = 3,
+	LB303_VCF_MOD   = 4,
+	LB303_VCF_DEC   = 5,
+	LB303_SLIDE     = 6,
+	LB303_SLIDE_DEC = 7,
+	LB303_ACCENT    = 8,
+	LB303_DEAD      = 9
 };
 
 
@@ -51,8 +79,16 @@ typedef struct {
 	LV2_URID_Map* map;
 
 	/* Ports */
-	float*           output_port;
 	LV2_Atom_Buffer* event_port;
+	float*           output_port;
+	float*           vcf_cut_port;
+	float*           vcf_res_port;
+	float*           vcf_mod_port;
+	float*           vcf_dec_port;
+	float*           slide_port;
+	float*           slide_dec_port;
+	float*           accent_port;
+	float*           dead_port;
 
 	/* URIs */
 	struct {
@@ -63,21 +99,30 @@ typedef struct {
 	/* Playback state */
 	bool     play;
 	uint32_t frame; // TODO: frame_t
+
+	float vco_inc,          // Sample increment for the frequency. Creates Sawtooth.
+	      vco_k,            // Raw oscillator sample [-0.5,0.5]
+	      vco_c;            // Raw oscillator sample [-0.5,0.5]
+
+	float vco_slide,        // Current value of slide exponential curve. Nonzero=sliding
+	      vco_slideinc,     // Slide base to use in next node. Nonzero=slide next note
+	      vco_slidebase;    // The base vco_inc while sliding.
+
+	float vca_attack,       // Amp attack 
+	      vca_decay,        // Amp decay
+	      vca_a0,           // Initial amplifier coefficient 
+	      vca_a;            // Amplifier coefficient.
+
+	// Envelope State
+	int   vca_mode;         // 0: attack, 1: decay, 2: idle, 3: never played
+
+	bool  dead;
+
 } LB303Synth;
 
 
 #endif // LB303_H__
 #if 0
-
-#include "effect_lib.h"
-#include "Instrument.h"
-#include "InstrumentView.h"
-#include "led_checkbox.h"
-#include "knob.h"
-#include "mixer.h"
-
-class lb302SynthView;
-class notePlayHandle;
 
 class lb302FilterKnobState
 {
@@ -159,14 +204,6 @@ class lb302Filter3Pole : public lb302Filter
 
 
 
-class lb302Note
-{
-public:
-	float vco_inc;
-	bool dead;
-};
-
-
 class lb302Synth : public Instrument
 {
 	Q_OBJECT
@@ -198,20 +235,11 @@ private:
 
 
 private:
-	FloatModel vcf_cut_knob;
-	FloatModel vcf_res_knob;
-	FloatModel vcf_mod_knob;
-	FloatModel vcf_dec_knob;
-
 	FloatModel vco_fine_detune_knob;
 
 	FloatModel dist_knob;
 	IntModel wave_shape;
-	FloatModel slide_dec_knob;
     
-	BoolModel slideToggle;
-	BoolModel accentToggle;
-	BoolModel deadToggle;
 	BoolModel db24Toggle;
 
 
@@ -221,13 +249,6 @@ public slots:
 
 private:
 	// Oscillator
-	float vco_inc,          // Sample increment for the frequency. Creates Sawtooth.
-	      vco_k,            // Raw oscillator sample [-0.5,0.5]
-	      vco_c;            // Raw oscillator sample [-0.5,0.5]
-
-	float vco_slide,        // Current value of slide exponential curve. Nonzero=sliding
-	      vco_slideinc,     // Slide base to use in next node. Nonzero=slide next note
-	      vco_slidebase;    // The base vco_inc while sliding.
 
 	float vco_detune;
 
@@ -243,14 +264,6 @@ private:
 
 	// More States
 	int   vcf_envpos;       // Update counter. Updates when >= ENVINC
-
-	float vca_attack,       // Amp attack 
-	      vca_decay,        // Amp decay
-	      vca_a0,           // Initial amplifier coefficient 
-	      vca_a;            // Amplifier coefficient.
-
-	// Envelope State
-	int   vca_mode;         // 0: attack, 1: decay, 2: idle, 3: never played
 
 	// My hacks
 	int   sample_cnt;
@@ -268,38 +281,7 @@ private:
 	void recalcFilter();
 
 	int process(sampleFrame *outbuf, const Uint32 size);
-
-	friend class lb302SynthView;
-
 } ;
 
-
-class lb302SynthView : public InstrumentView
-{
-public:
-	lb302SynthView( Instrument * _instrument,
-	                QWidget * _parent );
-	virtual ~lb302SynthView();
-
-private:
-	virtual void modelChanged();
-	
-	knob * m_vcfCutKnob;
-	knob * m_vcfResKnob;
-	knob * m_vcfDecKnob;
-	knob * m_vcfModKnob;
-
-	knob * m_vcoFineDetuneKnob;
-
-	knob * m_distKnob;
-	knob * m_slideDecKnob;
-	automatableButtonGroup * m_waveBtnGrp;
-    
-	ledCheckBox * m_slideToggle;
-	ledCheckBox * m_accentToggle;
-	ledCheckBox * m_deadToggle;
-	ledCheckBox * m_db24Toggle;
-
-} ;
 
 #endif

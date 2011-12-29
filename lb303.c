@@ -57,6 +57,30 @@ connect_port(LV2_Handle instance,
 		case LB303_OUT:
 			plugin->output_port = (float*)data;
 			break;
+		case LB303_VCF_CUT:
+			plugin->vcf_cut_port = (float*)data;
+			break;
+		case LB303_VCF_RES:
+			plugin->vcf_res_port = (float*)data;
+			break;
+		case LB303_VCF_MOD:
+			plugin->vcf_mod_port = (float*)data;
+			break;
+		case LB303_VCF_DEC:
+			plugin->vcf_dec_port = (float*)data;
+			break;
+		case LB303_SLIDE:
+			plugin->slide_port = (float*)data;
+			break;
+		case LB303_SLIDE_DEC:
+			plugin->slide_dec_port = (float*)data;
+			break;
+		case LB303_ACCENT:
+			plugin->accent_port = (float*)data;
+			break;
+		case LB303_DEAD:
+			plugin->dead_port = (float*)data;
+			break;
 		default:
 			break;
 	}
@@ -85,6 +109,19 @@ instantiate(const LV2_Descriptor*     descriptor,
 	}
 
 	memset(&plugin->uris, 0, sizeof(plugin->uris));
+	
+	/* TODO: Move to constants or ControlPorts */
+	plugin->vca_attack = 1.0 - 0.96406088; /* = 1.0 - 0.94406088; */
+	plugin->vca_decay  = 0.99897516;
+
+	// Start VCA on an attack.
+	plugin->vca_mode = 3;
+	plugin->vca_a    = 0;
+
+	// Experimenting with a0 between original (0.5) and 1.0
+	plugin->vca_a0   = 0.5;
+	plugin->vca_a    = 9;
+	plugin->vca_mode = 3;
 
 	/* Scan host features for URID map and map everything */
 	for (int i = 0; features[i]; ++i) {
@@ -117,7 +154,7 @@ run(LV2_Handle instance,
 	LB303Synth* plugin      = (LB303Synth*)instance;
 	float*      output      = plugin->output_port;
 	uint32_t    start_frame = 0;
-	uint32_t    pos;
+	uint32_t    pos         = 0;
 
 	/* Read incoming events */
 	for (LV2_Atom_Buffer_Iterator i = lv2_atom_buffer_begin(plugin->event_port);
@@ -127,10 +164,15 @@ run(LV2_Handle instance,
 		LV2_Atom_Event* const ev = lv2_atom_buffer_get(i);
 		if (ev->body.type == plugin->uris.midi_event) {
 			uint8_t* const data = (uint8_t* const)(ev + 1);
-			if ((data[0] & 0xF0) == 0x90) {
+			uint8_t const  cmd  = data[0] & 0xF0;
+			if (cmd == 0x90) {
+				float freq = powf(2.0f, (float)data[1] / 12.0f) * 440.0f;
+
 				start_frame   = ev->frames;
-				//plugin->frame = 0;
+				plugin->frame = 0;
 				plugin->play  = true;
+			} else if (cmd == 0x80) {
+				// TODO: Note-off
 			}
 		} else {
 			fprintf(stderr, "Unknown event type %d\n", ev->body.type);
@@ -140,14 +182,14 @@ run(LV2_Handle instance,
 	/* Render the sample (possibly already in progress) */
 	if (plugin->play) {
 		uint32_t       f  = plugin->frame;
-		const uint32_t lf = 100; // Length of "sample"
+		const uint32_t lf = 48000; // Length of "sample"
 
-		for (pos = 0; pos < start_frame; ++pos) {
+		for (; pos < start_frame; ++pos) {
 			output[pos] = 0;
 		}
 
 		for (; pos < sample_count && f < lf; ++pos, ++f) {
-			output[pos] = 1; // plugin->samp->data[f];
+			output[pos] = fmodf((float)f * 440.0f / 48000.0f, 1) * 2.0f - 1.0f;
 		}
 
 		plugin->frame = f;
@@ -234,69 +276,6 @@ const LV2_Descriptor* lv2_descriptor(uint32_t index)
 
 
 #if 0
-
-#include "lb302.h"
-#include "automatable_button.h"
-#include "engine.h"
-#include "InstrumentPlayHandle.h"
-#include "InstrumentTrack.h"
-#include "knob.h"
-#include "note_play_handle.h"
-#include "Oscillator.h"
-#include "pixmap_button.h"
-#include "templates.h"
-#include "tooltip.h"
-
-#include "embed.cpp"
-#include "moc_lb302.cxx"
-
-// Envelope Recalculation period
-#define ENVINC 64
-
-//
-// New config
-//
-#define LB_24_IGNORE_ENVELOPE   
-#define LB_FILTERED 
-//#define LB_DECAY
-//#define LB_24_RES_TRICK         
-
-#define LB_DIST_RATIO    4.0
-#define LB_24_VOL_ADJUST 3.0
-//#define LB_DECAY_NOTES
-
-#define LB_DEBUG
-
-#ifdef LB_DEBUG
-#include <assert.h>
-#endif
-
-//
-// Old config
-//
-
-
-//#define engine::getMixer()->processingSampleRate() 44100.0f
-
-
-extern "C"
-{
-
-Plugin::Descriptor PLUGIN_EXPORT lb302_plugin_descriptor =
-{
-	STRINGIFY( PLUGIN_NAME ),
-	"LB302",
-	QT_TRANSLATE_NOOP( "pluginBrowser",
-			"Incomplete monophonic imitation tb303" ),
-	"Paul Giblock <pgib/at/users.sf.net>",
-	0x0100,
-	Plugin::Instrument,
-	new PluginPixmapLoader( "logo" ),
-	NULL,
-	NULL
-};
-
-}
 
 //
 // lb302Filter
@@ -476,50 +455,11 @@ float lb302Filter3Pole::process(const float& samp)
 
 lb302Synth::lb302Synth( InstrumentTrack * _instrumentTrack ) :
 	Instrument( _instrumentTrack, &lb302_plugin_descriptor ),
-	vcf_cut_knob( 0.75f, 0.0f, 1.5f, 0.005f, this, tr( "VCF Cutoff Frequency" ) ),
-	vcf_res_knob( 0.75f, 0.0f, 1.25f, 0.005f, this, tr( "VCF Resonance" ) ),
-	vcf_mod_knob( 0.1f, 0.0f, 1.0f, 0.005f, this, tr( "VCF Envelope Mod" ) ),
-	vcf_dec_knob( 0.1f, 0.0f, 1.0f, 0.005f, this, tr( "VCF Envelope Decay" ) ),
 	dist_knob( 0.0f, 0.0f, 1.0f, 0.01f, this, tr( "Distortion" ) ),
 	wave_shape( 0.0f, 0.0f, 7.0f, this, tr( "Waveform" ) ),
-	slide_dec_knob( 0.6f, 0.0f, 1.0f, 0.005f, this, tr( "Slide Decay" ) ),
-	slideToggle( false, this, tr( "Slide" ) ),
-	accentToggle( false, this, tr( "Accent" ) ),
-	deadToggle( false, this, tr( "Dead" ) ),
 	db24Toggle( false, this, tr( "24dB/oct Filter" ) )	
 
 {
-
-	connect( engine::getMixer(), SIGNAL( sampleRateChanged( ) ),
-	         this, SLOT ( filterChanged( ) ) );
-
-	connect( &vcf_cut_knob, SIGNAL( dataChanged( ) ),
-	         this, SLOT ( filterChanged( ) ) );
-
-	connect( &vcf_res_knob, SIGNAL( dataChanged( ) ),
-	         this, SLOT ( filterChanged( ) ) );
-
-	connect( &vcf_mod_knob, SIGNAL( dataChanged( ) ),
-	         this, SLOT ( filterChanged( ) ) );
-
-	connect( &vcf_dec_knob, SIGNAL( dataChanged( ) ),
-	         this, SLOT ( filterChanged( ) ) );
-
-	connect( &db24Toggle, SIGNAL( dataChanged( ) ),
-	         this, SLOT ( db24Toggled( ) ) );
-
-	connect( &dist_knob, SIGNAL( dataChanged( ) ),
-	         this, SLOT ( filterChanged( )));
-
-
-	// SYNTH
-
-	vco_inc = 0.0;
-	vco_c = 0;
-	vco_k = 0;
-
-	vco_slide = 0; vco_slideinc = 0;
-	vco_slidebase = 0;
 
 	fs.cutoff = 0;
 	fs.envmod = 0;
@@ -529,20 +469,7 @@ lb302Synth::lb302Synth( InstrumentTrack * _instrumentTrack ) :
 
 	vcf_envpos = ENVINC;
 
-	// Start VCA on an attack.
-	vca_mode = 3;
-	vca_a = 0;
-
-	//vca_attack = 1.0 - 0.94406088;
-	vca_attack = 1.0 - 0.96406088;
-	vca_decay = 0.99897516;
-
 	vco_shape = SAWTOOTH; 
-
-	// Experimenting with a0 between original (0.5) and 1.0
-	vca_a0 = 0.5;
-	vca_a = 9;
-	vca_mode = 3;
 
 	vcf = new lb302FilterIIR2(&fs);
 
@@ -565,47 +492,6 @@ lb302Synth::lb302Synth( InstrumentTrack * _instrumentTrack ) :
 	filterChanged();
 }
 
-
-lb302Synth::~lb302Synth()
-{
-	delete vcf;
-}
-
-
-void lb302Synth::saveSettings( QDomDocument & _doc,
-	                             QDomElement & _this )
-{
-	vcf_cut_knob.saveSettings( _doc, _this, "vcf_cut" );
-	vcf_res_knob.saveSettings( _doc, _this, "vcf_res" );
-	vcf_mod_knob.saveSettings( _doc, _this, "vcf_mod" );
-	vcf_dec_knob.saveSettings( _doc, _this, "vcf_dec" );
-
-	wave_shape.saveSettings( _doc, _this, "shape");
-	dist_knob.saveSettings( _doc, _this, "dist");
-	slide_dec_knob.saveSettings( _doc, _this, "slide_dec");
-
-	slideToggle.saveSettings( _doc, _this, "slide");
-	deadToggle.saveSettings( _doc, _this, "dead");
-	db24Toggle.saveSettings( _doc, _this, "db24");
-}
-
-
-void lb302Synth::loadSettings( const QDomElement & _this )
-{
-	vcf_cut_knob.loadSettings( _this, "vcf_cut" );
-	vcf_res_knob.loadSettings( _this, "vcf_res" );
-	vcf_mod_knob.loadSettings( _this, "vcf_mod" );
-	vcf_dec_knob.loadSettings( _this, "vcf_dec" );
-
-	dist_knob.loadSettings( _this, "dist");
-	slide_dec_knob.loadSettings( _this, "slide_dec");
-	wave_shape.loadSettings( _this, "shape");
-	slideToggle.loadSettings( _this, "slide");
-	deadToggle.loadSettings( _this, "dead");
-	db24Toggle.loadSettings( _this, "db24");
-
-	filterChanged();
-}
 
 // TODO: Split into one function per knob.  envdecay doesn't require
 // recalcFilter.
