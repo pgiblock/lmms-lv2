@@ -177,6 +177,21 @@ run(LV2_Handle instance,
 		// Run until next event
 		for (; pos < ev_frames; ++pos, ++f) {
 			// Process
+			
+			if (plugin->vcf_envpos == 0) {
+				// TODO: vcf->envRecalc();
+
+				plugin->vcf_envpos = ENVINC;
+
+				if (plugin->vco_slide) {
+					plugin->vco_inc = plugin->vco_slidebase - plugin->vco_slide;
+					// Calculate coeff from dec_knob on knob change.
+					plugin->vco_slide *= 0.9 + (*plugin->slide_dec_port * 0.0999); // TODO: Adjust for Hz and ENVINC
+				}
+			}
+			else {
+				plugin->vcf_envpos--;
+			}
 
 			// update vco
 			plugin->vco_c += plugin->vco_inc;
@@ -194,14 +209,14 @@ run(LV2_Handle instance,
 					plugin->vca_mode = 2;
 				}
 			}
-			else if(plugin->vca_mode == 1) {
+			else if (plugin->vca_mode == 1) {
 				plugin->vca_a *= plugin->vca_decay;
 			}
 			//printf("f: %d(%d)  INC: %f  Val: %f\n", f, pos, plugin->vco_inc, output[pos]);
 		}
 
 		// the following line actually speeds up processing
-		if(plugin->vca_a < (1/65536.0)) {
+		if (plugin->vca_a < (1/65536.0)) {
 			plugin->vca_a = 0;
 			plugin->vca_mode = 3;
 		}
@@ -223,7 +238,7 @@ run(LV2_Handle instance,
 
 					// Always reset vca on non-dead notes, and
 					// Only reset vca on decaying(decayed) and never-played
-					if (!plugin->dead || (plugin->vca_mode ==1 || plugin->vca_mode==3)) {
+					if (!plugin->dead || (plugin->vca_mode == 1 || plugin->vca_mode==3)) {
 						plugin->vca_mode = 0;
 						plugin->frame = 0;
 						f = 0;
@@ -249,7 +264,7 @@ run(LV2_Handle instance,
 					// End break-out
 
 					// Slide-from note, save inc for next note
-					if (*plugin->slide_port > 0.0f) {
+					if (true || /* FIXME: HACK!! */ *plugin->slide_port > 0.0f) {
 						plugin->vco_slideinc = plugin->vco_inc; // May need to equal vco_slidebase+vco_slide if last note slid
 					}
 
@@ -613,7 +628,7 @@ void lb302Synth::recalcFilter()
 	kres = (((vcf_reso))) * (((-2.7079*kp1 + 10.963)*kp1 - 14.934)*kp1 + 8.4974);
 	value = 1.0+( (((0))) *(1.5 + 2.0*kres*(1.0-kfcn))); // ENVMOD was DIST*/
 
-	vcf_envpos = ENVINC; // Trigger filter update in process()
+	vcf_envpos = ENVINC; // Trigger filter update in process() TODO: = 0 in new version
 }
 
 inline int MIN(int a, int b) {

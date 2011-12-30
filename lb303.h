@@ -101,7 +101,6 @@ typedef struct {
 	float    srate;
 	uint8_t  midi_note;
 
-
 	bool  dead;
 
 	float vco_inc,          // Sample increment for the frequency. Creates Sawtooth.
@@ -116,8 +115,9 @@ typedef struct {
 	      vca_a0,           // Initial amplifier coefficient 
 	      vca_a;            // Amplifier coefficient.
 
-	// Envelope State
 	int   vca_mode;         // 0: attack, 1: decay, 2: idle, 3: never played
+
+	int   vcf_envpos;       // Update counter. Updates when = 0
 
 } LB303Synth;
 
