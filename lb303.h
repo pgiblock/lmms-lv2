@@ -97,11 +97,14 @@ typedef struct {
 	} uris;
 
 	/* Playback state */
-	bool     play;
 	uint32_t frame; // TODO: frame_t
+	float    srate;
+	uint8_t  midi_note;
+
+
+	bool  dead;
 
 	float vco_inc,          // Sample increment for the frequency. Creates Sawtooth.
-	      vco_k,            // Raw oscillator sample [-0.5,0.5]
 	      vco_c;            // Raw oscillator sample [-0.5,0.5]
 
 	float vco_slide,        // Current value of slide exponential curve. Nonzero=sliding
@@ -115,8 +118,6 @@ typedef struct {
 
 	// Envelope State
 	int   vca_mode;         // 0: attack, 1: decay, 2: idle, 3: never played
-
-	bool  dead;
 
 } LB303Synth;
 

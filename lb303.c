@@ -109,10 +109,12 @@ instantiate(const LV2_Descriptor*     descriptor,
 	}
 
 	memset(&plugin->uris, 0, sizeof(plugin->uris));
-	
+
 	/* TODO: Move to constants or ControlPorts */
 	plugin->vca_attack = 1.0 - 0.96406088; /* = 1.0 - 0.94406088; */
 	plugin->vca_decay  = 0.99897516;
+
+	plugin->srate = rate;
 
 	// Start VCA on an attack.
 	plugin->vca_mode = 3;
@@ -153,57 +155,121 @@ run(LV2_Handle instance,
 {
 	LB303Synth* plugin      = (LB303Synth*)instance;
 	float*      output      = plugin->output_port;
-	uint32_t    start_frame = 0;
-	uint32_t    pos         = 0;
 
-	/* Read incoming events */
-	for (LV2_Atom_Buffer_Iterator i = lv2_atom_buffer_begin(plugin->event_port);
-			lv2_atom_buffer_is_valid(i);
-			i = lv2_atom_buffer_next(i)) {
+	uint32_t    pos;
+	uint32_t    ev_frames;
+	uint32_t    f = plugin->frame;
 
-		LV2_Atom_Event* const ev = lv2_atom_buffer_get(i);
-		if (ev->body.type == plugin->uris.midi_event) {
-			uint8_t* const data = (uint8_t* const)(ev + 1);
-			uint8_t const  cmd  = data[0] & 0xF0;
-			if (cmd == 0x90) {
-				float freq = powf(2.0f, (float)data[1] / 12.0f) * 440.0f;
+	LV2_Atom_Buffer_Iterator ev_i = lv2_atom_buffer_begin(plugin->event_port);
+	LV2_Atom_Event const * ev = NULL;
 
-				start_frame   = ev->frames;
-				plugin->frame = 0;
-				plugin->play  = true;
-			} else if (cmd == 0x80) {
-				// TODO: Note-off
-			}
+	for (pos = 0; pos < sample_count;) {
+		// Check for next event
+		if (lv2_atom_buffer_is_valid(ev_i)) {
+			ev        = lv2_atom_buffer_get(ev_i);
+			ev_frames = ev->frames;
+			ev_i      = lv2_atom_buffer_next(ev_i);
 		} else {
-			fprintf(stderr, "Unknown event type %d\n", ev->body.type);
+			ev = NULL;
+			ev_frames = sample_count;
 		}
+
+		// Run until next event
+		for (; pos < ev_frames; ++pos, ++f) {
+			// Process
+
+			// update vco
+			plugin->vco_c += plugin->vco_inc;
+
+			if (plugin->vco_c > 0.5) {
+				plugin->vco_c -= 1.0;
+			}
+
+			output[pos] = plugin->vco_c * plugin->vca_a;
+
+			// Handle Envelope
+			if (plugin->vca_mode==0) {
+				plugin->vca_a += (plugin->vca_a0 - plugin->vca_a) * plugin->vca_attack;
+				if (f >= 0.5 * plugin->srate) {
+					plugin->vca_mode = 2;
+				}
+			}
+			else if(plugin->vca_mode == 1) {
+				plugin->vca_a *= plugin->vca_decay;
+			}
+			//printf("f: %d(%d)  INC: %f  Val: %f\n", f, pos, plugin->vco_inc, output[pos]);
+		}
+
+		// the following line actually speeds up processing
+		if(plugin->vca_a < (1/65536.0)) {
+			plugin->vca_a = 0;
+			plugin->vca_mode = 3;
+		}
+
+		// Process event
+		if (ev) {
+			if (ev->body.type == plugin->uris.midi_event) {
+				uint8_t* const data = (uint8_t* const)(ev + 1);
+				uint8_t const  cmd  = data[0] & 0xF0;
+				if (cmd == 0x90) {
+					// Note On
+					float freq        = powf(2.0f, (float)data[1] / 12.0f) * 110.0f;
+					plugin->midi_note = data[1];
+					plugin->vco_inc   = freq / plugin->srate;
+					plugin->dead      = (*plugin->dead_port) > 0.0f;
+					printf("MN: %d  INC: %f  FREQ: %f\n", data[1], plugin->vco_inc, freq);
+
+					//TODO: catch_decay = 0;
+
+					// Always reset vca on non-dead notes, and
+					// Only reset vca on decaying(decayed) and never-played
+					if (!plugin->dead || (plugin->vca_mode ==1 || plugin->vca_mode==3)) {
+						plugin->vca_mode = 0;
+						plugin->frame = 0;
+						f = 0;
+
+						// LB303:
+						//vca_a = 0;
+					}
+					else {
+						plugin->vca_mode = 2;
+					}
+
+					// Initiate Slide
+					// TODO: Break out into function, should be called again on detuneChanged
+					if (plugin->vco_slideinc) {
+						//printf("    sliding\n");
+						plugin->vco_slide     = plugin->vco_inc - plugin->vco_slideinc;	// Slide amount
+						plugin->vco_slidebase = plugin->vco_inc;			                  // The REAL frequency
+						plugin->vco_slideinc  = 0;					                            // reset from-note
+					}
+					else {
+						plugin->vco_slide = 0;
+					}
+					// End break-out
+
+					// Slide-from note, save inc for next note
+					if (*plugin->slide_port > 0.0f) {
+						plugin->vco_slideinc = plugin->vco_inc; // May need to equal vco_slidebase+vco_slide if last note slid
+					}
+
+					// TODO: recalcFilter(); ...
+
+				} else if (cmd == 0x80) {
+					// Note Off
+					if (plugin->midi_note == data[1]) {
+						plugin->vca_mode = 1;
+					}
+				}
+			} else {
+				fprintf(stderr, "Unknown event type %d\n", ev->body.type);
+			}
+		}
+
 	}
 
-	/* Render the sample (possibly already in progress) */
-	if (plugin->play) {
-		uint32_t       f  = plugin->frame;
-		const uint32_t lf = 48000; // Length of "sample"
-
-		for (; pos < start_frame; ++pos) {
-			output[pos] = 0;
-		}
-
-		for (; pos < sample_count && f < lf; ++pos, ++f) {
-			output[pos] = fmodf((float)f * 440.0f / 48000.0f, 1) * 2.0f - 1.0f;
-		}
-
-		plugin->frame = f;
-
-		if (f == lf) {
-			plugin->play = false;
-		}
-	}
-
-
-	/* Add zeros to end if sample not long enough (or not playing) */
-	for (; pos < sample_count; ++pos) {
-		output[pos] = 0.0f;
-	}
+	// TODO: Remove this stupid shadow?
+	plugin->frame = f;
 }
 
 
