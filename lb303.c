@@ -42,7 +42,6 @@
 
 #include "lb303.h"
 
-
 static void
 connect_port(LV2_Handle instance,
              uint32_t   port,
@@ -81,6 +80,12 @@ connect_port(LV2_Handle instance,
 		case LB303_DEAD:
 			plugin->dead_port = (float*)data;
 			break;
+		case LB303_DIST:
+			plugin->dist_port = (float*)data;
+			break;
+		case LB303_FILTER:
+			plugin->filter_port = (float*)data;
+			break;
 		default:
 			break;
 	}
@@ -110,11 +115,37 @@ instantiate(const LV2_Descriptor*     descriptor,
 
 	memset(&plugin->uris, 0, sizeof(plugin->uris));
 
+	plugin->vco_c   = 0.0f;
+	plugin->vco_slide =0.0f;
+	plugin->vco_slideinc = 0.0f;
+	plugin->vco_inc = 0.0f;
+
 	/* TODO: Move to constants or ControlPorts */
 	plugin->vca_attack = 1.0 - 0.96406088; /* = 1.0 - 0.94406088; */
 	plugin->vca_decay  = 0.99897516;
 
 	plugin->srate = rate;
+
+	plugin->vcf.c0 = 0.0f;
+	plugin->vcf.e0 = 0.0f;
+	plugin->vcf.e1 = 0.0f;
+	plugin->vcf.rescoeff = 0.0f;
+	plugin->vcf.d1 = 0.0f;
+	plugin->vcf.d2 = 0.0f;
+	plugin->vcf.a = 0.0f;
+	plugin->vcf.b = 0.0f;
+	plugin->vcf.c = 1.0f;
+
+	plugin->vcf.kfcn = 0.0f; 
+	plugin->vcf.kp = 0.0f; 
+	plugin->vcf.kp1 = 0.0f; 
+	plugin->vcf.kp1h = 0.0f; 
+	plugin->vcf.kres = 0.0f;
+	plugin->vcf.ay1 = 0.0f; 
+	plugin->vcf.ay2 = 0.0f; 
+	plugin->vcf.aout = 0.0f; 
+	plugin->vcf.lastin = 0.0f; 
+	plugin->vcf.value = 0.0f;
 
 	// Start VCA on an attack.
 	plugin->vca_mode = 3;
@@ -177,20 +208,23 @@ run(LV2_Handle instance,
 		// Run until next event
 		for (; pos < ev_frames; ++pos, ++f) {
 			// Process
+			//if (f < 100) printf("%f * %.9f  [inc=%f]\n", plugin->vco_c, plugin->vca_a, plugin->vco_inc);
 			
-			if (plugin->vcf_envpos == 0) {
-				// TODO: vcf->envRecalc();
+			if (plugin->vcf.envpos == 0) {
+				
+				filter_env_recalc(plugin);
 
-				plugin->vcf_envpos = ENVINC;
+				plugin->vcf.envpos = ENVINC;
 
 				if (plugin->vco_slide) {
 					plugin->vco_inc = plugin->vco_slidebase - plugin->vco_slide;
+					
 					// Calculate coeff from dec_knob on knob change.
 					plugin->vco_slide *= 0.9 + (*plugin->slide_dec_port * 0.0999); // TODO: Adjust for Hz and ENVINC
 				}
 			}
 			else {
-				plugin->vcf_envpos--;
+				plugin->vcf.envpos--;
 			}
 
 			// update vco
@@ -200,7 +234,32 @@ run(LV2_Handle instance,
 				plugin->vco_c -= 1.0;
 			}
 
+			//if (f < 100) printf("vco_c = %f,  vco_inc = %f,  vca_a = %f",
+			//                    plugin->vco_c, plugin->vco_inc, plugin->vca_a);
+			// TODO: Stupid hack to make filter printfs stop at the right time
+			plugin->frame = f;
+
+			// Apply envelope 
 			output[pos] = plugin->vco_c * plugin->vca_a;
+
+			//if (f < 100) printf(",  out = %f\n", output[pos]);
+
+
+			//if (f%40000) printf(" Before: %f", output[pos]);
+			// Filter
+			switch ((int)*plugin->filter_port) {
+				case FILTER_IIR2:
+					filter_iir2_run(plugin, &(output[pos]));
+					break;
+				case FILTER_3POLE:
+					filter_3pole_run(plugin, &(output[pos]));
+					break;
+				default:
+					fprintf(stderr, "Invalid filter index.\n");
+					break;
+			}
+
+			//if (f%10000) printf(" After: %f\n", output[pos]);
 
 			// Handle Envelope
 			if (plugin->vca_mode==0) {
@@ -212,7 +271,6 @@ run(LV2_Handle instance,
 			else if (plugin->vca_mode == 1) {
 				plugin->vca_a *= plugin->vca_decay;
 			}
-			//printf("f: %d(%d)  INC: %f  Val: %f\n", f, pos, plugin->vco_inc, output[pos]);
 		}
 
 		// the following line actually speeds up processing
@@ -228,11 +286,11 @@ run(LV2_Handle instance,
 				uint8_t const  cmd  = data[0] & 0xF0;
 				if (cmd == 0x90) {
 					// Note On
-					float freq        = powf(2.0f, (float)data[1] / 12.0f) * 110.0f;
+					float freq        = powf(2.0f, ((float)data[1]+3.0f) / 12.0f) * 27.5f/2.0f;
 					plugin->midi_note = data[1];
 					plugin->vco_inc   = freq / plugin->srate;
 					plugin->dead      = (*plugin->dead_port) > 0.0f;
-					printf("MN: %d  INC: %f  FREQ: %f\n", data[1], plugin->vco_inc, freq);
+					//printf("MN: %d  INC: %f  FREQ: %f\n", data[1], plugin->vco_inc, freq);
 
 					//TODO: catch_decay = 0;
 
@@ -253,7 +311,6 @@ run(LV2_Handle instance,
 					// Initiate Slide
 					// TODO: Break out into function, should be called again on detuneChanged
 					if (plugin->vco_slideinc) {
-						//printf("    sliding\n");
 						plugin->vco_slide     = plugin->vco_inc - plugin->vco_slideinc;	// Slide amount
 						plugin->vco_slidebase = plugin->vco_inc;			                  // The REAL frequency
 						plugin->vco_slideinc  = 0;					                            // reset from-note
@@ -268,7 +325,30 @@ run(LV2_Handle instance,
 						plugin->vco_slideinc = plugin->vco_inc; // May need to equal vco_slidebase+vco_slide if last note slid
 					}
 
+					/*
+					// TODO:FIXME: SUPER HACK TO JUST SEE IF I CAN GET IIR2 WORKING AGAIN!!!
+					plugin->vcf.a = 0;
+					plugin->vcf.b = 0;
+					plugin->vcf.c = 1;
+					plugin->vcf.d1 = 0;
+					plugin->vcf.d2 = 0;
+					*/
+
 					// TODO: recalcFilter(); ...
+					filter_recalc(plugin);
+
+					// TODO: is this the only place n->dead is used?
+					// FIXME: How is this not being entered on first-note???  
+					if(plugin->dead == 0){
+						// Swap next two blocks??
+						plugin->vcf.c0 = plugin->vcf.e1;
+						// Ensure envelope is recalculated
+						plugin->vcf.envpos = 0;
+
+						// Double Check 
+						//vca_mode = 0;
+						//vca_a = 0.0;
+					}
 
 				} else if (cmd == 0x80) {
 					// Note Off
@@ -355,180 +435,163 @@ const LV2_Descriptor* lv2_descriptor(uint32_t index)
 	}
 }
 
+#define DECAY_FROM_PORT(val, srate) (pow(0.1, 1.0/((0.2 + (2.3*(val))) * (srate)) * ENVINC))
+/*  float d = 0.2 + (2.3*vcf_dec_knob.value());
+    d *= engine::getMixer()->processingSampleRate();
+    fs.envdecay = pow(0.1, 1.0/d * ENVINC);  // decay is 0.1 to the 1/d * ENVINC
+	                                           // vcf_envdecay is now adjusted for both
+	                                           // sampling rate and ENVINC
+*/
 
-#if 0
 
-//
-// lb302Filter
-//
-
-lb302Filter::lb302Filter(lb302FilterKnobState* p_fs) :
-	fs(p_fs),
-	vcf_c0(0),
-	vcf_e0(0),
-	vcf_e1(0)
+void
+filter_iir2_recalc(LB303Synth *p)
 {
-};
+	p->vcf.e1 = exp(6.109 + 1.5876*(*p->vcf_mod_port) + 2.1553*(*p->vcf_cut_port) - 1.2*(1.0-(*p->vcf_res_port)));
+	p->vcf.e0 = exp(5.613 - 0.8*(*p->vcf_mod_port) + 2.1553*(*p->vcf_cut_port) - 0.7696*(1.0-(*p->vcf_res_port)));
+	p->vcf.e0*= M_PI / p->srate;
+	p->vcf.e1*= M_PI / p->srate;
+	p->vcf.e1-= p->vcf.e0;
 
-
-void lb302Filter::recalc()
-{
-	vcf_e1 = exp(6.109 + 1.5876*(fs->envmod) + 2.1553*(fs->cutoff) - 1.2*(1.0-(fs->reso)));
-	vcf_e0 = exp(5.613 - 0.8*(fs->envmod) + 2.1553*(fs->cutoff) - 0.7696*(1.0-(fs->reso)));
-	vcf_e0*=M_PI/engine::getMixer()->processingSampleRate();
-	vcf_e1*=M_PI/engine::getMixer()->processingSampleRate();
-	vcf_e1 -= vcf_e0;
-
-	vcf_rescoeff = exp(-1.20 + 3.455*(fs->reso));
-};
-
-
-void lb302Filter::envRecalc()
-{
-	vcf_c0 *= fs->envdecay;       // Filter Decay. vcf_decay is adjusted for Hz and ENVINC
-	// vcf_rescoeff = exp(-1.20 + 3.455*(fs->reso)); moved above
-};
-
-
-void lb302Filter::playNote()
-{
-	vcf_c0 = vcf_e1;
+	// TODO: Double check to see if this is IIR2 only..
+	p->vcf.rescoeff = exp(-1.20 + 3.455*(*p->vcf_res_port));
 }
 
 
-//
-// lb302FilterIIR2
-//
-
-lb302FilterIIR2::lb302FilterIIR2(lb302FilterKnobState* p_fs) :
-	lb302Filter(p_fs),
-	vcf_d1(0),
-	vcf_d2(0),
-	vcf_a(0),
-	vcf_b(0),
-	vcf_c(1)
-{
-
-	m_dist = new effectLib::distortion( 1.0, 1.0f);
-	
-};
-
-
-lb302FilterIIR2::~lb302FilterIIR2()
-{
-	delete m_dist;
-}
-
-
-void lb302FilterIIR2::recalc()
-{
-	lb302Filter::recalc();
-	//m_dist->setThreshold(0.5+(fs->dist*2.0));
-	m_dist->setThreshold(fs->dist*75.0);
-};
-
-
-void lb302FilterIIR2::envRecalc()
+void
+filter_iir2_env_recalc(LB303Synth *p)
 {
 	float k, w;
 
-	lb302Filter::envRecalc();
+	p->vcf.c0 *= DECAY_FROM_PORT(*p->vcf_dec_port, p->srate);  // Filter Decay. vcf_decay is adjusted for Hz and ENVINC
+	// vcf_rescoeff = exp(-1.20 + 3.455*(fs->reso)); moved above
 
-	w = vcf_e0 + vcf_c0;          // e0 is adjusted for Hz and doesn't need ENVINC
-	k = exp(-w/vcf_rescoeff);     // Does this mean c0 is inheritantly?
+	w = p->vcf.e0 + p->vcf.c0;          // e0 is adjusted for Hz and doesn't need ENVINC
+	k = exp(-w / p->vcf.rescoeff);     // Does this mean c0 is inheritantly?
 
-	vcf_a = 2.0*cos(2.0*w) * k;
-	vcf_b = -k*k;
-	vcf_c = 1.0 - vcf_a - vcf_b;
+	p->vcf.a = 2.0*cos(2.0*w) * k;
+	p->vcf.b = -k*k;
+	p->vcf.c = 1.0 - p->vcf.a - p->vcf.b;
 }
 
 
-float lb302FilterIIR2::process(const float& samp)
+void
+filter_iir2_run(LB303Synth *p, float *sampl)
 {
-	float ret = vcf_a*vcf_d1 + vcf_b*vcf_d2 + vcf_c*samp;
+	float tmp;
+	tmp    = p->vcf.a * p->vcf.d1 +
+	         p->vcf.b * p->vcf.d2 +
+	         p->vcf.c * *sampl;
+
+	
+	/*
+	if(p->frame < 100)
+	printf("%f = a[%f] * d1[%f] + "
+			       " b[%f] * d2[%f] + "
+				     " c[%f] * sa[%f]\n",
+				 tmp, p->vcf.a, p->vcf.d1,
+				      p->vcf.b, p->vcf.d2,
+							p->vcf.c, *sampl);
+	*/
+
 	// Delayed samples for filter
-	vcf_d2 = vcf_d1;
-	vcf_d1 = ret;
+	p->vcf.d2 = p->vcf.d1;
+	p->vcf.d1 = tmp;
 
-	if(fs->dist > 0) 
-		ret=m_dist->nextSample(ret);
-
-	// output = IIR2 + dry
-	return ret;
+	*sampl = tmp;
 }
 
 
-//
-// lb302Filter3Pole
-//
-
-lb302Filter3Pole::lb302Filter3Pole(lb302FilterKnobState *p_fs) :
-	lb302Filter(p_fs),
-	ay1(0),
-	ay2(0),
-	aout(0),
-	lastin(0) 
+void
+filter_3pole_recalc(LB303Synth *p)
 {
-};
-
-
-void lb302Filter3Pole::recalc()
-{
-	// DO NOT CALL BASE CLASS
-	vcf_e0 = 0.000001;
-	vcf_e1 = 1.0;
+	p->vcf.e0 = 0.000001;
+	p->vcf.e1 = 1.0;
 }
 
 
 // TODO: Try using k instead of vcf_reso
-void lb302Filter3Pole::envRecalc()
+void
+filter_3pole_env_recalc(LB303Synth *p)
 {
-	float w,k;
+	float w, k;
 	float kfco;
 
-	lb302Filter::envRecalc();
+	p->vcf.c0 *= DECAY_FROM_PORT(*p->vcf_dec_port, p->srate);  // Filter Decay. vcf_decay is adjusted for Hz and ENVINC
+	// vcf_rescoeff = exp(-1.20 + 3.455*(fs->reso)); moved above
 
 	// e0 is adjusted for Hz and doesn't need ENVINC
-	w = vcf_e0 + vcf_c0;
-	k = (fs->cutoff > 0.975)?0.975:fs->cutoff;
-	kfco = 50.f + (k)*((2300.f-1600.f*(fs->envmod))+(w) *
-	                   (700.f+1500.f*(k)+(1500.f+(k)*(engine::getMixer()->processingSampleRate()/2.f-6000.f)) * 
-	                   (fs->envmod)) );
+	w = p->vcf.e0 + p->vcf.c0;
+	k = (*p->vcf_cut_port > 0.975)?0.975:*p->vcf_cut_port;
+	kfco = 50.f + (k)*((2300.f-1600.f*(*p->vcf_mod_port))+(w) *
+	                   (700.f+1500.f*(k)+(1500.f+(k)*(p->srate/2.f-6000.f)) * 
+	                   (*p->vcf_mod_port)) );
 	//+iacc*(.3+.7*kfco*kenvmod)*kaccent*kaccurve*2000
-
 
 #ifdef LB_24_IGNORE_ENVELOPE
 	// kfcn = fs->cutoff;
-	kfcn = 2.0 * kfco / engine::getMixer()->processingSampleRate();
+	p->vcf.kfcn = 2.0 * kfco / p->srate;
 #else
-	kfcn = w;
+	p->vcf.kfcn = w;
 #endif
-	kp   = ((-2.7528*kfcn + 3.0429)*kfcn + 1.718)*kfcn - 0.9984;
-	kp1  = kp+1.0;
-	kp1h = 0.5*kp1;
+	p->vcf.kp   = ((-2.7528*p->vcf.kfcn + 3.0429)*p->vcf.kfcn + 1.718)*p->vcf.kfcn - 0.9984;
+	p->vcf.kp1  = p->vcf.kp+1.0;
+	p->vcf.kp1h = 0.5*p->vcf.kp1;
 #ifdef LB_24_RES_TRICK
-	k = exp(-w/vcf_rescoeff);
-	kres = (((k))) * (((-2.7079*kp1 + 10.963)*kp1 - 14.934)*kp1 + 8.4974);
+	k = exp(-w/p->vcf.rescoeff);
+	p->vcf.kres = (((k))) * (((-2.7079*p->vcf.kp1 + 10.963)*p->vcf.kp1 - 14.934)*p->vcf.kp1 + 8.4974);
 #else
-	kres = (((fs->reso))) * (((-2.7079*kp1 + 10.963)*kp1 - 14.934)*kp1 + 8.4974);
+	p->vcf.kres = (((*p->vcf_res_port))) * (((-2.7079*p->vcf.kp1 + 10.963)*p->vcf.kp1 - 14.934)*p->vcf.kp1 + 8.4974);
 #endif
-	value = 1.0+( (fs->dist) *(1.5 + 2.0*kres*(1.0-kfcn))); // ENVMOD was DIST
+	p->vcf.value = 1.0+( (*p->dist_port) *(1.5 + 2.0*p->vcf.kres*(1.0-p->vcf.kfcn))); // ENVMOD was DIST
 }
 
 
-float lb302Filter3Pole::process(const float& samp) 
+void
+filter_3pole_run(LB303Synth *p, float *sampl)
 {
-	float ax1  = lastin;
-	float ay11 = ay1;
-	float ay31 = ay2;
-	lastin  = (samp) - tanh(kres*aout);
-	ay1     = kp1h * (lastin+ax1) - kp*ay1;
-	ay2     = kp1h * (ay1 + ay11) - kp*ay2;
-	aout    = kp1h * (ay2 + ay31) - kp*aout;
+	float ax1  = p->vcf.lastin;
+	float ay11 = p->vcf.ay1;
+	float ay31 = p->vcf.ay2;
 
-	return tanh(aout*value)*LB_24_VOL_ADJUST/(1.0+fs->dist);
+	p->vcf.lastin  = (*sampl) - tanh(p->vcf.kres * p->vcf.aout);
+	p->vcf.ay1     = p->vcf.kp1h * (p->vcf.lastin+ax1) - (p->vcf.kp * p->vcf.ay1);
+	p->vcf.ay2     = p->vcf.kp1h * (p->vcf.ay1 + ay11) - (p->vcf.kp * p->vcf.ay2);
+	p->vcf.aout    = p->vcf.kp1h * (p->vcf.ay2 + ay31) - (p->vcf.kp * p->vcf.aout);
+
+	*sampl = tanh(p->vcf.aout * p->vcf.value) * LB_24_VOL_ADJUST / (1.0 + (*p->dist_port));
 }
 
+
+void
+filter_recalc(LB303Synth *plugin)
+{
+	switch ((int)(*plugin->filter_port)) {
+		case FILTER_IIR2:
+			filter_iir2_recalc(plugin);
+			break;
+		case FILTER_3POLE:
+			filter_3pole_recalc(plugin);
+			break;
+	}
+}
+
+
+void
+filter_env_recalc(LB303Synth *plugin)
+{
+	switch ((int)(*plugin->filter_port)) {
+		case FILTER_IIR2:
+			filter_iir2_env_recalc(plugin);
+			break;
+		case FILTER_3POLE:
+			filter_3pole_env_recalc(plugin);
+			break;
+	}
+}
+
+
+#if 0
 
 //
 // LBSynth
@@ -541,14 +604,6 @@ lb302Synth::lb302Synth( InstrumentTrack * _instrumentTrack ) :
 	db24Toggle( false, this, tr( "24dB/oct Filter" ) )	
 
 {
-
-	fs.cutoff = 0;
-	fs.envmod = 0;
-	fs.reso = 0;
-	fs.envdecay = 0;
-	fs.dist = 0;
-
-	vcf_envpos = ENVINC;
 
 	vco_shape = SAWTOOTH; 
 
@@ -593,26 +648,6 @@ void lb302Synth::filterChanged()
 }
 
 
-void lb302Synth::db24Toggled()
-{
-	delete vcf;
-	if(db24Toggle.value()) {
-		vcf = new lb302Filter3Pole(&fs);
-	}
-	else {
-		vcf = new lb302FilterIIR2(&fs);
-	}
-	recalcFilter();
-}
-
-
-
-QString lb302Synth::nodeName() const
-{
-	return( lb302_plugin_descriptor.name );
-}
-
-
 // OBSOLETE. Break apart once we get Q_OBJECT to work. >:[
 void lb302Synth::recalcFilter()
 {
@@ -631,13 +666,6 @@ void lb302Synth::recalcFilter()
 	vcf_envpos = ENVINC; // Trigger filter update in process() TODO: = 0 in new version
 }
 
-inline int MIN(int a, int b) {
-	return (a<b)?a:b;
-}
-
-inline float GET_INC(float freq) {
-	return freq/engine::getMixer()->processingSampleRate();  // TODO: Use actual sampling rate.
-}
 
 int lb302Synth::process(sampleFrame *outbuf, const Uint32 size)
 {
@@ -652,20 +680,15 @@ int lb302Synth::process(sampleFrame *outbuf, const Uint32 size)
 	}
 
 	if( new_freq > 0.0f ) {
-		//printf("  playing new note..\n");
 		lb302Note note;
 		note.vco_inc = GET_INC( true_freq );
-		//printf("GET_INC %f %f %d\n", note.vco_inc, new_freq, vca_mode );
 		///**vco_detune*//engine::getMixer()->processingSampleRate();  // TODO: Use actual sampling rate.
-		//printf("VCO_INC = %f\n", note.vco_inc);
 		note.dead = deadToggle.value();
 		initNote(&note);
-		//printf("%f %f,  ", vco_inc, vco_c);
 		
 		current_freq = new_freq; 
 
 		new_freq = -1.0f;
-		//printf("GOT_INC %f %f %d\n\n", note.vco_inc, new_freq, vca_mode );
 	} 
 
 	

@@ -70,8 +70,48 @@ enum {
 	LB303_SLIDE     = 6,
 	LB303_SLIDE_DEC = 7,
 	LB303_ACCENT    = 8,
-	LB303_DEAD      = 9
+	LB303_DEAD      = 9,
+	LB303_DIST			= 10,
+	LB303_FILTER    = 11
 };
+
+
+enum {
+	FILTER_IIR2  = 0,
+	FILTER_3POLE = 1
+};
+
+typedef struct {
+	int   envpos;       // Update counter. Updates when = 0
+
+	float c0,           // c0=e1 on retrigger; c0*=ed every sample; cutoff=e0+c0
+	      e0,           // e0 and e1 for interpolation
+	      e1,           //
+	      rescoeff;     // Resonance coefficient [0.30,9.54]
+
+	// IIR2:
+	float d1,           //   d1 and d2 are added back into the sample with 
+	      d2;           //   vcf_a and b as coefficients. IIR2 resonance
+	                    //   loop.
+
+	float a,            // IIR2 Coefficients for mixing dry and delay.
+	      b,            //   Mixing coefficients for the final sound.  
+	      c;            //  
+
+	// 3-Filter
+	float kfcn, 
+	      kp, 
+	      kp1, 
+	      kp1h, 
+	      kres;
+
+	float ay1, 
+	      ay2, 
+	      aout, 
+	      lastin, 
+	      value;
+
+} FilterState;
 
 
 typedef struct {
@@ -81,16 +121,18 @@ typedef struct {
 	/* Ports */
 	LV2_Atom_Buffer* event_port;
 	float*           output_port;
-	float*           vcf_cut_port;
-	float*           vcf_res_port;
-	float*           vcf_mod_port;
-	float*           vcf_dec_port;
 	float*           slide_port;
 	float*           slide_dec_port;
 	float*           accent_port;
 	float*           dead_port;
+	float*           dist_port;
+	float*           filter_port;
+	float*           vcf_cut_port;
+	float*           vcf_res_port;
+	float*           vcf_mod_port;
+	float*           vcf_dec_port;
 
-	/* URIs */
+	/* URIs TODO: Global*/
 	struct {
 		LV2_URID midi_event;
 		LV2_URID atom_message;
@@ -117,24 +159,25 @@ typedef struct {
 
 	int   vca_mode;         // 0: attack, 1: decay, 2: idle, 3: never played
 
-	int   vcf_envpos;       // Update counter. Updates when = 0
+	FilterState vcf;			// State of Vcf
 
 } LB303Synth;
 
 
+void filter_recalc(LB303Synth*);
+void filter_env_recalc(LB303Synth*);
+
+void filter_iir2_run(LB303Synth*, float*);
+void filter_iir2_recalc(LB303Synth*);
+void filter_iir2_env_recalc(LB303Synth*);
+
+void filter_3pole_run(LB303Synth*, float*);
+void filter_3pole_recalc(LB303Synth*);
+void filter_3pole_env_recalc(LB303Synth*);
+
+
 #endif // LB303_H__
 #if 0
-
-class lb302FilterKnobState
-{
-	public:
-	float cutoff;
-	float reso;
-	float envmod;
-	float envdecay;
-	float dist;
-};
-
 
 class lb302Filter
 {
