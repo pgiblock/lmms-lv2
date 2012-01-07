@@ -59,6 +59,16 @@
 #define M_PI 3.14159265358979323846264338327
 #endif
 
+#ifndef USE_LV2_URID
+typedef uint32_t             LV2_URID;
+#endif
+
+#ifdef USE_LV2_ATOM
+typedef LV2_Atom_Buffer      Event_Buffer_t;
+#else
+typedef LV2_Event_Buffer     Event_Buffer_t;
+#endif
+
 // PORTS
 enum {
 	LB303_CONTROL   = 0,
@@ -116,10 +126,14 @@ typedef struct {
 
 typedef struct {
 	/* Features */
-	LV2_URID_Map* map;
+#ifdef USE_LV2_URID
+	LV2_URID_Map*              map;
+#else
+	LV2_URI_Map_Feature*       map;
+#endif
 
 	/* Ports */
-	LV2_Atom_Buffer* event_port;
+	Event_Buffer_t*  event_port;
 	float*           output_port;
 	float*           slide_port;
 	float*           slide_dec_port;

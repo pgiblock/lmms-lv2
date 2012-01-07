@@ -1,5 +1,5 @@
 /*
- * lb302.cpp - implementation of class lb302 which is a bass synth attempting 
+ * lb303.cpp - implementation of class LB303 which is a bass synth attempting 
  *             to emulate the Roland TB303 bass synth
  *
  * Copyright (c) 2006-2008 Paul Giblock <pgib/at/users.sourceforge.net>
@@ -31,14 +31,26 @@
 #include <assert.h>
 #include <math.h>
 #include <stdbool.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
+#include "lv2/lv2plug.in/ns/ext/state/state.h"
+#include "lv2/lv2plug.in/ns/lv2core/lv2.h"
+
+#ifdef USE_LV2_ATOM
 #include "lv2/lv2plug.in/ns/ext/atom/atom-buffer.h"
 #include "lv2/lv2plug.in/ns/ext/atom/atom-helpers.h"
-#include "lv2/lv2plug.in/ns/ext/state/state.h"
+#else
+#include "lv2/lv2plug.in/ns/ext/event/event.h"
+#include "lv2/lv2plug.in/ns/ext/event/event-helpers.h"
+#endif // USE_LV2_ATOM
+
+#ifdef USE_LV2_URID
 #include "lv2/lv2plug.in/ns/ext/urid/urid.h"
-#include "lv2/lv2plug.in/ns/lv2core/lv2.h"
+#else
+#include "lv2/lv2plug.in/ns/ext/uri-map/uri-map.h"
+#endif // USE_LV2_URID
 
 #include "lb303.h"
 
@@ -51,7 +63,7 @@ connect_port(LV2_Handle instance,
 
 	switch (port) {
 		case LB303_CONTROL:
-			plugin->event_port = (LV2_Atom_Buffer*)data;
+			plugin->event_port = (Event_Buffer_t*)data;
 			break;
 		case LB303_OUT:
 			plugin->output_port = (float*)data;
@@ -158,6 +170,7 @@ instantiate(const LV2_Descriptor*     descriptor,
 
 	/* Scan host features for URID map and map everything */
 	for (int i = 0; features[i]; ++i) {
+#ifdef USE_LV2_URID
 		if (!strcmp(features[i]->URI, LV2_URID_URI "#map")) {
 			plugin->map = (LV2_URID_Map*)features[i]->data;
 			plugin->uris.midi_event = plugin->map->map(
@@ -165,6 +178,18 @@ instantiate(const LV2_Descriptor*     descriptor,
 			plugin->uris.atom_message = plugin->map->map(
 					plugin->map->handle, ATOM_MESSAGE_URI);
 		}
+#else
+		if (!strcmp(features[i]->URI, LV2_URI_MAP_URI)) {
+			fprintf(stderr, "Found URI-Map.");
+			plugin->map = (LV2_URI_Map_Feature*)features[i]->data;
+			plugin->uris.midi_event = plugin->map->uri_to_id(
+					plugin->map->callback_data, NULL, MIDI_EVENT_URI);
+			plugin->uris.atom_message = plugin->map->uri_to_id(
+					plugin->map->callback_data, NULL, ATOM_MESSAGE_URI);
+			fprintf(stderr, "%s -> %d\n", MIDI_EVENT_URI, plugin->uris.midi_event);
+			fprintf(stderr, "%s -> %d\n", ATOM_MESSAGE_URI, plugin->uris.atom_message);
+		}
+#endif
 	}
 
 	if (!plugin->map) {
@@ -191,6 +216,7 @@ run(LV2_Handle instance,
 	uint32_t    ev_frames;
 	uint32_t    f = plugin->frame;
 
+#ifdef USE_LV2_ATOM
 	LV2_Atom_Buffer_Iterator ev_i = lv2_atom_buffer_begin(plugin->event_port);
 	LV2_Atom_Event const * ev = NULL;
 
@@ -204,11 +230,26 @@ run(LV2_Handle instance,
 			ev = NULL;
 			ev_frames = sample_count;
 		}
+#else
+	LV2_Event_Iterator ev_i;
+	lv2_event_begin(&ev_i, plugin->event_port);
+	LV2_Event const * ev = NULL;
+
+	for (pos = 0; pos < sample_count;) {
+		// Check for next event
+		if (lv2_event_is_valid(&ev_i)) {
+			ev        = lv2_event_get(&ev_i, NULL);
+			ev_frames = ev->frames;
+			lv2_event_increment(&ev_i);
+		} else {
+			ev = NULL;
+			ev_frames = sample_count;
+		}
+#endif
 
 		// Run until next event
 		for (; pos < ev_frames; ++pos, ++f) {
 			// Process
-			//if (f < 100) printf("%f * %.9f  [inc=%f]\n", plugin->vco_c, plugin->vca_a, plugin->vco_inc);
 			
 			if (plugin->vcf.envpos == 0) {
 				
@@ -242,10 +283,6 @@ run(LV2_Handle instance,
 			// Apply envelope 
 			output[pos] = plugin->vco_c * plugin->vca_a;
 
-			//if (f < 100) printf(",  out = %f\n", output[pos]);
-
-
-			//if (f%40000) printf(" Before: %f", output[pos]);
 			// Filter
 			switch ((int)*plugin->filter_port) {
 				case FILTER_IIR2:
@@ -258,8 +295,6 @@ run(LV2_Handle instance,
 					fprintf(stderr, "Invalid filter index.\n");
 					break;
 			}
-
-			//if (f%10000) printf(" After: %f\n", output[pos]);
 
 			// Handle Envelope
 			if (plugin->vca_mode==0) {
@@ -281,16 +316,21 @@ run(LV2_Handle instance,
 
 		// Process event
 		if (ev) {
+#ifdef USE_LV2_ATOM
 			if (ev->body.type == plugin->uris.midi_event) {
 				uint8_t* const data = (uint8_t* const)(ev + 1);
+#else
+			if (ev->type == plugin->uris.midi_event || ev->type == 1) {
+				uint8_t* const data = (uint8_t* const)(ev) + sizeof(LV2_Event);
+#endif
 				uint8_t const  cmd  = data[0] & 0xF0;
+				//fprintf(stderr, "  cmd=%d data1=%d data2=%d\n", cmd, data[1], data[2]);
 				if (cmd == 0x90) {
 					// Note On
 					float freq        = powf(2.0f, ((float)data[1]+3.0f) / 12.0f) * 27.5f/2.0f;
 					plugin->midi_note = data[1];
 					plugin->vco_inc   = freq / plugin->srate;
 					plugin->dead      = (*plugin->dead_port) > 0.0f;
-					//printf("MN: %d  INC: %f  FREQ: %f\n", data[1], plugin->vco_inc, freq);
 
 					//TODO: catch_decay = 0;
 
@@ -357,7 +397,11 @@ run(LV2_Handle instance,
 					}
 				}
 			} else {
+#ifdef USE_LV2_ATOM
 				fprintf(stderr, "Unknown event type %d\n", ev->body.type);
+#else
+				fprintf(stderr, "Unknown event type %d (size %d)\n", ev->type, ev->size);
+#endif
 			}
 		}
 
@@ -371,7 +415,11 @@ run(LV2_Handle instance,
 static uint32_t
 map_uri(LB303Synth* plugin, const char* uri)
 {
+#ifdef USE_LV2_ATOM
 	return plugin->map->map(plugin->map->handle, uri);
+#else
+	return plugin->map->uri_to_id(plugin->map->callback_data, NULL, uri);
+#endif
 }
 
 

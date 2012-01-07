@@ -1,7 +1,9 @@
-@prefix atom:  <http://lv2plug.in/ns/ext/atom#> .
+#@prefix atom:  <http://lv2plug.in/ns/ext/atom#> .
 @prefix doap:  <http://usefulinc.com/ns/doap#> .
 @prefix foaf:  <http://xmlns.com/foaf/0.1/> .
 @prefix lv2:   <http://lv2plug.in/ns/lv2core#> .
+@prefix lv2ev: <http://lv2plug.in/ns/ext/event#> .
+@prefix lv2midi: <http://lv2plug.in/ns/ext/midi#> .
 @prefix rdf:   <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
 @prefix rdfs:  <http://www.w3.org/2000/01/rdf-schema#> .
 
@@ -9,16 +11,23 @@
 	a lv2:Plugin ;
 	doap:name "LB303 Synth" ;
 	doap:license <http://opensource.org/licenses/isc> ;
-	lv2:requiredFeature <http://lv2plug.in/ns/ext/urid#Mapper> ;
-	lv2:optionalFeature lv2:hardRtCapable ;
+	lv2:requiredFeature <http://lv2plug.in/ns/ext/uri-map> ;
+  #lv2:requiredFeature <http://lv2plug.in/ns/ext/urid#Mapper> ;
+	lv2:optionalFeature lv2:hardRTCapable ;
 	lv2:extensionData <http://lv2plug.in/ns/ext/state#Interface> ;
 	lv2:port [
-		a lv2:InputPort ,
-			atom:EventPort ;
-		atom:supports <http://lv2plug.in/ns/ext/midi#MidiEvent> ;
+		a lv2:InputPort ;
+
+		#a atom:EventPort ;
+		#atom:supports <http://lv2plug.in/ns/ext/midi#MidiEvent> ;
+		a lv2ev:EventPort ;
+		lv2ev:supportsEvent lv2midi:MidiEvent ;
+		lv2ev:supportsTimestamp <lv2ev:TimeStamp> ;
+
 		lv2:index 0 ;
 		lv2:symbol "control" ;
-		lv2:name "Control"
+		lv2:name "Control" ;
+		lv2:portProperty lv2:connectionOptional ;
 	] , [
 		a lv2:AudioPort ,
 			lv2:OutputPort ;
