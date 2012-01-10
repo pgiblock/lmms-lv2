@@ -70,16 +70,16 @@ typedef struct Oscillator_st Oscillator;
 
 // Public interface
 
-static Oscillator* osc_create(
+Oscillator* osc_create(
 		float wave_shape, float modulation_algo,
 		float freq, float detuning, float volume,
-		struct Oscillator_st* sub_osc, float phase_offset,
+		Oscillator* sub_osc, float phase_offset,
 		float sample_rate);
 
-static void        osc_destroy(Oscillator* o);
+void        osc_destroy(Oscillator* o);
 
-static void        osc_update(Oscillator* o, sample_t* buff, fpp_t len);
-static sample_t    osc_get_sample(Oscillator* o, float sample);
+void        osc_update(Oscillator* o, sample_t* buff, fpp_t len);
+sample_t    osc_get_sample(Oscillator* o, float sample);
 
 
 // Waveform sample routines

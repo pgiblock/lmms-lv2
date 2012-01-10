@@ -27,10 +27,10 @@
 
 #include "oscillator.h"
 
-static Oscillator*
+Oscillator*
 osc_create(float wave_shape, float modulation_algo,
            float freq, float detuning, float volume,
-           struct Oscillator_st* sub_osc, float phase_offset,
+           Oscillator* sub_osc, float phase_offset,
            float sample_rate) {
 
 	Oscillator* o = (Oscillator*)malloc(sizeof(Oscillator));
@@ -55,7 +55,7 @@ osc_create(float wave_shape, float modulation_algo,
 }
 
 
-static void
+void
 osc_destroy(Oscillator* o) {
 	free(o);
 }
@@ -101,8 +101,10 @@ void osc_update_no_sub(Oscillator* o, sample_t* buff, fpp_t len) {
 
 	osc_recalc_phase(o);
 
+	printf("ph=%f, coef=%f\n", o->phase, osc_coeff);
 	for (fpp_t frame = 0; frame < len; ++frame) {
-		buff[frame] = osc_get_sample(o, o->phase) * o->volume;
+		buff[frame] = fmod(o->phase, 1.0f);//  osc_get_sample(o, o->phase) * o->volume;
+		//printf("b[f]=%f, ph=%f, vol=%f, coef=%f\n", buff[frame], o->phase, o->volume, osc_coeff);
 		o->phase += osc_coeff;
 	}
 }
@@ -184,7 +186,7 @@ void osc_update_fm(Oscillator* o, sample_t* buff, fpp_t len) {
 }
 
 
-static void
+void
 osc_update(Oscillator* o, sample_t* buff, fpp_t len) {
 	if (o->freq >= o->sample_rate / 2) {
 		return;
@@ -215,7 +217,7 @@ osc_update(Oscillator* o, sample_t* buff, fpp_t len) {
 }
 
 
-static sample_t
+sample_t
 osc_get_sample(Oscillator* o, float sample) {
 	switch ((int)(o->wave_shape)) {
 		case OSC_WAVE_SINE:
