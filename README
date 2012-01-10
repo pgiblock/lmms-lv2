@@ -1,87 +1,82 @@
-LB303 Bass Synth - Known bugs, issues, and missing features
------------------------------------------------------------
+                            ======================
+                             LMMS Plugins for LV2
+                            ======================
 
-2007.02.03 - First release
---------------------------
+This is the beginning of a port of LMMS plugins to LV2.
 
-Important note, in the current incarnation there are many behaviors,
-constants, and other items that will be changed.  This will result
-in a change of the instrument's timbre and functionality. Therefore,
-it would be wise to not make any masterpieces with the synth at 
-this point in time.
+Initially there will be some effort required for scaffolding, mainly handling
+multiple voices etc..  Once this is done, other plugins will come along a
+little bit quicker.
 
-BUG: 
-  Fix the awful clicking cause by adjacent notes.  This problem seems
-  to be caused by 'unexhausted buffers' That is, the problem manifests
-  itself to a greater degree when the user "buffer size" configuration
-  is increased to over 1024 frames or so.  The problem is much less
-  noticable when the buffer size is set to 64 frames.
+There are a number of plugins that will require some extension to LV2 in order
+for them to work in a ``Nice'' way.
 
-BUG:
-  The synth does not make accomodations for sampling rates other than
-  44100. This should be easy to fix, but I haven't gotten around to
-  it; nor do I have the means to test it.
+Key [W]=Working on, [C]=Complete, [X]=Not planned
 
-BUG:
-  I get segfaults now and then.  Granted, I've rarely used LMMS 
-  without also using LB302, so I do not know if the problem is actually 
-  in the Bass Synth. I have gotten the backtraces a few times:
-    ...
-    mixer::renderNextBuffer()
-    mixer::nextAudioBuffer()
-    QOBject::activate_signal()
-    ??()
+Instruments:
 
-    and
+[ ] AudioFileProcessor - playing audio files.
+        Would be nice to coordinate efforts with LV2 team, regarding host-side sample loading.
+    
+[ ] BitInvader - 'simple and dirty' wavetable synthesis.
+        Should be easy enough, might require "Atom" extension for the scribble data
+    
+[ ] Kicker - drum synthesis.
+        Easy
+    
+[W] LB302 - a monophonic implementation of the TB303 sound.
+        Simplified due to monophonic nature and because I'm familiar with code-base
+    
+[ ] Mallets - a struck-instrument synthesizer
+        Is this necessary due to CMT on LV2?
+    
+[ ] Organic - an additive organ synthesizer.
+        I'm not a huge fan of this one, so low priority
+    
+[ ] FreeBoy - an emulator of the sound chip of the Nintendo Game Boy.
+        Will require BitInvader's "Graph" widget and data-passing.
+    
+[ ] PatMan - a GUS-compatible patch instrument.
+        Never used it...
+    
+[X] SF2 Player - the official SoundFont2 player.
+        Not neccessary with FluidSynth LV2 plugin
+    
+[ ] SID - an emulator of the sound chips used by the C64.
+        A fun one, but not huge priority of mine
+    
+[X] Singerbot - a 'singing' sound synthesizer.
+        Unmaintained, might try it once LMMS restores this one
+    
+[W] TripleOscillator - the 'standard' subtractive synthesis module.
+        Priority #2 behind LB303.  Will require writing the initial oscillator code
+        and voice-managing code.  And the original oscillator code is less than ideal
+        for a C port.
+    
+[X] VeSTige - VSTi-hosting plugin
+        Not required with current work on FST
+    
+[ ] Vibed - powerful vibrating-string synthesis module.
+        Requires BitInvader's graph
+    
+[X] ZynAddSubFX - A powerful hybrid synthesizer 
+        There is already zyn for LV2, right?
 
-    ...
-    instrumentTrack::play()
-    notePlayHandle()
-    instrumentTrack::processOutEvent()
-    fadeButton::activate()
-    QSingleShotTimer::start()
-    qStartTimer()
-    qKillTimer()
-    QGList::insertAt()
+Effects:
 
-TODO:
-  Add accent feature.  This isn't as bad as it sounds, but will require
-  some tweaking to get right.
+[ ] Bass Booster - Maximizes bass sound
 
-TODO:
-  LB302 contains code for a short fixed-length default decay.  If a 
-  released note is using a user-defined VCA from the instrument
-  panel, then LB302 should not do anything special.  However, if no
-  envelope is specified, then LB302 should request enough release-frames
-  in order to apply the built-in exponential decay.
+[X] Peak Controller - Control other parameters with the input peak levels
+        This is tied too closely to LMMS's mixer to be useful here.
+        A rewrite is necessary (and more trivial to be honest)
 
-TODO:
-  The original TB303's square wave is not 50% duty cycle.  The peaks are
-  supposed to slope down slightly.  It would be nice to be able to 
-  configure this.  In fact, each waveform could have a parameter knob to
-  change some aspect of the wave.  See lb302.cpp:643 for more info.
+[ ] Spectrum Analyzer - Visualize audio response
+        There are other Visualizers in the JACK/LV2 world. Lowest priority.
 
-TODO:
-  Must decide on proper action to take when a slide note is interrupted
-  by another slide note.  Right now, the slide-from frequency is always
-  replaced with the prior note.  However, we may wish to maintain the
-  current frequency in order to make the sound more continuous.
+[ ] Stereo Enhancer - Simulate a wider stereo separation
 
-TODO:
-  The default filter's distortion could use some work.
-  effectLib::distortion<> gets the job done, but the coefficients need
-  to more closely match that of lb302Filter3Pole's tanh distortion.
+[ ] Stereophonic Matrix - Mix stereo input and output in a completely flexible way
+        Might not be too useful outside of LMMS.  Originally designed to
+        work-around some limitation in the mixer.
 
-TODO:
-  Slide decay needs a better knob mapping.  sqrt()? lb302.cpp:588
 
-TODO:
-  Consider making the slide trigger set the note to slide TO as opposed
-  to the note to slide FROM.  I originally did FROM in order to match
-  the real 303. However, TO may be more intuitive.
-
-TODO:
-  Various code refactoring, as well as precomputing some values.
-
-TODO:
-  Remove one of the sawtooth waveforms in favor of the other?
