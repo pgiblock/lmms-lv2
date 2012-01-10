@@ -28,19 +28,13 @@
  *
  */
 
-
 #ifndef LB303_H__
 #define LB303_H__
 
-#define NS_ATOM "http://lv2plug.in/ns/ext/atom#"
-#define NS_RDF  "http://www.w3.org/1999/02/22-rdf-syntax-ns#"
-
-#define LB303_SYNTH_URI  "http://pgiblock.net/plugins/lb303-synth"
-#define MIDI_EVENT_URI   "http://lv2plug.in/ns/ext/midi#MidiEvent"
-#define ATOM_MESSAGE_URI "http://lv2plug.in/ns/ext/atom#Message"
+#include "lv2/lv2plug.in/ns/lv2core/lv2.h"
 
 // Envelope Recalculation period
-#define ENVINC 64
+#define LB_ENVINC 64
 
 //
 // New config
@@ -55,139 +49,7 @@
 //#define LB_DECAY_NOTES
 
 
-#ifndef MPI
-#define M_PI 3.14159265358979323846264338327
-#endif
-
-#ifndef USE_LV2_URID
-typedef uint32_t             LV2_URID;
-#endif
-
-#ifdef USE_LV2_ATOM
-typedef LV2_Atom_Buffer      Event_Buffer_t;
-#else
-typedef LV2_Event_Buffer     Event_Buffer_t;
-#endif
-
-// PORTS
-enum {
-	LB303_CONTROL   = 0,
-	LB303_OUT       = 1,
-	LB303_VCF_CUT   = 2,
-	LB303_VCF_RES   = 3,
-	LB303_VCF_MOD   = 4,
-	LB303_VCF_DEC   = 5,
-	LB303_SLIDE     = 6,
-	LB303_SLIDE_DEC = 7,
-	LB303_ACCENT    = 8,
-	LB303_DEAD      = 9,
-	LB303_DIST			= 10,
-	LB303_FILTER    = 11
-};
-
-
-enum {
-	FILTER_IIR2  = 0,
-	FILTER_3POLE = 1
-};
-
-typedef struct {
-	int   envpos;       // Update counter. Updates when = 0
-
-	float c0,           // c0=e1 on retrigger; c0*=ed every sample; cutoff=e0+c0
-	      e0,           // e0 and e1 for interpolation
-	      e1,           //
-	      rescoeff;     // Resonance coefficient [0.30,9.54]
-
-	// IIR2:
-	float d1,           //   d1 and d2 are added back into the sample with 
-	      d2;           //   vcf_a and b as coefficients. IIR2 resonance
-	                    //   loop.
-
-	float a,            // IIR2 Coefficients for mixing dry and delay.
-	      b,            //   Mixing coefficients for the final sound.  
-	      c;            //  
-
-	// 3-Filter
-	float kfcn, 
-	      kp, 
-	      kp1, 
-	      kp1h, 
-	      kres;
-
-	float ay1, 
-	      ay2, 
-	      aout, 
-	      lastin, 
-	      value;
-
-} FilterState;
-
-
-typedef struct {
-	/* Features */
-#ifdef USE_LV2_URID
-	LV2_URID_Map*              map;
-#else
-	LV2_URI_Map_Feature*       map;
-#endif
-
-	/* Ports */
-	Event_Buffer_t*  event_port;
-	float*           output_port;
-	float*           slide_port;
-	float*           slide_dec_port;
-	float*           accent_port;
-	float*           dead_port;
-	float*           dist_port;
-	float*           filter_port;
-	float*           vcf_cut_port;
-	float*           vcf_res_port;
-	float*           vcf_mod_port;
-	float*           vcf_dec_port;
-
-	/* URIs TODO: Global*/
-	struct {
-		LV2_URID midi_event;
-		LV2_URID atom_message;
-	} uris;
-
-	/* Playback state */
-	uint32_t frame; // TODO: frame_t
-	float    srate;
-	uint8_t  midi_note;
-
-	bool  dead;
-
-	float vco_inc,          // Sample increment for the frequency. Creates Sawtooth.
-	      vco_c;            // Raw oscillator sample [-0.5,0.5]
-
-	float vco_slide,        // Current value of slide exponential curve. Nonzero=sliding
-	      vco_slideinc,     // Slide base to use in next node. Nonzero=slide next note
-	      vco_slidebase;    // The base vco_inc while sliding.
-
-	float vca_attack,       // Amp attack 
-	      vca_decay,        // Amp decay
-	      vca_a0,           // Initial amplifier coefficient 
-	      vca_a;            // Amplifier coefficient.
-
-	int   vca_mode;         // 0: attack, 1: decay, 2: idle, 3: never played
-
-	FilterState vcf;			// State of Vcf
-
-} LB303Synth;
-
-
-void filter_recalc(LB303Synth*);
-void filter_env_recalc(LB303Synth*);
-
-void filter_iir2_run(LB303Synth*, float*);
-void filter_iir2_recalc(LB303Synth*);
-void filter_iir2_env_recalc(LB303Synth*);
-
-void filter_3pole_run(LB303Synth*, float*);
-void filter_3pole_recalc(LB303Synth*);
-void filter_3pole_env_recalc(LB303Synth*);
+static const LV2_Descriptor lb303_descriptor;
 
 
 #endif // LB303_H__

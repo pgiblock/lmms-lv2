@@ -4,7 +4,7 @@ import shutil
 from waflib import Logs
 
 # Variables for 'waf dist'
-APPNAME = 'lb303.lv2'
+APPNAME = 'lmms.lv2'
 VERSION = '0.1.0'
 
 LV2DIR  = '/usr/local/lib/lv2'
@@ -24,6 +24,9 @@ def options(opt):
 def configure(conf):
     conf.load('compiler_c')
     conf.env.append_value('CFLAGS', '-std=c99')
+
+    # TODO: don't hardcode
+    conf.env.LV2DIR = LV2DIR;
 
     # Required
     conf.check_cfg(package='lv2core', atleast_version='6.0',
@@ -87,6 +90,7 @@ def configure(conf):
                  'BOLD')
         conf.define('USE_LV2_ATOM', 1)
 
+    # Pre-calculate pattern for plugin *.so files
     pat = conf.env['cshlib_PATTERN']
     if pat.startswith('lib'):
         pat = pat[3:]
@@ -94,16 +98,8 @@ def configure(conf):
 
     conf.write_config_header('config.h')
 
+
 def build(bld):
-    bundle     = 'lb303.lv2'
-    installdir = os.path.join(LV2DIR, bundle)
-
-    # Plugin environment
-    penv                   = bld.env.derive()
-    penv['cshlib_PATTERN'] = bld.env['pluginlib_PATTERN']
-
-    bld.shlib(source='lb303.c', target='%s/lb303' % bundle, install_path=installdir, env=penv)
-    for f in ['manifest.ttl', 'lb303.ttl']:
-        bld(features='subst', source=f, target=os.path.join(bundle,f), install_path=installdir)
+    bld.recurse('src')
 
 # vim: ts=8:sts=4:sw=4:et

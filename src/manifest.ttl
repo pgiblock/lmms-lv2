@@ -3,5 +3,5 @@
 
 <http://pgiblock.net/plugins/lb303-synth>
 	a lv2:Plugin ;
-	lv2:binary <lb303.so> ;
+	lv2:binary <lmms.so> ;
 	rdfs:seeAlso <lb303.ttl> .
