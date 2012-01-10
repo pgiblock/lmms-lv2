@@ -11,13 +11,21 @@ def build(bld):
     penv                   = bld.env.derive()
     penv['cshlib_PATTERN'] = bld.env['pluginlib_PATTERN']
 
-    plugins = ['lb303']
-    src     = ['lmms_lv2.c', 'oscillator.c']
+    plugins = ['lb303', 'triple_oscillator']
+    src     = ['oscillator.c']
+
+    for s in src:
+        bld.objects(source=s, includes='.', target='oscillator')
 
     for p in plugins:
         bld.recurse(p)
-
-    bld.shlib(source=src, target='%s/lmms' % bundle, use=plugins, install_path=installdir, env=penv)
+    
+    bld.shlib(source='lmms_lv2.c',
+              target='%s/lmms' % bundle,
+              includes='.',
+              use=plugins,
+              install_path=installdir,
+              env=penv)
 
     for f in ['manifest.ttl']:
         bld(features='subst', source=f, target=os.path.join(bundle,f), install_path=installdir)

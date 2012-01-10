@@ -1,0 +1,470 @@
+#@prefix atom:  <http://lv2plug.in/ns/ext/atom#> .
+@prefix doap:  <http://usefulinc.com/ns/doap#> .
+@prefix foaf:  <http://xmlns.com/foaf/0.1/> .
+@prefix lv2:   <http://lv2plug.in/ns/lv2core#> .
+@prefix lv2ev: <http://lv2plug.in/ns/ext/event#> .
+@prefix lv2midi: <http://lv2plug.in/ns/ext/midi#> .
+@prefix rdf:   <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs:  <http://www.w3.org/2000/01/rdf-schema#> .
+
+<http://pgiblock.net/plugins/triple-oscillator>
+	a lv2:Plugin ;
+	doap:name "Triple Oscillator" ;
+	doap:license <http://opensource.org/licenses/isc> ;
+	lv2:requiredFeature <http://lv2plug.in/ns/ext/uri-map> ;
+  #lv2:requiredFeature <http://lv2plug.in/ns/ext/urid#Mapper> ;
+	lv2:optionalFeature lv2:hardRTCapable ;
+	lv2:extensionData <http://lv2plug.in/ns/ext/state#Interface> ;
+	lv2:port [
+		a lv2:InputPort ;
+		a lv2ev:EventPort ;
+		lv2ev:supportsEvent lv2midi:MidiEvent ;
+		lv2ev:supportsTimestamp <lv2ev:TimeStamp> ;
+		lv2:index 0 ;
+		lv2:symbol "control" ;
+		lv2:name "Control" ;
+		lv2:portProperty lv2:connectionOptional ;
+	] , [
+		a lv2:AudioPort ,
+			lv2:OutputPort ;
+		lv2:index 1 ;
+		lv2:symbol "out_l" ;
+		lv2:name "Out Left"
+	] , [
+		a lv2:AudioPort ,
+			lv2:OutputPort ;
+		lv2:index 2 ;
+		lv2:symbol "out_r" ;
+		lv2:name "Out Right"
+	] ;
+	
+
+	# Oscillator 1
+	lv2:port [
+		a lv2:InputPort ,
+			lv2:ControlPort ;
+		lv2:index 3 ;
+		lv2:symbol "osc1_vol" ;
+		lv2:name "Osc 1 Volume" ;
+		lv2:default 100.0 ;
+		lv2:minimum 0.0 ;
+		lv2:maximum 200.0 ;
+		lv2:scalePoint [
+			rdfs:label "200%" ;
+			rdf:value 200
+		] ,	[
+			rdfs:label "100%" ;
+			rdf:value 100
+		] ,	[
+			rdfs:label "0%" ;
+			rdf:value 0
+		]
+	] ,	[
+		a lv2:InputPort ,
+			lv2:ControlPort ;
+		lv2:index 4 ;
+		lv2:symbol "osc1_pan" ;
+		lv2:name "Osc 1 Panning" ;
+		lv2:default 0.0 ;
+		lv2:minimum -100.0 ;
+		lv2:maximum +100.0 ;
+		lv2:scalePoint [
+			rdfs:label "100% Left" ;
+			rdf:value -100.0
+		] ,	[
+			rdfs:label "Center" ;
+			rdf:value 0.0
+		] ,	[
+			rdfs:label "100% Right" ;
+			rdf:value +100.0
+		]
+	] ,	[
+		a lv2:InputPort ,
+			lv2:ControlPort ;
+		lv2:index 5 ;
+		lv2:symbol "osc1_detune_coarse" ;
+		lv2:name "Osc 1 Coarse Detuning" ;
+		lv2:default 0.0 ;
+		lv2:minimum -24.0 ;
+		lv2:maximum +24.0 ;
+	] ,	[
+		a lv2:InputPort ,
+			lv2:ControlPort ;
+		lv2:index 6 ;
+		lv2:symbol "osc1_detune_fine_l" ;
+		lv2:name "Osc 1 Fine Detuning Left" ;
+		lv2:default 0.0 ;
+		lv2:minimum -100.0 ;
+		lv2:maximum +100.0 ;
+	] ,	[
+		a lv2:InputPort ,
+			lv2:ControlPort ;
+		lv2:index 7 ;
+		lv2:symbol "osc1_detune_fine_r" ;
+		lv2:name "Osc 1 Fine Detuning Right" ;
+		lv2:default 0.0 ;
+		lv2:minimum -100.0 ;
+		lv2:maximum +100.0 ;
+	] ,	[
+		a lv2:InputPort ,
+			lv2:ControlPort ;
+		lv2:index 8 ;
+		lv2:symbol "osc1_phase_offset" ;
+		lv2:name "Osc 1 Phase-offset" ;
+		lv2:default 0.0 ;
+		lv2:minimum -180.0 ;
+		lv2:maximum +180.0 ;
+	] ,	[
+		a lv2:InputPort ,
+			lv2:ControlPort ;
+		lv2:index 9 ;
+		lv2:symbol "osc1_phase_detune" ;
+		lv2:name "Osc 1 Stereo Phase-detuning" ;
+		lv2:default 0.0 ;
+		lv2:minimum -180.0 ;
+		lv2:maximum +180.0 ;
+	] ,	[
+		a lv2:InputPort ,
+			lv2:ControlPort ;
+		lv2:index 10 ;
+		lv2:symbol "osc1_phase_random" ;
+		lv2:name "Osc 1 Phase Randomness" ;
+		lv2:default 0.0 ;
+		lv2:minimum 0.0 ;
+		lv2:maximum 360.0 ;
+	] ,	[
+		a lv2:InputPort ,
+			lv2:ControlPort ;
+		lv2:index 11 ;
+		lv2:symbol "osc1_wave_shape" ;
+		lv2:name "Osc 1 Wave Shape" ;
+		lv2:default 0.0 ;
+		lv2:minimum 0.0 ;
+		lv2:maximum 6.0 ;
+		lv2:scalePoint [
+			rdfs:label "Sine" ;
+			rdf:value 0.0
+		] ,	[
+			rdfs:label "Triangle" ;
+			rdf:value 1.0
+		] ,	[
+			rdfs:label "Saw" ;
+			rdf:value 2.0
+		] ,	[
+			rdfs:label "Square" ;
+			rdf:value 3.0
+		] ,	[
+			rdfs:label "Moog" ;
+			rdf:value 4.0
+		] ,	[
+			rdfs:label "Exponential" ;
+			rdf:value 5.0
+		] ,	[
+			rdfs:label "Noise" ;
+			rdf:value 6.0
+		]
+	] ,	[
+		a lv2:InputPort ,
+			lv2:ControlPort ;
+		lv2:index 12 ;
+		lv2:symbol "osc1_osc2_mod" ;
+		lv2:name "Osc 1 + Osc 2 Modulation" ;
+		lv2:default 0.0 ;
+		lv2:minimum 0.0 ;
+		lv2:maximum 4.0 ;
+		lv2:scalePoint [
+			rdfs:label "PM" ;
+			rdf:value 0.0
+		] ,	[
+			rdfs:label "AM" ;
+			rdf:value 1.0
+		] ,	[
+			rdfs:label "Mix" ;
+			rdf:value 2.0
+		] ,	[
+			rdfs:label "Sync" ;
+			rdf:value 3.0
+		] ,	[
+			rdfs:label "FM" ;
+			rdf:value 4.0
+		]
+	] ;
+
+
+	# Oscillator 2
+	lv2:port [
+		a lv2:InputPort ,
+			lv2:ControlPort ;
+		lv2:index 13 ;
+		lv2:symbol "osc2_vol" ;
+		lv2:name "Osc 2 Volume" ;
+		lv2:default 100.0 ;
+		lv2:minimum 0.0 ;
+		lv2:maximum 200.0 ;
+		lv2:scalePoint [
+			rdfs:label "200%" ;
+			rdf:value 200
+		] ,	[
+			rdfs:label "100%" ;
+			rdf:value 100
+		] ,	[
+			rdfs:label "0%" ;
+			rdf:value 0
+		]
+	] ,	[
+		a lv2:InputPort ,
+			lv2:ControlPort ;
+		lv2:index 14 ;
+		lv2:symbol "osc2_pan" ;
+		lv2:name "Osc 2 Panning" ;
+		lv2:default 0.0 ;
+		lv2:minimum -100.0 ;
+		lv2:maximum +100.0 ;
+		lv2:scalePoint [
+			rdfs:label "100% Left" ;
+			rdf:value -100.0
+		] ,	[
+			rdfs:label "Center" ;
+			rdf:value 0.0
+		] ,	[
+			rdfs:label "100% Right" ;
+			rdf:value +100.0
+		]
+	] ,	[
+		a lv2:InputPort ,
+			lv2:ControlPort ;
+		lv2:index 15 ;
+		lv2:symbol "osc2_detune_coarse" ;
+		lv2:name "Osc 2 Coarse Detuning" ;
+		lv2:default 0.0 ;
+		lv2:minimum -24.0 ;
+		lv2:maximum +24.0 ;
+	] ,	[
+		a lv2:InputPort ,
+			lv2:ControlPort ;
+		lv2:index 16 ;
+		lv2:symbol "osc2_detune_fine_l" ;
+		lv2:name "Osc 2 Fine Detuning Left" ;
+		lv2:default 0.0 ;
+		lv2:minimum -100.0 ;
+		lv2:maximum +100.0 ;
+	] ,	[
+		a lv2:InputPort ,
+			lv2:ControlPort ;
+		lv2:index 17 ;
+		lv2:symbol "osc2_detune_fine_r" ;
+		lv2:name "Osc 2 Fine Detuning Right" ;
+		lv2:default 0.0 ;
+		lv2:minimum -100.0 ;
+		lv2:maximum +100.0 ;
+	] ,	[
+		a lv2:InputPort ,
+			lv2:ControlPort ;
+		lv2:index 18 ;
+		lv2:symbol "osc2_phase_offset" ;
+		lv2:name "Osc 2 Phase-offset" ;
+		lv2:default 0.0 ;
+		lv2:minimum -180.0 ;
+		lv2:maximum +180.0 ;
+	] ,	[
+		a lv2:InputPort ,
+			lv2:ControlPort ;
+		lv2:index 19 ;
+		lv2:symbol "osc2_phase_detune" ;
+		lv2:name "Osc 2 Stereo Phase-detuning" ;
+		lv2:default 0.0 ;
+		lv2:minimum -180.0 ;
+		lv2:maximum +180.0 ;
+	] ,	[
+		a lv2:InputPort ,
+			lv2:ControlPort ;
+		lv2:index 20 ;
+		lv2:symbol "osc2_phase_random" ;
+		lv2:name "Osc 2 Phase Randomness" ;
+		lv2:default 0.0 ;
+		lv2:minimum 0.0 ;
+		lv2:maximum 360.0 ;
+	] ,	[
+		a lv2:InputPort ,
+			lv2:ControlPort ;
+		lv2:index 21 ;
+		lv2:symbol "osc2_wave_shape" ;
+		lv2:name "Osc 2 Wave Shape" ;
+		lv2:default 0.0 ;
+		lv2:minimum 0.0 ;
+		lv2:maximum 6.0 ;
+		lv2:scalePoint [
+			rdfs:label "Sine" ;
+			rdf:value 0.0
+		] ,	[
+			rdfs:label "Triangle" ;
+			rdf:value 1.0
+		] ,	[
+			rdfs:label "Saw" ;
+			rdf:value 2.0
+		] ,	[
+			rdfs:label "Square" ;
+			rdf:value 3.0
+		] ,	[
+			rdfs:label "Moog" ;
+			rdf:value 4.0
+		] ,	[
+			rdfs:label "Exponential" ;
+			rdf:value 5.0
+		] ,	[
+			rdfs:label "Noise" ;
+			rdf:value 6.0
+		]
+	] ,	[
+		a lv2:InputPort ,
+			lv2:ControlPort ;
+		lv2:index 22 ;
+		lv2:symbol "osc2_osc3_mod" ;
+		lv2:name "Osc 2 + Osc 3 Modulation" ;
+		lv2:default 0.0 ;
+		lv2:minimum 0.0 ;
+		lv2:maximum 4.0 ;
+		lv2:scalePoint [
+			rdfs:label "PM" ;
+			rdf:value 0.0
+		] ,	[
+			rdfs:label "AM" ;
+			rdf:value 1.0
+		] ,	[
+			rdfs:label "Mix" ;
+			rdf:value 2.0
+		] ,	[
+			rdfs:label "Sync" ;
+			rdf:value 3.0
+		] ,	[
+			rdfs:label "FM" ;
+			rdf:value 4.0
+		]
+	] ;
+
+
+	# Oscillator 3
+	lv2:port [
+		a lv2:InputPort ,
+			lv2:ControlPort ;
+		lv2:index 23 ;
+		lv2:symbol "osc3_vol" ;
+		lv2:name "Osc 3 Volume" ;
+		lv2:default 100.0 ;
+		lv2:minimum 0.0 ;
+		lv2:maximum 200.0 ;
+		lv2:scalePoint [
+			rdfs:label "200%" ;
+			rdf:value 200
+		] ,	[
+			rdfs:label "100%" ;
+			rdf:value 100
+		] ,	[
+			rdfs:label "0%" ;
+			rdf:value 0
+		]
+	] ,	[
+		a lv2:InputPort ,
+			lv2:ControlPort ;
+		lv2:index 24 ;
+		lv2:symbol "osc3_pan" ;
+		lv2:name "Osc 3 Panning" ;
+		lv2:default 0.0 ;
+		lv2:minimum -100.0 ;
+		lv2:maximum +100.0 ;
+		lv2:scalePoint [
+			rdfs:label "100% Left" ;
+			rdf:value -100.0
+		] ,	[
+			rdfs:label "Center" ;
+			rdf:value 0.0
+		] ,	[
+			rdfs:label "100% Right" ;
+			rdf:value +100.0
+		]
+	] ,	[
+		a lv2:InputPort ,
+			lv2:ControlPort ;
+		lv2:index 25 ;
+		lv2:symbol "osc3_detune_coarse" ;
+		lv2:name "Osc 3 Coarse Detuning" ;
+		lv2:default 0.0 ;
+		lv2:minimum -24.0 ;
+		lv2:maximum +24.0 ;
+	] ,	[
+		a lv2:InputPort ,
+			lv2:ControlPort ;
+		lv2:index 26 ;
+		lv2:symbol "osc3_detune_fine_l" ;
+		lv2:name "Osc 3 Fine Detuning Left" ;
+		lv2:default 0.0 ;
+		lv2:minimum -100.0 ;
+		lv2:maximum +100.0 ;
+	] ,	[
+		a lv2:InputPort ,
+			lv2:ControlPort ;
+		lv2:index 27 ;
+		lv2:symbol "osc3_detune_fine_r" ;
+		lv2:name "Osc 3 Fine Detuning Right" ;
+		lv2:default 0.0 ;
+		lv2:minimum -100.0 ;
+		lv2:maximum +100.0 ;
+	] ,	[
+		a lv2:InputPort ,
+			lv2:ControlPort ;
+		lv2:index 28 ;
+		lv2:symbol "osc3_phase_offset" ;
+		lv2:name "Osc 3 Phase-offset" ;
+		lv2:default 0.0 ;
+		lv2:minimum -180.0 ;
+		lv2:maximum +180.0 ;
+	] ,	[
+		a lv2:InputPort ,
+			lv2:ControlPort ;
+		lv2:index 29 ;
+		lv2:symbol "osc3_phase_detune" ;
+		lv2:name "Osc 3 Stereo Phase-detuning" ;
+		lv2:default 0.0 ;
+		lv2:minimum -180.0 ;
+		lv2:maximum +180.0 ;
+	] ,	[
+		a lv2:InputPort ,
+			lv2:ControlPort ;
+		lv2:index 30 ;
+		lv2:symbol "osc3_phase_random" ;
+		lv2:name "Osc 3 Phase Randomness" ;
+		lv2:default 0.0 ;
+		lv2:minimum 0.0 ;
+		lv2:maximum 360.0 ;
+	] ,	[
+		a lv2:InputPort ,
+			lv2:ControlPort ;
+		lv2:index 31 ;
+		lv2:symbol "osc3_wave_shape" ;
+		lv2:name "Osc 3 Wave Shape" ;
+		lv2:default 0.0 ;
+		lv2:minimum 0.0 ;
+		lv2:maximum 6.0 ;
+		lv2:scalePoint [
+			rdfs:label "Sine" ;
+			rdf:value 0.0
+		] ,	[
+			rdfs:label "Triangle" ;
+			rdf:value 1.0
+		] ,	[
+			rdfs:label "Saw" ;
+			rdf:value 2.0
+		] ,	[
+			rdfs:label "Square" ;
+			rdf:value 3.0
+		] ,	[
+			rdfs:label "Moog" ;
+			rdf:value 4.0
+		] ,	[
+			rdfs:label "Exponential" ;
+			rdf:value 5.0
+		] ,	[
+			rdfs:label "Noise" ;
+			rdf:value 6.0
+		]
+	] .

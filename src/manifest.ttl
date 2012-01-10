@@ -5,3 +5,8 @@
 	a lv2:Plugin ;
 	lv2:binary <lmms.so> ;
 	rdfs:seeAlso <lb303.ttl> .
+
+<http://pgiblock.net/plugins/triple-oscillator>
+	a lv2:Plugin ;
+	lv2:binary <lmms.so> ;
+	rdfs:seeAlso <triple_oscillator.ttl> .

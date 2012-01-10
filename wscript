@@ -24,6 +24,7 @@ def options(opt):
 def configure(conf):
     conf.load('compiler_c')
     conf.env.append_value('CFLAGS', '-std=c99')
+    conf.env.append_value('CFLAGS', '-fPIC')
 
     # TODO: don't hardcode
     conf.env.LV2DIR = LV2DIR;
@@ -96,7 +97,7 @@ def configure(conf):
         pat = pat[3:]
     conf.env['pluginlib_PATTERN'] = pat
 
-    conf.write_config_header('config.h')
+    conf.write_config_header('src/config.h')
 
 
 def build(bld):
