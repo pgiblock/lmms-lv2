@@ -56,8 +56,8 @@ enum {
 };
 
 enum {
-	FILTER_IIR2  = 0,
-	FILTER_3POLE = 1
+	LB303_FILTER_IIR2  = 0,
+	LB303_FILTER_3POLE = 1
 };
 
 typedef struct {
@@ -90,7 +90,7 @@ typedef struct {
 	      lastin, 
 	      value;
 
-} FilterState;
+} LB303FilterState;
 
 
 typedef struct {
@@ -142,20 +142,20 @@ typedef struct {
 
 	int   vca_mode;         // 0: attack, 1: decay, 2: idle, 3: never played
 
-	FilterState vcf;			// State of Vcf
+	LB303FilterState vcf;		// State of Vcf
 
 } LB303Synth;
 
 
-void filter_recalc(LB303Synth *plugin);
-void filter_env_recalc(LB303Synth *plugin);
-void filter_3pole_run(LB303Synth*, float*);
-void filter_iir2_run(LB303Synth*, float*);
+void lb303_filter_recalc(LB303Synth *plugin);
+void lb303_filter_env_recalc(LB303Synth *plugin);
+void lb303_filter_3pole_run(LB303Synth*, float*);
+void lb303_filter_iir2_run(LB303Synth*, float*);
 
 static void
-connect_port(LV2_Handle instance,
-             uint32_t   port,
-             void*      data)
+lb303_connect_port(LV2_Handle instance,
+                   uint32_t   port,
+                   void*      data)
 {
 	LB303Synth* plugin = (LB303Synth*)instance;
 
@@ -203,7 +203,7 @@ connect_port(LV2_Handle instance,
 
 
 static void
-cleanup(LV2_Handle instance)
+lb303_cleanup(LV2_Handle instance)
 {
 	LB303Synth* plugin = (LB303Synth*)instance;
 	free(instance);
@@ -211,10 +211,10 @@ cleanup(LV2_Handle instance)
 
 
 static LV2_Handle
-instantiate(const LV2_Descriptor*     descriptor,
-            double                    rate,
-            const char*               path,
-            const LV2_Feature* const* features)
+lb303_instantiate(const LV2_Descriptor*     descriptor,
+                  double                    rate,
+                  const char*               path,
+                  const LV2_Feature* const* features)
 {
 	/* Malloc and initialize new Synth */
 	LB303Synth* plugin = (LB303Synth*)malloc(sizeof(LB303Synth));
@@ -304,8 +304,8 @@ fail:
 
 
 static void
-run(LV2_Handle instance,
-    uint32_t   sample_count)
+lb303_run(LV2_Handle instance,
+          uint32_t   sample_count)
 {
 	LB303Synth* plugin      = (LB303Synth*)instance;
 	float*      output      = plugin->output_port;
@@ -351,7 +351,7 @@ run(LV2_Handle instance,
 			
 			if (plugin->vcf.envpos == 0) {
 				
-				filter_env_recalc(plugin);
+				lb303_filter_env_recalc(plugin);
 
 				plugin->vcf.envpos = LB_ENVINC;
 
@@ -383,11 +383,11 @@ run(LV2_Handle instance,
 
 			// Filter
 			switch ((int)*plugin->filter_port) {
-				case FILTER_IIR2:
-					filter_iir2_run(plugin, &(output[pos]));
+				case LB303_FILTER_IIR2:
+					lb303_filter_iir2_run(plugin, &(output[pos]));
 					break;
-				case FILTER_3POLE:
-					filter_3pole_run(plugin, &(output[pos]));
+				case LB303_FILTER_3POLE:
+					lb303_filter_3pole_run(plugin, &(output[pos]));
 					break;
 				default:
 					fprintf(stderr, "Invalid filter index.\n");
@@ -473,7 +473,7 @@ run(LV2_Handle instance,
 					*/
 
 					// TODO: recalcFilter(); ...
-					filter_recalc(plugin);
+					lb303_filter_recalc(plugin);
 
 					// TODO: is this the only place n->dead is used?
 					// FIXME: How is this not being entered on first-note???  
@@ -511,7 +511,7 @@ run(LV2_Handle instance,
 
 
 static uint32_t
-map_uri(LB303Synth* plugin, const char* uri)
+lb303_map_uri(LB303Synth* plugin, const char* uri)
 {
 #ifdef USE_LV2_ATOM
 	return plugin->map->map(plugin->map->handle, uri);
@@ -522,11 +522,11 @@ map_uri(LB303Synth* plugin, const char* uri)
 
 
 static void
-save(LV2_Handle                instance,
-     LV2_State_Store_Function  store,
-     void*                     callback_data,
-     uint32_t                  flags,
-     const LV2_Feature* const* features)
+lb303_save(LV2_Handle                instance,
+           LV2_State_Store_Function  store,
+           void*                     callback_data,
+           uint32_t                  flags,
+           const LV2_Feature* const* features)
 {
 	LB303Synth* plugin = (LB303Synth*)instance;
 	// TODO: store(...)
@@ -535,11 +535,11 @@ save(LV2_Handle                instance,
 
 
 static void
-restore(LV2_Handle                  instance,
-        LV2_State_Retrieve_Function retrieve,
-        void*                       callback_data,
-        uint32_t                    flags,
-        const LV2_Feature* const*   features)
+lb303_restore(LV2_Handle                  instance,
+              LV2_State_Retrieve_Function retrieve,
+              void*                       callback_data,
+              uint32_t                    flags,
+              const LV2_Feature* const*   features)
 {
 	LB303Synth* plugin = (LB303Synth*)instance;
 	// TODO: retrieve(...)
@@ -548,9 +548,9 @@ restore(LV2_Handle                  instance,
 
 
 const void*
-extension_data(const char* uri)
+lb303_extension_data(const char* uri)
 {
-	static const LV2_State_Interface state = { save, restore };
+	static const LV2_State_Interface state = { lb303_save, lb303_restore };
 	if (!strcmp(uri, LV2_STATE_URI)) {
 		return &state;
 	}
@@ -558,15 +558,15 @@ extension_data(const char* uri)
 }
 
 
-static const LV2_Descriptor lb303_descriptor = {
+const LV2_Descriptor lb303_descriptor = {
 	LB303_SYNTH_URI,
-	instantiate,
-	connect_port,
+	lb303_instantiate,
+	lb303_connect_port,
 	NULL, // activate,
-	run,
+	lb303_run,
 	NULL, // deactivate,
-	cleanup,
-	extension_data
+	lb303_cleanup,
+	lb303_extension_data
 };
 
 
@@ -580,7 +580,7 @@ static const LV2_Descriptor lb303_descriptor = {
 
 
 void
-filter_iir2_recalc(LB303Synth *p)
+lb303_filter_iir2_recalc(LB303Synth *p)
 {
 	p->vcf.e1 = exp(6.109 + 1.5876*(*p->vcf_mod_port) + 2.1553*(*p->vcf_cut_port) - 1.2*(1.0-(*p->vcf_res_port)));
 	p->vcf.e0 = exp(5.613 - 0.8*(*p->vcf_mod_port) + 2.1553*(*p->vcf_cut_port) - 0.7696*(1.0-(*p->vcf_res_port)));
@@ -594,7 +594,7 @@ filter_iir2_recalc(LB303Synth *p)
 
 
 void
-filter_iir2_env_recalc(LB303Synth *p)
+lb303_filter_iir2_env_recalc(LB303Synth *p)
 {
 	float k, w;
 
@@ -611,7 +611,7 @@ filter_iir2_env_recalc(LB303Synth *p)
 
 
 void
-filter_iir2_run(LB303Synth *p, float *sampl)
+lb303_filter_iir2_run(LB303Synth *p, float *sampl)
 {
 	float tmp;
 	tmp    = p->vcf.a * p->vcf.d1 +
@@ -638,7 +638,7 @@ filter_iir2_run(LB303Synth *p, float *sampl)
 
 
 void
-filter_3pole_recalc(LB303Synth *p)
+lb303_filter_3pole_recalc(LB303Synth *p)
 {
 	p->vcf.e0 = 0.000001;
 	p->vcf.e1 = 1.0;
@@ -647,7 +647,7 @@ filter_3pole_recalc(LB303Synth *p)
 
 // TODO: Try using k instead of vcf_reso
 void
-filter_3pole_env_recalc(LB303Synth *p)
+lb303_filter_3pole_env_recalc(LB303Synth *p)
 {
 	float w, k;
 	float kfco;
@@ -683,7 +683,7 @@ filter_3pole_env_recalc(LB303Synth *p)
 
 
 void
-filter_3pole_run(LB303Synth *p, float *sampl)
+lb303_filter_3pole_run(LB303Synth *p, float *sampl)
 {
 	float ax1  = p->vcf.lastin;
 	float ay11 = p->vcf.ay1;
@@ -699,28 +699,28 @@ filter_3pole_run(LB303Synth *p, float *sampl)
 
 
 void
-filter_recalc(LB303Synth *plugin)
+lb303_filter_recalc(LB303Synth *plugin)
 {
 	switch ((int)(*plugin->filter_port)) {
-		case FILTER_IIR2:
-			filter_iir2_recalc(plugin);
+		case LB303_FILTER_IIR2:
+			lb303_filter_iir2_recalc(plugin);
 			break;
-		case FILTER_3POLE:
-			filter_3pole_recalc(plugin);
+		case LB303_FILTER_3POLE:
+			lb303_filter_3pole_recalc(plugin);
 			break;
 	}
 }
 
 
 void
-filter_env_recalc(LB303Synth *plugin)
+lb303_filter_env_recalc(LB303Synth *plugin)
 {
 	switch ((int)(*plugin->filter_port)) {
-		case FILTER_IIR2:
-			filter_iir2_env_recalc(plugin);
+		case LB303_FILTER_IIR2:
+			lb303_filter_iir2_env_recalc(plugin);
 			break;
-		case FILTER_3POLE:
-			filter_3pole_env_recalc(plugin);
+		case LB303_FILTER_3POLE:
+			lb303_filter_3pole_env_recalc(plugin);
 			break;
 	}
 }

@@ -9,7 +9,7 @@ def build(bld):
     bundle     = 'lmms.lv2'
     installdir = os.path.join(bld.env.LV2DIR, bundle)
 
-    bld.objects(source='lb303.c', includes='..')
+    bld.objects(source='lb303.c', includes='..', target='lb303')
 
     for f in ['lb303.ttl']:
         bld(features='subst', source=f, target=os.path.join(bundle,f), install_path=installdir)

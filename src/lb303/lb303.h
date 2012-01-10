@@ -49,9 +49,6 @@
 //#define LB_DECAY_NOTES
 
 
-static const LV2_Descriptor lb303_descriptor;
-
-
 #endif // LB303_H__
 #if 0
 
