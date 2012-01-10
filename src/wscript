@@ -12,7 +12,7 @@ def build(bld):
     penv['cshlib_PATTERN'] = bld.env['pluginlib_PATTERN']
 
     plugins = ['lb303']
-    src     = ['lmms_lv2.c']
+    src     = ['lmms_lv2.c', 'oscillator.c']
 
     for p in plugins:
         bld.recurse(p)
