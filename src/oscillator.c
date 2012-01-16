@@ -28,16 +28,22 @@
 #include "oscillator.h"
 
 Oscillator*
-osc_create(float wave_shape, float modulation_algo,
-           float freq, float detuning, float volume,
-           Oscillator* sub_osc, float phase_offset,
-           float sample_rate) {
-
+osc_create() {
 	Oscillator* o = (Oscillator*)malloc(sizeof(Oscillator));
+	osc_reset(o, 0.f, 0.f, 404.f, 1.f, 1.f, NULL, 0.f, 0.f);
 	if (!o) {
 		fprintf(stderr, "Could not allocate Oscillator.\n");
 		return NULL;
 	}
+
+	return o;
+}
+
+void
+osc_reset(Oscillator* o, float wave_shape, float modulation_algo,
+           float freq, float detuning, float volume,
+           Oscillator* sub_osc, float phase_offset,
+           float sample_rate) {
 
 	// FIXME: Ideally share some config across oscillators in the same instrument
 	o->wave_shape = wave_shape;
@@ -50,14 +56,22 @@ osc_create(float wave_shape, float modulation_algo,
 	o->phase_offset = phase_offset;
 	o->phase = phase_offset;
 	o->sample_rate = sample_rate;
-
-	return o;
 }
 
 
 void
 osc_destroy(Oscillator* o) {
 	free(o);
+}
+
+void
+osc_print(Oscillator* o) {
+	fprintf(stderr, "{wave_shape=%f\n modulation_algo=%f\n freq=%f\n "
+	        "detuning=%f\n volume=%f\n ext_phase_offset=%f\n sub_osc=%lx\n "
+	        "phase_offset=%f\n phase=%f\n sample_rate=%f\n}\n",
+	        o->wave_shape, o->modulation_algo, o->freq,
+	        o->detuning, o->volume, o->ext_phase_offset, o->sub_osc,
+	        o->phase_offset, o->phase, o->sample_rate);
 }
 
 
@@ -101,9 +115,8 @@ void osc_update_no_sub(Oscillator* o, sample_t* buff, fpp_t len) {
 
 	osc_recalc_phase(o);
 
-	printf("ph=%f, coef=%f\n", o->phase, osc_coeff);
 	for (fpp_t frame = 0; frame < len; ++frame) {
-		buff[frame] = fmod(o->phase, 1.0f);//  osc_get_sample(o, o->phase) * o->volume;
+		buff[frame] = osc_get_sample(o, o->phase) * o->volume;
 		//printf("b[f]=%f, ph=%f, vol=%f, coef=%f\n", buff[frame], o->phase, o->volume, osc_coeff);
 		o->phase += osc_coeff;
 	}

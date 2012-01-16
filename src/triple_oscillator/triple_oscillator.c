@@ -11,6 +11,8 @@
 #include "oscillator.h"
 #include "triple_oscillator.h"
 
+#define NUM_VOICES 64
+
 // PORTS
 enum {
 	TRIPOSC_CONTROL = 0,
@@ -74,6 +76,10 @@ typedef struct {
 
 
 typedef struct {
+	// Standard voice state
+	uint8_t    midi_note;
+	uint32_t   frame;
+	// Plugin voice state
 	Oscillator osc_l[3];
 	Oscillator osc_r[3];
 } TripOscVoice;
@@ -103,12 +109,54 @@ typedef struct {
 	/* Playback state */
 	uint32_t frame; // TODO: frame_t
 	float    srate;
-	uint8_t  midi_note;
 
 	TripOscVoice* voices;
 
 } TripleOscillator;
 
+
+void
+voice_steal(TripleOscillator* triposc, uint8_t midi_note) {
+	fprintf(stderr, "Stealing voice!!\n");
+	for (int i=0; i<NUM_VOICES; ++i) {
+		TripOscVoice* v = &triposc->voices[i];
+		if (v->midi_note == 0xFF) {
+			// Stealing
+			v->midi_note = midi_note;
+			// Init note
+			float freq  = powf(2.0f, ((float)midi_note+3.0f) / 12.0f) * 55.0f;
+			for (int i=2; i>=0; --i) {
+				OscillatorUnit* u = &triposc->units[i];
+				// FIXME: This check won't be needed if we fix oscillator to just hold float* members bound straight to ports
+				float mod = (i==2)? 0 : *u->modulation_port;
+				// FIXME: Detuning needs to happen occationally even after note-on
+				float detune_l = powf( 2.0f, (*u->detune_coarse_port * 100.0f + *u->detune_fine_l_port) / 1200.0f) / triposc->srate;
+				float detune_r = powf( 2.0f, (*u->detune_coarse_port * 100.0f + *u->detune_fine_r_port) / 1200.0f) / triposc->srate;
+				osc_reset(&(v->osc_l[i]), *u->wave_shape_port, mod,
+				          freq, detune_l, *u->vol_port,
+									i==2?NULL:&(v->osc_l[i+1]), *u->phase_offset_port,
+									triposc->srate);
+				osc_reset(&(v->osc_r[i]), *u->wave_shape_port, mod,
+				          freq, detune_r, *u->vol_port,
+									i==2?NULL:&(v->osc_r[i+1]), *u->phase_offset_port,
+									triposc->srate);
+			}
+			break;
+		}
+	}
+}
+	
+
+void
+voice_release(TripleOscillator* triposc, uint8_t midi_note) {
+	fprintf(stderr, "Releasing voice\n");
+	for (int i=0; i<NUM_VOICES; ++i) {
+		TripOscVoice* v = &triposc->voices[i];
+		if (v->midi_note == midi_note) {
+			v->midi_note = 0xFF;
+		}
+	}
+}
 
 static void
 triposc_connect_port(LV2_Handle instance,
@@ -188,6 +236,7 @@ static void
 triposc_cleanup(LV2_Handle instance)
 {
 	TripleOscillator* plugin = (TripleOscillator*)instance;
+	free(plugin->voices);
 	free(instance);
 }
 
@@ -203,6 +252,16 @@ triposc_instantiate(const LV2_Descriptor*     descriptor,
 	if (!plugin) {
 		fprintf(stderr, "Could not allocate TripleOscillator.\n");
 		return NULL;
+	}
+
+	// Malloc voices
+	plugin->voices = (TripOscVoice*)malloc(sizeof(TripOscVoice) * NUM_VOICES);
+	if (!plugin->voices) {
+		fprintf(stderr, "Could not allocate TripleOscillator voices.\n");
+		return NULL;
+	}
+	for (int i=0; i<NUM_VOICES; ++i) {
+		plugin->voices[i].midi_note = 0xFF;
 	}
 
 	memset(&plugin->uris, 0, sizeof(plugin->uris));
@@ -294,10 +353,29 @@ triposc_run(LV2_Handle instance,
 		}
 #endif
 
+		float outbuf[2048]; // FIXME: Ugh
 
 		// Run until next event
 		// FIXME: This extra arithmetic is stupid to have in this loop
-		//osc_update(plugin->osc, &output[pos], ev_frames-pos);
+		float *out_l = &plugin->out_l_port[pos];
+		float *out_r = &plugin->out_r_port[pos];
+		int    outlen = ev_frames-pos;
+		for (int f=0; f<outlen; ++f) {
+			out_l[f] = out_r[f] = 0.0f;
+		}
+		for (int i=0; i<NUM_VOICES; ++i) {
+			TripOscVoice* v = &plugin->voices[i];
+			if (v->midi_note != 0xFF) {
+				osc_update(&v->osc_l[0], outbuf, outlen);
+				for (int f=0; f<outlen; ++f) {
+					out_l[f] += outbuf[f];
+				}
+				osc_update(&v->osc_r[0], outbuf, outlen);
+				for (int f=0; f<outlen; ++f) {
+					out_r[f] += outbuf[f];
+				}
+			}
+		}
 		pos = ev_frames;
 
 
@@ -314,15 +392,13 @@ triposc_run(LV2_Handle instance,
 				//fprintf(stderr, "  cmd=%d data1=%d data2=%d\n", cmd, data[1], data[2]);
 				if (cmd == 0x90) {
 					// Note On
-					float freq        = powf(2.0f, ((float)data[1]+3.0f) / 12.0f) * 27.5f/2.0f;
-					plugin->midi_note = data[1];
+					voice_steal(plugin, data[1]);
 					// TODO: steal voices etc...
 
 				} else if (cmd == 0x80) {
 					// Note Off
-					if (plugin->midi_note == data[1]) {
-						// TODO
-					}
+					// TODO need envelope
+					voice_release(plugin, data[1]);
 				}
 			} else {
 #ifdef USE_LV2_ATOM

@@ -169,7 +169,7 @@
 		lv2:index 12 ;
 		lv2:symbol "osc1_osc2_mod" ;
 		lv2:name "Osc 1 + Osc 2 Modulation" ;
-		lv2:default 0.0 ;
+		lv2:default 2.0 ;
 		lv2:minimum 0.0 ;
 		lv2:maximum 4.0 ;
 		lv2:scalePoint [
@@ -236,7 +236,7 @@
 		lv2:index 15 ;
 		lv2:symbol "osc2_detune_coarse" ;
 		lv2:name "Osc 2 Coarse Detuning" ;
-		lv2:default 0.0 ;
+		lv2:default -12.0 ;
 		lv2:minimum -24.0 ;
 		lv2:maximum +24.0 ;
 	] ,	[
@@ -321,7 +321,7 @@
 		lv2:index 22 ;
 		lv2:symbol "osc2_osc3_mod" ;
 		lv2:name "Osc 2 + Osc 3 Modulation" ;
-		lv2:default 0.0 ;
+		lv2:default 2.0 ;
 		lv2:minimum 0.0 ;
 		lv2:maximum 4.0 ;
 		lv2:scalePoint [
@@ -388,7 +388,7 @@
 		lv2:index 25 ;
 		lv2:symbol "osc3_detune_coarse" ;
 		lv2:name "Osc 3 Coarse Detuning" ;
-		lv2:default 0.0 ;
+		lv2:default -24.0 ;
 		lv2:minimum -24.0 ;
 		lv2:maximum +24.0 ;
 	] ,	[

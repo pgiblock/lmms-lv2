@@ -70,7 +70,9 @@ typedef struct Oscillator_st Oscillator;
 
 // Public interface
 
-Oscillator* osc_create(
+Oscillator* osc_create();
+
+void        osc_reset(Oscillator* osc,
 		float wave_shape, float modulation_algo,
 		float freq, float detuning, float volume,
 		Oscillator* sub_osc, float phase_offset,
@@ -81,6 +83,7 @@ void        osc_destroy(Oscillator* o);
 void        osc_update(Oscillator* o, sample_t* buff, fpp_t len);
 sample_t    osc_get_sample(Oscillator* o, float sample);
 
+void        osc_print(Oscillator* o);
 
 // Waveform sample routines
 
