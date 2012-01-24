@@ -10,3 +10,8 @@
 	a lv2:Plugin ;
 	lv2:binary <lmms.so> ;
 	rdfs:seeAlso <triple_oscillator.ttl> .
+
+<http://pgiblock.net/plugins/envelope-generator>
+	a lv2:Plugin ;
+	lv2:binary <lmms.so> ;
+	rdfs:seeAlso <envelope_generator.ttl> .
