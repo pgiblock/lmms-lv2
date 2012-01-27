@@ -55,7 +55,6 @@ envelope_destroy(Envelope* e)
 void
 envelope_trigger(Envelope* e)
 {
-	printf("TRIGGER\n");
 	e->st.q       = ENV_DEL;
 	e->st.nframes = e->p->time_base * envelope_exp_val(*e->p->del);
 	e->st.frame   = 0;
@@ -73,7 +72,6 @@ envelope_release(Envelope* e)
 			e->st.q = ENV_OFF;
 			break;
 		default:
-			printf("RELEASE\n");
 			e->st.q        = ENV_REL;
 			e->st.nframes  = e->p->time_base * envelope_exp_val(*e->p->rel);
 			e->st.frame    = 0;
@@ -105,7 +103,6 @@ envelope_run(Envelope* e, float* samples, uint32_t nsamples)
 				// State change
 				e->st.frame++;
 				if (e->st.frame > e->st.nframes) {
-					printf("ATT\n");
 					e->st.q       = ENV_ATT;
 					e->st.nframes = e->p->time_base * envelope_exp_val(*e->p->att);
 					e->st.frame   = 0;
@@ -118,7 +115,6 @@ envelope_run(Envelope* e, float* samples, uint32_t nsamples)
 				// State
 				e->st.frame++;
 				if (e->st.frame >= e->st.nframes) {
-					printf("HOLD\n");
 					e->st.q       = ENV_HOLD;
 					e->st.nframes = e->p->time_base * envelope_exp_val(*e->p->hold);
 					e->st.frame   = 0;
@@ -131,7 +127,6 @@ envelope_run(Envelope* e, float* samples, uint32_t nsamples)
 				// State
 				e->st.frame++;
 				if (e->st.frame > e->st.nframes) {
-					printf("DEC\n");
 					e->st.q       = ENV_DEC;
 					e->st.nframes = e->p->time_base * envelope_exp_val((*e->p->dec)*(*e->p->sus));
 					e->st.frame   = 0;
@@ -145,7 +140,6 @@ envelope_run(Envelope* e, float* samples, uint32_t nsamples)
 				//State
 				e->st.frame++;
 				if (e->st.frame > e->st.nframes) {
-					printf("SUS\n");
 					e->st.q       = ENV_SUS;
 					e->st.nframes = 0;
 					e->st.frame   = 0;
@@ -162,7 +156,6 @@ envelope_run(Envelope* e, float* samples, uint32_t nsamples)
 				// State
 				e->st.frame++;
 				if (e->st.frame >= e->st.nframes) {
-					printf("OFF\n");
 					e->st.q = ENV_OFF;
 				}
 				break;

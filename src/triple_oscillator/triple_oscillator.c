@@ -12,7 +12,7 @@
 #include "oscillator.h"
 #include "triple_oscillator.h"
 
-#define NUM_VOICES 64
+#define NUM_VOICES 8
 
 // PORTS
 enum {
@@ -114,6 +114,7 @@ typedef struct {
 	float    srate;
 
 	TripOscVoice* voices;
+	int           victim_idx;
 
 	//// The beginning of general "Instrument" Stuff
 	// OMG, even more "ports"
@@ -132,46 +133,45 @@ typedef struct {
 
 void
 voice_steal(TripleOscillator* triposc, uint8_t midi_note) {
-	fprintf(stderr, "Stealing voice!!\n");
-	for (int i=0; i<NUM_VOICES; ++i) {
-		TripOscVoice* v = &triposc->voices[i];
-		if (v->midi_note == 0xFF) {
-			fprintf(stderr, "  Stealing voice %d\n", i);
-			// Stealing
-			v->midi_note = midi_note;
-			// Init note
-			float freq  = powf(2.0f, ((float)midi_note+3.0f) / 12.0f) * 55.0f;
-			for (int i=2; i>=0; --i) {
-				OscillatorUnit* u = &triposc->units[i];
-				// FIXME: This check won't be needed if we fix oscillator to just hold float* members bound straight to ports
-				float mod = (i==2)? 0 : *u->modulation_port;
-				// FIXME: Detuning needs to happen occationally even after note-on
-				float detune_l = powf( 2.0f, (*u->detune_coarse_port * 100.0f + *u->detune_fine_l_port) / 1200.0f) / triposc->srate;
-				float detune_r = powf( 2.0f, (*u->detune_coarse_port * 100.0f + *u->detune_fine_r_port) / 1200.0f) / triposc->srate;
-				osc_reset(&(v->osc_l[i]), *u->wave_shape_port, mod,
-				          freq, detune_l, *u->vol_port,
-									i==2?NULL:&(v->osc_l[i+1]), *u->phase_offset_port,
-									triposc->srate);
-				osc_reset(&(v->osc_r[i]), *u->wave_shape_port, mod,
-				          freq, detune_r, *u->vol_port,
-									i==2?NULL:&(v->osc_r[i+1]), *u->phase_offset_port,
-									triposc->srate);
-			}
-			// Trigger envelopes
-			envelope_trigger(v->env_vol);
-			break;
-		}
+	// We are just going round-robin for now
+	// TODO: Prioritize on vol-envelope state
+	TripOscVoice* v = &triposc->voices[triposc->victim_idx];
+
+	// Stealing
+	v->midi_note = midi_note;
+	// Init note
+	float freq  = powf(2.0f, ((float)midi_note+3.0f) / 12.0f) * 55.0f;
+	// Run oscillators backwards, wee...
+	for (int i=2; i>=0; --i) {
+		OscillatorUnit* u = &triposc->units[i];
+		// FIXME: This check won't be needed if we fix oscillator to just hold float* members bound straight to ports
+		float mod = (i==2)? 0 : *u->modulation_port;
+		// FIXME: Detuning needs to happen occationally even after note-on
+		float detune_l = powf( 2.0f, (*u->detune_coarse_port * 100.0f + *u->detune_fine_l_port) / 1200.0f) / triposc->srate;
+		float detune_r = powf( 2.0f, (*u->detune_coarse_port * 100.0f + *u->detune_fine_r_port) / 1200.0f) / triposc->srate;
+		osc_reset(&(v->osc_l[i]), *u->wave_shape_port, mod,
+							freq, detune_l, *u->vol_port*0.01f,
+							i==2?NULL:&(v->osc_l[i+1]), *u->phase_offset_port,
+							triposc->srate);
+		osc_reset(&(v->osc_r[i]), *u->wave_shape_port, mod,
+							freq, detune_r, *u->vol_port*0.01f,
+							i==2?NULL:&(v->osc_r[i+1]), *u->phase_offset_port,
+							triposc->srate);
 	}
+
+	// Trigger envelopes
+	envelope_trigger(v->env_vol);
+
+	// Pick next victim
+	triposc->victim_idx = (triposc->victim_idx+1) % NUM_VOICES;
 }
 	
 
 void
 voice_release(TripleOscillator* triposc, uint8_t midi_note) {
-	fprintf(stderr, "Releasing voice\n");
 	for (int i=0; i<NUM_VOICES; ++i) {
 		TripOscVoice* v = &triposc->voices[i];
 		if (v->midi_note == midi_note) {
-			v->midi_note = 0xFF;
 			envelope_release(v->env_vol);
 		}
 	}
@@ -300,6 +300,7 @@ triposc_instantiate(const LV2_Descriptor*     descriptor,
 		plugin->voices[i].midi_note = 0xFF;
 		plugin->voices[i].env_vol = envelope_create(&plugin->env_vol_params);
 	}
+	plugin->victim_idx = 0;
 
 	memset(&plugin->uris, 0, sizeof(plugin->uris));
 
