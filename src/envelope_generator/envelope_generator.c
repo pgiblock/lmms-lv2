@@ -11,18 +11,35 @@
 
 // PORTS
 enum {
-	ENVGEN_TRIGGER   = 0,
-	ENVGEN_OUT       = 1,
-	ENVGEN_ENV_DEL   = 2,
-	ENVGEN_ENV_ATT   = 3,
-	ENVGEN_ENV_HOLD  = 4,
-	ENVGEN_ENV_DEC   = 5,
-	ENVGEN_ENV_SUS   = 6,
-	ENVGEN_ENV_REL   = 7,
-	ENVGEN_ENV_MOD   = 8,
+	ENVGEN_DEL       = 0,
+	ENVGEN_ATT       = 1,
+	ENVGEN_HOLD      = 2,
+	ENVGEN_DEC       = 3,
+	ENVGEN_SUS       = 4,
+	ENVGEN_REL       = 5,
+	ENVGEN_MOD       = 6,
+	ENVGEN_GATE_IN   = 7,
+	ENVGEN_TRIGGER   = 8,
+	ENVGEN_GATE_OUT  = 9,
+	ENVGEN_ENV_OUT   = 10
+};
+
+// STATES
+enum {
+	ENV_OFF,
+	ENV_DEL,
+	ENV_ATT,
+	ENV_HOLD,
+	ENV_DEC,
+	ENV_SUS,
+	ENV_REL
 };
 
 typedef struct {
+	int q;            // State
+	uint32_t frame;   // Frame of current state
+	uint32_t nframes; // Num frames to run current state
+	float    rel_base;// Base value for releasing from
 } EnvelopeState;
 
 
@@ -35,8 +52,18 @@ typedef struct {
 #endif
 
 	/* Ports */
-	float*           trigger_port;
-	float*           output_port;
+	float*  gate_in_port;
+	float*  trigger_port;
+	float*  gate_out_port;
+	float*  env_out_port;
+
+	float*  del_port;
+	float*  att_port;
+	float*  hold_port;
+	float*  dec_port;
+	float*  sus_port;
+	float*  rel_port;
+	float*  mod_port;
 
 	/* URIs TODO: Global*/
 	struct {
@@ -45,8 +72,8 @@ typedef struct {
 	} uris;
 
 	/* Playback state */
-	uint32_t frame; // TODO: frame_t
-	float    srate;
+	double    srate;
+	float     lasto;
 
 	EnvelopeState env;
 } EnvelopeGenerator;
@@ -60,11 +87,38 @@ envgen_connect_port(LV2_Handle instance,
 	EnvelopeGenerator* plugin = (EnvelopeGenerator*)instance;
 
 	switch (port) {
+		case ENVGEN_DEL:
+			plugin->del_port = (float*)data;
+			break;
+		case ENVGEN_ATT:
+			plugin->att_port = (float*)data;
+			break;
+		case ENVGEN_HOLD:
+			plugin->hold_port = (float*)data;
+			break;
+		case ENVGEN_DEC:
+			plugin->dec_port = (float*)data;
+			break;
+		case ENVGEN_SUS:
+			plugin->sus_port = (float*)data;
+			break;
+		case ENVGEN_REL:
+			plugin->rel_port = (float*)data;
+			break;
+		case ENVGEN_MOD:
+			plugin->mod_port = (float*)data;
+			break;
+		case ENVGEN_GATE_IN:
+			plugin->gate_in_port = (float*)data;
+			break;
 		case ENVGEN_TRIGGER:
 			plugin->trigger_port = (float*)data;
 			break;
-		case ENVGEN_OUT:
-			plugin->output_port = (float*)data;
+		case ENVGEN_GATE_OUT:
+			plugin->gate_out_port = (float*)data;
+			break;
+		case ENVGEN_ENV_OUT:
+			plugin->env_out_port = (float*)data;
 			break;
 		default:
 			break;
@@ -76,7 +130,7 @@ static void
 envgen_cleanup(LV2_Handle instance)
 {
 	EnvelopeGenerator* plugin = (EnvelopeGenerator*)instance;
-	free(instance);
+	free(plugin);
 }
 
 
@@ -89,9 +143,15 @@ envgen_instantiate(const LV2_Descriptor*     descriptor,
 	/* Malloc and initialize new Synth */
 	EnvelopeGenerator* plugin = (EnvelopeGenerator*)malloc(sizeof(EnvelopeGenerator));
 	if (!plugin) {
-		fprintf(stderr, "Could not allocate LB303Synth.\n");
+		fprintf(stderr, "Could not allocate Envelope Generator.\n");
 		return NULL;
 	}
+	plugin->srate = rate;
+	plugin->lasto = 0.0f;
+
+	/* TODO: Move EnvState init */ 
+	plugin->env.q = ENV_OFF;
+	plugin->env.frame = 0;
 
 	memset(&plugin->uris, 0, sizeof(plugin->uris));
 
@@ -132,11 +192,137 @@ fail:
 }
 
 
+// FIXME: What good is this??
+static inline float
+expKnobVal( float _val )
+{
+	return ( ( _val < 0 ) ? -_val : _val ) * _val;
+}
+
+
+
 static void
 envgen_run(LV2_Handle instance,
            uint32_t   sample_count)
 {
-	EnvelopeGenerator* plugin = (EnvelopeGenerator*)instance;
+	EnvelopeGenerator* eg = (EnvelopeGenerator*)instance;
+
+	const double frames_per_env_seg = SECS_PER_ENV_SEGMENT * eg->srate;
+
+	float amsum  = 1.0f;
+	float amount = 1.0f;
+
+	int i;
+	float o = eg->lasto;
+	for (i=0; i<sample_count; ++i) {
+		// Reset envelope
+		if (eg->trigger_port[i] > 0.5f) {
+			eg->env.q       = ENV_DEL;
+			eg->env.nframes = frames_per_env_seg * expKnobVal(*eg->del_port);
+			eg->env.frame   = 0;
+		}
+
+		// Trigger release
+		if (eg->gate_in_port[i] < 0.5f) {
+			switch (eg->env.q) {
+				case ENV_OFF:
+				case ENV_REL:
+					break;
+				case ENV_DEL:
+					eg->env.q = ENV_OFF;
+					break;
+				default:
+					eg->env.q        = ENV_REL;
+					eg->env.nframes  = frames_per_env_seg * expKnobVal(*eg->rel_port);
+					eg->env.frame    = 0;
+					eg->env.rel_base = o; 
+					break;
+			}
+		}
+
+		// Stupid way
+		switch (eg->env.q) {
+			case ENV_OFF:
+				o = 0.0f;
+				break;
+
+			case ENV_DEL:
+				// Process
+				o = 0.0f;
+				// State change
+				eg->env.frame++;
+				if (eg->env.frame > eg->env.nframes) {
+					eg->env.q       = ENV_ATT;
+					eg->env.nframes = frames_per_env_seg * expKnobVal(*eg->att_port);
+					eg->env.frame   = 0;
+				}
+				break;
+
+			case ENV_ATT:
+				// Process
+				o = ((float)eg->env.frame) / (eg->env.nframes);
+				// State
+				eg->env.frame++;
+				if (eg->env.frame >= eg->env.nframes) {
+					eg->env.q       = ENV_HOLD;
+					eg->env.nframes = frames_per_env_seg * expKnobVal(*eg->hold_port);
+					eg->env.frame   = 0;
+				}
+				break;
+
+			case ENV_HOLD:
+				// Process
+				o = 1.0f;
+				// State
+				eg->env.frame++;
+				if (eg->env.frame > eg->env.nframes) {
+					eg->env.q       = ENV_DEC;
+					eg->env.nframes = frames_per_env_seg * expKnobVal((*eg->dec_port)*(*eg->sus_port));
+					eg->env.frame   = 0;
+				}
+				break;
+
+			case ENV_DEC:
+				// Process
+				o = amsum + eg->env.frame * ((1.0f / eg->env.nframes)*((1.0f-(*eg->sus_port))-1.0f)*amount);
+				//o = 1.0f - (1.0f - (*eg->sus_port)) * ((float)eg->env.frame / eg->env.nframes);
+				//State
+				eg->env.frame++;
+				if (eg->env.frame > eg->env.nframes) {
+					eg->env.q       = ENV_SUS;
+					eg->env.nframes = 0;
+					eg->env.frame   = 0;
+				}
+				break;
+
+			case ENV_SUS:
+				o = 1.0f - (*eg->sus_port); // Sustain Level;
+				break;
+
+			case ENV_REL:
+				// Process
+				o = eg->env.rel_base * (1.0f - ((float)eg->env.frame / eg->env.nframes));
+				// State
+				eg->env.frame++;
+				if (eg->env.frame >= eg->env.nframes) {
+					eg->env.q = ENV_OFF;
+				}
+				break;
+
+			default:
+				break;
+		}
+
+		float mod = *eg->mod_port;
+		if (mod >= 0.0f) {
+			eg->env_out_port[i] = o * mod;
+		}
+		else {
+			// TODO: Negative mod
+		}
+		eg->gate_out_port[i] = eg->env_out_port[i] > 0.0f;
+	}
+	eg->lasto = o;
 }
 
 
