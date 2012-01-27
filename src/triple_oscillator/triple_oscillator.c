@@ -393,8 +393,6 @@ triposc_run(LV2_Handle instance,
 				if (cmd == 0x90) {
 					// Note On
 					voice_steal(plugin, data[1]);
-					// TODO: steal voices etc...
-
 				} else if (cmd == 0x80) {
 					// Note Off
 					// TODO need envelope
