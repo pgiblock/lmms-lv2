@@ -31,6 +31,7 @@ typedef struct {
 
 
 Envelope* envelope_create(EnvelopeParams *p);
+
 void envelope_destroy(Envelope* e);
 
 void envelope_trigger(Envelope* e);

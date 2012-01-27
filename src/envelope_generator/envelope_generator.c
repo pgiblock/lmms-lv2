@@ -193,7 +193,7 @@ envgen_run(LV2_Handle instance,
 			envelope_release(eg->env);
 		}
 
-		// Stupid way
+		// Stupid way FIXME: Run for the longest run before a trig/rel
 		envelope_run(eg->env, &(eg->env_out_port[i]), 1);
 		eg->gate_out_port[i] = eg->env_out_port[i] > 0.0f;
 	}

@@ -9,7 +9,7 @@ def build(bld):
     bundle     = 'lmms.lv2'
     installdir = os.path.join(bld.env.LV2DIR, bundle)
 
-    bld.objects(source='triple_oscillator.c', includes='..', use='oscillator', target='triple_oscillator')
+    bld.objects(source='triple_oscillator.c', includes='..', use=['envelope','oscillator'], target='triple_oscillator')
 
     for f in ['triple_oscillator.ttl']:
         bld(features='subst', source=f, target=os.path.join(bundle,f), install_path=installdir)

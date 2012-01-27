@@ -8,6 +8,7 @@
 
 #include "lmms_lv2.h"
 #include "uris.h"
+#include "envelope.h"
 #include "oscillator.h"
 #include "triple_oscillator.h"
 
@@ -62,7 +63,7 @@ typedef struct {
 	float* phase_random_port;
 	float* wave_shape_port;
 	float* modulation_port;
-
+	
 	// Calculated values
 	float m_volumeLeft;
 	float m_volumeRight;
@@ -82,6 +83,8 @@ typedef struct {
 	// Plugin voice state
 	Oscillator osc_l[3];
 	Oscillator osc_r[3];
+	// Volume Envelope
+	Envelope  *env_vol;
 } TripOscVoice;
 
 
@@ -112,6 +115,18 @@ typedef struct {
 
 	TripOscVoice* voices;
 
+	//// The beginning of general "Instrument" Stuff
+	// OMG, even more "ports"
+	float env_vol_del;
+	float env_vol_att;
+	float env_vol_hold;
+	float env_vol_dec;
+	float env_vol_sus;
+	float env_vol_rel;
+	float env_vol_mod;
+
+	EnvelopeParams env_vol_params;
+
 } TripleOscillator;
 
 
@@ -121,6 +136,7 @@ voice_steal(TripleOscillator* triposc, uint8_t midi_note) {
 	for (int i=0; i<NUM_VOICES; ++i) {
 		TripOscVoice* v = &triposc->voices[i];
 		if (v->midi_note == 0xFF) {
+			fprintf(stderr, "  Stealing voice %d\n", i);
 			// Stealing
 			v->midi_note = midi_note;
 			// Init note
@@ -141,6 +157,8 @@ voice_steal(TripleOscillator* triposc, uint8_t midi_note) {
 									i==2?NULL:&(v->osc_r[i+1]), *u->phase_offset_port,
 									triposc->srate);
 			}
+			// Trigger envelopes
+			envelope_trigger(v->env_vol);
 			break;
 		}
 	}
@@ -154,6 +172,7 @@ voice_release(TripleOscillator* triposc, uint8_t midi_note) {
 		TripOscVoice* v = &triposc->voices[i];
 		if (v->midi_note == midi_note) {
 			v->midi_note = 0xFF;
+			envelope_release(v->env_vol);
 		}
 	}
 }
@@ -254,6 +273,23 @@ triposc_instantiate(const LV2_Descriptor*     descriptor,
 		return NULL;
 	}
 
+	// FIXME: Hardcoding envelope for now. Yuck
+	plugin->env_vol_del = 0.0f;
+	plugin->env_vol_att = 0.3f;
+	plugin->env_vol_hold= 0.4f;
+	plugin->env_vol_dec = 0.5f;
+	plugin->env_vol_sus = 0.5f;
+	plugin->env_vol_rel = 0.5f;
+	plugin->env_vol_mod = 1.0f;
+	plugin->env_vol_params.time_base = rate * 3.0f; 
+	plugin->env_vol_params.del = &plugin->env_vol_del  ;
+	plugin->env_vol_params.att = &plugin->env_vol_att  ;
+	plugin->env_vol_params.hold= &plugin->env_vol_hold ;
+	plugin->env_vol_params.dec = &plugin->env_vol_dec  ;
+	plugin->env_vol_params.sus = &plugin->env_vol_sus  ;
+	plugin->env_vol_params.rel = &plugin->env_vol_rel  ;
+	plugin->env_vol_params.mod = &plugin->env_vol_mod  ;
+
 	// Malloc voices
 	plugin->voices = (TripOscVoice*)malloc(sizeof(TripOscVoice) * NUM_VOICES);
 	if (!plugin->voices) {
@@ -262,6 +298,7 @@ triposc_instantiate(const LV2_Descriptor*     descriptor,
 	}
 	for (int i=0; i<NUM_VOICES; ++i) {
 		plugin->voices[i].midi_note = 0xFF;
+		plugin->voices[i].env_vol = envelope_create(&plugin->env_vol_params);
 	}
 
 	memset(&plugin->uris, 0, sizeof(plugin->uris));
@@ -353,7 +390,8 @@ triposc_run(LV2_Handle instance,
 		}
 #endif
 
-		float outbuf[2048]; // FIXME: Ugh
+		float outbuf[sample_count];
+		float envbuf[sample_count];
 
 		// Run until next event
 		// FIXME: This extra arithmetic is stupid to have in this loop
@@ -366,13 +404,16 @@ triposc_run(LV2_Handle instance,
 		for (int i=0; i<NUM_VOICES; ++i) {
 			TripOscVoice* v = &plugin->voices[i];
 			if (v->midi_note != 0xFF) {
+				envelope_run(v->env_vol, envbuf, outlen);
 				osc_update(&v->osc_l[0], outbuf, outlen);
 				for (int f=0; f<outlen; ++f) {
-					out_l[f] += outbuf[f];
+					out_l[f] += outbuf[f] * envbuf[f];
 				}
+				// TODO: Make a mixing version of the run function
+
 				osc_update(&v->osc_r[0], outbuf, outlen);
 				for (int f=0; f<outlen; ++f) {
-					out_r[f] += outbuf[f];
+					out_r[f] += outbuf[f] * envbuf[f];
 				}
 			}
 		}
