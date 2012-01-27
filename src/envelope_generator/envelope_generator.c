@@ -7,6 +7,7 @@
 
 #include "lmms_lv2.h"
 #include "uris.h"
+#include "envelope.h"
 #include "envelope_generator.h"
 
 // PORTS
@@ -24,24 +25,6 @@ enum {
 	ENVGEN_ENV_OUT   = 10
 };
 
-// STATES
-enum {
-	ENV_OFF,
-	ENV_DEL,
-	ENV_ATT,
-	ENV_HOLD,
-	ENV_DEC,
-	ENV_SUS,
-	ENV_REL
-};
-
-typedef struct {
-	int q;            // State
-	uint32_t frame;   // Frame of current state
-	uint32_t nframes; // Num frames to run current state
-	float    rel_base;// Base value for releasing from
-} EnvelopeState;
-
 
 typedef struct {
 	/* Features */
@@ -57,13 +40,8 @@ typedef struct {
 	float*  gate_out_port;
 	float*  env_out_port;
 
-	float*  del_port;
-	float*  att_port;
-	float*  hold_port;
-	float*  dec_port;
-	float*  sus_port;
-	float*  rel_port;
-	float*  mod_port;
+	/* Direct parameter ports */
+	EnvelopeParams params;
 
 	/* URIs TODO: Global*/
 	struct {
@@ -75,7 +53,8 @@ typedef struct {
 	double    srate;
 	float     lasto;
 
-	EnvelopeState env;
+	Envelope *env;
+
 } EnvelopeGenerator;
 
 
@@ -88,25 +67,25 @@ envgen_connect_port(LV2_Handle instance,
 
 	switch (port) {
 		case ENVGEN_DEL:
-			plugin->del_port = (float*)data;
+			plugin->params.del = (float*)data;
 			break;
 		case ENVGEN_ATT:
-			plugin->att_port = (float*)data;
+			plugin->params.att = (float*)data;
 			break;
 		case ENVGEN_HOLD:
-			plugin->hold_port = (float*)data;
+			plugin->params.hold = (float*)data;
 			break;
 		case ENVGEN_DEC:
-			plugin->dec_port = (float*)data;
+			plugin->params.dec = (float*)data;
 			break;
 		case ENVGEN_SUS:
-			plugin->sus_port = (float*)data;
+			plugin->params.sus = (float*)data;
 			break;
 		case ENVGEN_REL:
-			plugin->rel_port = (float*)data;
+			plugin->params.rel = (float*)data;
 			break;
 		case ENVGEN_MOD:
-			plugin->mod_port = (float*)data;
+			plugin->params.mod = (float*)data;
 			break;
 		case ENVGEN_GATE_IN:
 			plugin->gate_in_port = (float*)data;
@@ -130,6 +109,7 @@ static void
 envgen_cleanup(LV2_Handle instance)
 {
 	EnvelopeGenerator* plugin = (EnvelopeGenerator*)instance;
+	envelope_destroy(plugin->env);
 	free(plugin);
 }
 
@@ -146,12 +126,14 @@ envgen_instantiate(const LV2_Descriptor*     descriptor,
 		fprintf(stderr, "Could not allocate Envelope Generator.\n");
 		return NULL;
 	}
+	
 	plugin->srate = rate;
 	plugin->lasto = 0.0f;
 
-	/* TODO: Move EnvState init */ 
-	plugin->env.q = ENV_OFF;
-	plugin->env.frame = 0;
+	// TODO: Setting this param like this is a hack
+	plugin->params.time_base = rate * SECS_PER_ENV_SEGMENT;
+
+	plugin->env = envelope_create(&plugin->params);
 
 	memset(&plugin->uris, 0, sizeof(plugin->uris));
 
@@ -192,14 +174,6 @@ fail:
 }
 
 
-// FIXME: What good is this??
-static inline float
-expKnobVal( float _val )
-{
-	return ( ( _val < 0 ) ? -_val : _val ) * _val;
-}
-
-
 
 static void
 envgen_run(LV2_Handle instance,
@@ -207,122 +181,22 @@ envgen_run(LV2_Handle instance,
 {
 	EnvelopeGenerator* eg = (EnvelopeGenerator*)instance;
 
-	const double frames_per_env_seg = SECS_PER_ENV_SEGMENT * eg->srate;
-
-	float amsum  = 1.0f;
-	float amount = 1.0f;
-
 	int i;
-	float o = eg->lasto;
 	for (i=0; i<sample_count; ++i) {
 		// Reset envelope
 		if (eg->trigger_port[i] > 0.5f) {
-			eg->env.q       = ENV_DEL;
-			eg->env.nframes = frames_per_env_seg * expKnobVal(*eg->del_port);
-			eg->env.frame   = 0;
+			envelope_trigger(eg->env);
 		}
 
-		// Trigger release
+		// release
 		if (eg->gate_in_port[i] < 0.5f) {
-			switch (eg->env.q) {
-				case ENV_OFF:
-				case ENV_REL:
-					break;
-				case ENV_DEL:
-					eg->env.q = ENV_OFF;
-					break;
-				default:
-					eg->env.q        = ENV_REL;
-					eg->env.nframes  = frames_per_env_seg * expKnobVal(*eg->rel_port);
-					eg->env.frame    = 0;
-					eg->env.rel_base = o; 
-					break;
-			}
+			envelope_release(eg->env);
 		}
 
 		// Stupid way
-		switch (eg->env.q) {
-			case ENV_OFF:
-				o = 0.0f;
-				break;
-
-			case ENV_DEL:
-				// Process
-				o = 0.0f;
-				// State change
-				eg->env.frame++;
-				if (eg->env.frame > eg->env.nframes) {
-					eg->env.q       = ENV_ATT;
-					eg->env.nframes = frames_per_env_seg * expKnobVal(*eg->att_port);
-					eg->env.frame   = 0;
-				}
-				break;
-
-			case ENV_ATT:
-				// Process
-				o = ((float)eg->env.frame) / (eg->env.nframes);
-				// State
-				eg->env.frame++;
-				if (eg->env.frame >= eg->env.nframes) {
-					eg->env.q       = ENV_HOLD;
-					eg->env.nframes = frames_per_env_seg * expKnobVal(*eg->hold_port);
-					eg->env.frame   = 0;
-				}
-				break;
-
-			case ENV_HOLD:
-				// Process
-				o = 1.0f;
-				// State
-				eg->env.frame++;
-				if (eg->env.frame > eg->env.nframes) {
-					eg->env.q       = ENV_DEC;
-					eg->env.nframes = frames_per_env_seg * expKnobVal((*eg->dec_port)*(*eg->sus_port));
-					eg->env.frame   = 0;
-				}
-				break;
-
-			case ENV_DEC:
-				// Process
-				o = amsum + eg->env.frame * ((1.0f / eg->env.nframes)*((1.0f-(*eg->sus_port))-1.0f)*amount);
-				//o = 1.0f - (1.0f - (*eg->sus_port)) * ((float)eg->env.frame / eg->env.nframes);
-				//State
-				eg->env.frame++;
-				if (eg->env.frame > eg->env.nframes) {
-					eg->env.q       = ENV_SUS;
-					eg->env.nframes = 0;
-					eg->env.frame   = 0;
-				}
-				break;
-
-			case ENV_SUS:
-				o = 1.0f - (*eg->sus_port); // Sustain Level;
-				break;
-
-			case ENV_REL:
-				// Process
-				o = eg->env.rel_base * (1.0f - ((float)eg->env.frame / eg->env.nframes));
-				// State
-				eg->env.frame++;
-				if (eg->env.frame >= eg->env.nframes) {
-					eg->env.q = ENV_OFF;
-				}
-				break;
-
-			default:
-				break;
-		}
-
-		float mod = *eg->mod_port;
-		if (mod >= 0.0f) {
-			eg->env_out_port[i] = o * mod;
-		}
-		else {
-			// TODO: Negative mod
-		}
+		envelope_run(eg->env, &(eg->env_out_port[i]), 1);
 		eg->gate_out_port[i] = eg->env_out_port[i] > 0.0f;
 	}
-	eg->lasto = o;
 }
 
 

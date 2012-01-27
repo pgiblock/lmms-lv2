@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 import os
 import shutil
+import re
 from waflib import Logs
 
 def build(bld):
@@ -12,10 +13,10 @@ def build(bld):
     penv['cshlib_PATTERN'] = bld.env['pluginlib_PATTERN']
 
     plugins = ['envelope_generator', 'lb303', 'triple_oscillator']
-    src     = ['oscillator.c']
+    src     = ['envelope.c', 'oscillator.c']
 
     for s in src:
-        bld.objects(source=s, includes='.', target='oscillator')
+        bld.objects(source=s, includes='.', target=re.sub('\.c$', '', s))
 
     for p in plugins:
         bld.recurse(p)

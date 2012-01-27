@@ -9,7 +9,7 @@ def build(bld):
     bundle     = 'lmms.lv2'
     installdir = os.path.join(bld.env.LV2DIR, bundle)
 
-    bld.objects(source='envelope_generator.c', includes='..', target='envelope_generator')
+    bld.objects(source='envelope_generator.c', includes='..', use='envelope', target='envelope_generator')
 
     for f in ['envelope_generator.ttl']:
         bld(features='subst', source=f, target=os.path.join(bundle,f), install_path=installdir)
