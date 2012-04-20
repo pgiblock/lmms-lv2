@@ -50,7 +50,14 @@ enum {
 	TRIPOSC_OSC3_PHASE_OFFSET = 28,
 	TRIPOSC_OSC3_PHASE_DETUNE = 29,
 	TRIPOSC_OSC3_PHASE_RANDOM = 30,
-	TRIPOSC_OSC3_WAVE_SHAPE = 31
+	TRIPOSC_OSC3_WAVE_SHAPE = 31,
+	TRIPOSC_ENV_VOL_DEL = 32,
+	TRIPOSC_ENV_VOL_ATT = 33,
+	TRIPOSC_ENV_VOL_HOLD = 34,
+	TRIPOSC_ENV_VOL_DEC = 35,
+	TRIPOSC_ENV_VOL_SUS = 36,
+	TRIPOSC_ENV_VOL_REL = 37,
+	TRIPOSC_ENV_VOL_MOD = 38
 };
 
 
@@ -204,7 +211,7 @@ triposc_connect_port(LV2_Handle instance,
 	int oscidx, oscport;
 
 	// Handle Plugin-global ports
-	if (port < TRIPOSC_OSC1_VOL) {
+	if (port < TRIPOSC_OSC1_VOL || port >= TRIPOSC_ENV_VOL_DEL) {
 		switch (port) {
 			case TRIPOSC_CONTROL:
 				plugin->event_port = (Event_Buffer_t*)data;
@@ -214,6 +221,27 @@ triposc_connect_port(LV2_Handle instance,
 				break;
 			case TRIPOSC_OUT_R:
 				plugin->out_r_port = (float*)data;
+				break;
+			case TRIPOSC_ENV_VOL_DEL:
+				plugin->env_vol_params.del = (float*)data;
+				break;
+			case TRIPOSC_ENV_VOL_ATT:
+				plugin->env_vol_params.att = (float*)data;
+				break;
+			case TRIPOSC_ENV_VOL_HOLD:
+				plugin->env_vol_params.hold = (float*)data;
+				break;
+			case TRIPOSC_ENV_VOL_DEC:
+				plugin->env_vol_params.dec = (float*)data;
+				break;
+			case TRIPOSC_ENV_VOL_SUS:
+				plugin->env_vol_params.sus = (float*)data;
+				break;
+			case TRIPOSC_ENV_VOL_REL:
+				plugin->env_vol_params.rel = (float*)data;
+				break;
+			case TRIPOSC_ENV_VOL_MOD:
+				plugin->env_vol_params.mod = (float*)data;
 				break;
 			default:
 				break;
@@ -300,13 +328,6 @@ triposc_instantiate(const LV2_Descriptor*     descriptor,
 	plugin->env_vol_rel = 0.5f;
 	plugin->env_vol_mod = 1.0f;
 	plugin->env_vol_params.time_base = rate * 3.0f; 
-	plugin->env_vol_params.del = &plugin->env_vol_del  ;
-	plugin->env_vol_params.att = &plugin->env_vol_att  ;
-	plugin->env_vol_params.hold= &plugin->env_vol_hold ;
-	plugin->env_vol_params.dec = &plugin->env_vol_dec  ;
-	plugin->env_vol_params.sus = &plugin->env_vol_sus  ;
-	plugin->env_vol_params.rel = &plugin->env_vol_rel  ;
-	plugin->env_vol_params.mod = &plugin->env_vol_mod  ;
 
 	// FIXME: Leak!
 	TripOscGenerator *generators = malloc(sizeof(TripOscGenerator) * NUM_VOICES);
