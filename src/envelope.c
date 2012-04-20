@@ -81,7 +81,7 @@ envelope_release(Envelope* e)
 }
 
 
-void
+int 
 envelope_run(Envelope* e, float* samples, uint32_t nsamples)
 {
 	// FIXME: Crap

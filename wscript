@@ -24,7 +24,7 @@ def options(opt):
 def configure(conf):
     conf.load('compiler_c')
     conf.env.append_value('CFLAGS', '-Wall')
-    conf.env.append_value('CFLAGS', '-O3')
+    conf.env.append_value('CFLAGS', '-ggdb')
     conf.env.append_value('CFLAGS', '-std=c99')
     conf.env.append_value('CFLAGS', '-fPIC')
 

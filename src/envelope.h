@@ -25,7 +25,7 @@ typedef struct {
 
 
 typedef struct {
-	EnvelopeParams *p;
+	EnvelopeParams *p;	// TODO: Consider copying the Params
 	EnvelopeState st;
 } Envelope;
 
@@ -37,6 +37,6 @@ void envelope_destroy(Envelope* e);
 void envelope_trigger(Envelope* e);
 void envelope_release(Envelope* e);
 
-void envelope_run(Envelope* e, float* sample, uint32_t nsamples);
+int  envelope_run(Envelope* e, float* sample, uint32_t nsamples);
 
 #endif

@@ -10,15 +10,18 @@
 #include "uris.h"
 #include "envelope.h"
 #include "oscillator.h"
+#include "voice.h"
 #include "triple_oscillator.h"
 
 #define NUM_VOICES 8
 
 // PORTS
 enum {
+	// Instrument
 	TRIPOSC_CONTROL = 0,
 	TRIPOSC_OUT_L = 1,
 	TRIPOSC_OUT_R = 2,
+	// Voice
 	TRIPOSC_OSC1_VOL = 3,
 	TRIPOSC_OSC1_PAN = 4,
 	TRIPOSC_OSC1_DETUNE_COARSE = 5,
@@ -77,15 +80,11 @@ typedef struct {
 
 
 typedef struct {
-	// Standard voice state
-	uint8_t    midi_note;
-	uint32_t   frame;
 	// Plugin voice state
 	Oscillator osc_l[3];
 	Oscillator osc_r[3];
-	// Volume Envelope
-	Envelope  *env_vol;
-} TripOscVoice;
+} TripOscGenerator;
+
 
 
 typedef struct {
@@ -96,28 +95,12 @@ typedef struct {
 	LV2_URI_Map_Feature*       map;
 #endif
 
-	/* Ports */
+	/* Instrument Ports */
 	Event_Buffer_t*  event_port;
 	float*           out_l_port;
 	float*           out_r_port;
 
-	OscillatorUnit   units[3];
-
-	/* URIs TODO: Global*/
-	struct {
-		URI_t midi_event;
-		URI_t atom_message;
-	} uris;
-
-	/* Playback state */
-	uint32_t frame; // TODO: frame_t
-	float    srate;
-
-	TripOscVoice* voices;
-	int           victim_idx;
-
-	//// The beginning of general "Instrument" Stuff
-	// OMG, even more "ports"
+	/* TODO: These are only here to serve as data for the vol env, should be connected as ports instead */
 	float env_vol_del;
 	float env_vol_att;
 	float env_vol_hold;
@@ -128,20 +111,35 @@ typedef struct {
 
 	EnvelopeParams env_vol_params;
 
+	/* Generic instrument stuff */
+	Voice* voices;
+	int    victim_idx;
+
+	/* URIs TODO: Global*/
+	struct {
+		URI_t midi_event;
+		URI_t atom_message;
+	} uris;
+
+	/* Generator Ports */
+	OscillatorUnit   units[3];
+
+	/* Playback state */
+	uint32_t frame; // TODO: frame_t
+	float    srate;
+
 } TripleOscillator;
 
 
-void
-voice_steal(TripleOscillator* triposc, uint8_t midi_note) {
-	// We are just going round-robin for now
-	// TODO: Prioritize on vol-envelope state
-	TripOscVoice* v = &triposc->voices[triposc->victim_idx];
 
-	// Stealing
-	v->midi_note = midi_note;
+static void
+trip_osc_voice_steal(TripleOscillator* triposc, Voice* v) {
+	TripOscGenerator* g = (TripOscGenerator*)v->generator;
+
 	// Init note
-	float freq  = powf(2.0f, ((float)midi_note+3.0f) / 12.0f) * 55.0f;
-	// Run oscillators backwards, wee...
+	float freq  = powf(2.0f, ((float)v->midi_note-69.0f) / 12.0f) * 440.0f;
+
+	// Reset oscillators backwards, wee...
 	for (int i=2; i>=0; --i) {
 		OscillatorUnit* u = &triposc->units[i];
 		// FIXME: This check won't be needed if we fix oscillator to just hold float* members bound straight to ports
@@ -149,15 +147,33 @@ voice_steal(TripleOscillator* triposc, uint8_t midi_note) {
 		// FIXME: Detuning needs to happen occationally even after note-on
 		float detune_l = powf( 2.0f, (*u->detune_coarse_port * 100.0f + *u->detune_fine_l_port) / 1200.0f) / triposc->srate;
 		float detune_r = powf( 2.0f, (*u->detune_coarse_port * 100.0f + *u->detune_fine_r_port) / 1200.0f) / triposc->srate;
-		osc_reset(&(v->osc_l[i]), *u->wave_shape_port, mod,
+		osc_reset(&(g->osc_l[i]), *u->wave_shape_port, mod,
 							freq, detune_l, *u->vol_port*0.01f,
-							i==2?NULL:&(v->osc_l[i+1]), *u->phase_offset_port,
+							i==2?NULL:&(g->osc_l[i+1]), *u->phase_offset_port,
 							triposc->srate);
-		osc_reset(&(v->osc_r[i]), *u->wave_shape_port, mod,
+		osc_reset(&(g->osc_r[i]), *u->wave_shape_port, mod,
 							freq, detune_r, *u->vol_port*0.01f,
-							i==2?NULL:&(v->osc_r[i+1]), *u->phase_offset_port,
+							i==2?NULL:&(g->osc_r[i+1]), *u->phase_offset_port,
 							triposc->srate);
 	}
+}
+
+
+static void
+trip_osc_voice_release(TripleOscillator* triposc, Voice* v) {
+	// Noop
+}
+
+
+void
+voice_steal(TripleOscillator* triposc, uint8_t midi_note) {
+	// We are just going round-robin for now
+	// TODO: Prioritize on vol-envelope state
+	Voice* v = &triposc->voices[triposc->victim_idx];
+
+	// Stealing
+	v->midi_note = midi_note;
+	trip_osc_voice_steal(triposc, v);
 
 	// Trigger envelopes
 	envelope_trigger(v->env_vol);
@@ -170,12 +186,14 @@ voice_steal(TripleOscillator* triposc, uint8_t midi_note) {
 void
 voice_release(TripleOscillator* triposc, uint8_t midi_note) {
 	for (int i=0; i<NUM_VOICES; ++i) {
-		TripOscVoice* v = &triposc->voices[i];
+		Voice* v = &triposc->voices[i];
 		if (v->midi_note == midi_note) {
 			envelope_release(v->env_vol);
+			trip_osc_voice_release(triposc, v);
 		}
 	}
 }
+
 
 static void
 triposc_connect_port(LV2_Handle instance,
@@ -290,15 +308,23 @@ triposc_instantiate(const LV2_Descriptor*     descriptor,
 	plugin->env_vol_params.rel = &plugin->env_vol_rel  ;
 	plugin->env_vol_params.mod = &plugin->env_vol_mod  ;
 
+	// FIXME: Leak!
+	TripOscGenerator *generators = malloc(sizeof(TripOscGenerator) * NUM_VOICES);
+
 	// Malloc voices
-	plugin->voices = (TripOscVoice*)malloc(sizeof(TripOscVoice) * NUM_VOICES);
-	if (!plugin->voices) {
+	plugin->voices = malloc(sizeof(Voice) * NUM_VOICES);
+	if (!plugin->voices || !generators) {
 		fprintf(stderr, "Could not allocate TripleOscillator voices.\n");
 		return NULL;
 	}
 	for (int i=0; i<NUM_VOICES; ++i) {
 		plugin->voices[i].midi_note = 0xFF;
 		plugin->voices[i].env_vol = envelope_create(&plugin->env_vol_params);
+
+
+		plugin->voices[i].generator = generators + i;
+		// TODO: Another callback voice_alloc and voice_free??
+
 	}
 	plugin->victim_idx = 0;
 
@@ -360,6 +386,10 @@ triposc_run(LV2_Handle instance,
 	uint32_t    ev_frames;
 	uint32_t    f = plugin->frame;
 
+	float outbuf[sample_count];
+	float envbuf[sample_count];
+
+
 #ifdef USE_LV2_ATOM
 	LV2_Atom_Buffer_Iterator ev_i = lv2_atom_buffer_begin(plugin->event_port);
 	LV2_Atom_Event const * ev = NULL;
@@ -391,9 +421,6 @@ triposc_run(LV2_Handle instance,
 		}
 #endif
 
-		float outbuf[sample_count];
-		float envbuf[sample_count];
-
 		// Run until next event
 		// FIXME: This extra arithmetic is stupid to have in this loop
 		float *out_l = &plugin->out_l_port[pos];
@@ -403,16 +430,18 @@ triposc_run(LV2_Handle instance,
 			out_l[f] = out_r[f] = 0.0f;
 		}
 		for (int i=0; i<NUM_VOICES; ++i) {
-			TripOscVoice* v = &plugin->voices[i];
+			Voice* v = &plugin->voices[i];
 			if (v->midi_note != 0xFF) {
 				envelope_run(v->env_vol, envbuf, outlen);
-				osc_update(&v->osc_l[0], outbuf, outlen);
+
+				TripOscGenerator* g = (TripOscGenerator*)v->generator;
+				osc_update(&g->osc_l[0], outbuf, outlen);
 				for (int f=0; f<outlen; ++f) {
 					out_l[f] += outbuf[f] * envbuf[f];
 				}
 				// TODO: Make a mixing version of the run function
 
-				osc_update(&v->osc_r[0], outbuf, outlen);
+				osc_update(&g->osc_r[0], outbuf, outlen);
 				for (int f=0; f<outlen; ++f) {
 					out_r[f] += outbuf[f] * envbuf[f];
 				}
@@ -439,7 +468,10 @@ triposc_run(LV2_Handle instance,
 					// Note Off
 					// TODO need envelope
 					voice_release(plugin, data[1]);
+				} else {
+					printf("0x%x 0x%x\n",cmd,data[1]);
 				}
+
 			} else {
 #ifdef USE_LV2_ATOM
 				fprintf(stderr, "Unknown event type %d\n", ev->body.type);
@@ -474,7 +506,6 @@ triposc_save(LV2_Handle                instance,
              uint32_t                  flags,
              const LV2_Feature* const* features)
 {
-	TripleOscillator* plugin = (TripleOscillator*)instance;
 	// TODO: store(...)
 	printf("TripleOscillator save stub.\n");
 }
@@ -487,7 +518,6 @@ triposc_restore(LV2_Handle                  instance,
                 uint32_t                    flags,
                 const LV2_Feature* const*   features)
 {
-	TripleOscillator* plugin = (TripleOscillator*)instance;
 	// TODO: store(...)
 	printf("TripleOscillator restore stub.\n");
 }
