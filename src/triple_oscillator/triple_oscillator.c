@@ -320,13 +320,6 @@ triposc_instantiate(const LV2_Descriptor*     descriptor,
 	}
 
 	// FIXME: Hardcoding envelope for now. Yuck
-	plugin->env_vol_del = 0.0f;
-	plugin->env_vol_att = 0.3f;
-	plugin->env_vol_hold= 0.4f;
-	plugin->env_vol_dec = 0.5f;
-	plugin->env_vol_sus = 0.5f;
-	plugin->env_vol_rel = 0.5f;
-	plugin->env_vol_mod = 1.0f;
 	plugin->env_vol_params.time_base = rate * 3.0f; 
 
 	// FIXME: Leak!
