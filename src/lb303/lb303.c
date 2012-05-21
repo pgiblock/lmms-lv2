@@ -320,7 +320,6 @@ lb303_run(LV2_Handle instance,
 	for (pos = 0; pos < sample_count;) {
 		// Check for next event
 		if (!lv2_atom_sequence_is_end(&plugin->event_port->body, plugin->event_port->atom.size, ev)) {
-			ev        = lv2_atom_sequence_next(ev);
 			ev_frames = ev->time.frames;
 		} else {
 			ev = NULL;
@@ -415,6 +414,7 @@ lb303_run(LV2_Handle instance,
 #ifdef USE_LV2_ATOM
 			if (ev->body.type == plugin->uris.midi_event) {
 				uint8_t* const data = (uint8_t* const)(ev + 1);
+				ev = lv2_atom_sequence_next(ev);
 #else
 			if (ev->type == plugin->uris.midi_event || ev->type == 1) {
 				uint8_t* const data = (uint8_t* const)(ev) + sizeof(LV2_Event);
