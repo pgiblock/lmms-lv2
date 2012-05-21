@@ -29,13 +29,13 @@
  */
 
 #include <assert.h>
-#include <math.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
 #include "lmms_lv2.h"
+#include "lmms_math.h"
 #include "uris.h"
 #include "lb303.h"
 
@@ -206,7 +206,7 @@ static void
 lb303_cleanup(LV2_Handle instance)
 {
 	LB303Synth* plugin = (LB303Synth*)instance;
-	free(instance);
+	free(plugin);
 }
 
 
@@ -315,15 +315,13 @@ lb303_run(LV2_Handle instance,
 	uint32_t    f = plugin->frame;
 
 #ifdef USE_LV2_ATOM
-	LV2_Atom_Buffer_Iterator ev_i = lv2_atom_buffer_begin(plugin->event_port);
-	LV2_Atom_Event const * ev = NULL;
+	LV2_Atom_Event* ev = lv2_atom_sequence_begin(&plugin->event_port->body);
 
 	for (pos = 0; pos < sample_count;) {
 		// Check for next event
-		if (lv2_atom_buffer_is_valid(ev_i)) {
-			ev        = lv2_atom_buffer_get(ev_i);
-			ev_frames = ev->frames;
-			ev_i      = lv2_atom_buffer_next(ev_i);
+		if (!lv2_atom_sequence_is_end(&plugin->event_port->body, plugin->event_port->atom.size, ev)) {
+			ev        = lv2_atom_sequence_next(ev);
+			ev_frames = ev->time.frames;
 		} else {
 			ev = NULL;
 			ev_frames = sample_count;
@@ -521,29 +519,29 @@ lb303_map_uri(LB303Synth* plugin, const char* uri)
 }
 
 
-static void
-lb303_save(LV2_Handle                instance,
-           LV2_State_Store_Function  store,
-           void*                     callback_data,
-           uint32_t                  flags,
-           const LV2_Feature* const* features)
+static LV2_State_Status
+lb303_save(LV2_Handle         instance,
+		LV2_State_Store_Function  store,
+		LV2_State_Handle          handle,
+		uint32_t                  flags,
+		const LV2_Feature* const* features)
 {
-	LB303Synth* plugin = (LB303Synth*)instance;
 	// TODO: store(...)
 	printf("LB303 save stub.\n");
+	return LV2_STATE_SUCCESS;
 }
 
 
-static void
-lb303_restore(LV2_Handle                  instance,
-              LV2_State_Retrieve_Function retrieve,
-              void*                       callback_data,
-              uint32_t                    flags,
-              const LV2_Feature* const*   features)
+static LV2_State_Status
+lb303_restore(LV2_Handle        instance,
+		LV2_State_Retrieve_Function retrieve,
+		LV2_State_Handle            handle,
+		uint32_t                    flags,
+		const LV2_Feature* const*   features)
 {
-	LB303Synth* plugin = (LB303Synth*)instance;
 	// TODO: retrieve(...)
 	printf("LB303 restore stub.\n");
+	return LV2_STATE_SUCCESS;
 }
 
 

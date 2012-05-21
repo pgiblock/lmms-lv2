@@ -37,6 +37,6 @@ void envelope_destroy(Envelope* e);
 void envelope_trigger(Envelope* e);
 void envelope_release(Envelope* e);
 
-int  envelope_run(Envelope* e, float* sample, uint32_t nsamples);
+void envelope_run(Envelope* e, float* sample, uint32_t nsamples);
 
 #endif

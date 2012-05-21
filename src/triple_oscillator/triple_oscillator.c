@@ -61,6 +61,7 @@ enum {
 };
 
 
+// Per-oscillator ports and calculated coefficients
 typedef struct {
 	// Ports
 	float* vol_port;
@@ -86,14 +87,14 @@ typedef struct {
 } OscillatorUnit;
 
 
+// Plugin voice state
 typedef struct {
-	// Plugin voice state
 	Oscillator osc_l[3];
 	Oscillator osc_r[3];
 } TripOscGenerator;
 
 
-
+// The entire instrument
 typedef struct {
 	/* Features */
 #ifdef USE_LV2_URID
@@ -106,15 +107,6 @@ typedef struct {
 	Event_Buffer_t*  event_port;
 	float*           out_l_port;
 	float*           out_r_port;
-
-	/* TODO: These are only here to serve as data for the vol env, should be connected as ports instead */
-	float env_vol_del;
-	float env_vol_att;
-	float env_vol_hold;
-	float env_vol_dec;
-	float env_vol_sus;
-	float env_vol_rel;
-	float env_vol_mod;
 
 	EnvelopeParams env_vol_params;
 
@@ -405,15 +397,13 @@ triposc_run(LV2_Handle instance,
 
 
 #ifdef USE_LV2_ATOM
-	LV2_Atom_Buffer_Iterator ev_i = lv2_atom_buffer_begin(plugin->event_port);
-	LV2_Atom_Event const * ev = NULL;
+	LV2_Atom_Event* ev = lv2_atom_sequence_begin(&plugin->event_port->body);
 
 	for (pos = 0; pos < sample_count;) {
 		// Check for next event
-		if (lv2_atom_buffer_is_valid(ev_i)) {
-			ev        = lv2_atom_buffer_get(ev_i);
-			ev_frames = ev->frames;
-			ev_i      = lv2_atom_buffer_next(ev_i);
+		if (!lv2_atom_sequence_is_end(&plugin->event_port->body, plugin->event_port->atom.size, ev)) {
+			ev        = lv2_atom_sequence_next(ev);
+			ev_frames = ev->time.frames;
 		} else {
 			ev = NULL;
 			ev_frames = sample_count;
@@ -513,27 +503,27 @@ triposc_map_uri(TripleOscillator* plugin, const char* uri)
 }
 
 
-static void
-triposc_save(LV2_Handle                instance,
-             LV2_State_Store_Function  store,
-             void*                     callback_data,
-             uint32_t                  flags,
-             const LV2_Feature* const* features)
+static LV2_State_Status
+triposc_save(LV2_Handle       instance,
+		LV2_State_Store_Function  store,
+		LV2_State_Handle          handle,
+		uint32_t                  flags,
+		const LV2_Feature* const* features)
 {
-	// TODO: store(...)
 	printf("TripleOscillator save stub.\n");
+	return LV2_STATE_SUCCESS;
 }
 
 
-static void
-triposc_restore(LV2_Handle                  instance,
-                LV2_State_Retrieve_Function retrieve,
-                void*                       callback_data,
-                uint32_t                    flags,
-                const LV2_Feature* const*   features)
+static LV2_State_Status
+triposc_restore(LV2_Handle      instance,
+		LV2_State_Retrieve_Function retrieve,
+		LV2_State_Handle            handle,
+		uint32_t                    flags,
+		const LV2_Feature* const*   features)
 {
-	// TODO: store(...)
 	printf("TripleOscillator restore stub.\n");
+	return LV2_STATE_SUCCESS;
 }
 
 

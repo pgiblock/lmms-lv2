@@ -13,7 +13,7 @@ def build(bld):
     penv['cshlib_PATTERN'] = bld.env['pluginlib_PATTERN']
 
     plugins = ['envelope_generator', 'lb303', 'triple_oscillator']
-    src     = ['envelope.c', 'oscillator.c']
+    src     = ['basic_filters.c', 'envelope.c', 'oscillator.c']
 
     for s in src:
         bld.objects(source=s, includes='.', target=re.sub('\.c$', '', s))

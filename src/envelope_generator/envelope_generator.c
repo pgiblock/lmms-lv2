@@ -211,25 +211,27 @@ envgen_map_uri(EnvelopeGenerator* plugin, const char* uri)
 }
 
 
-static void
-envgen_save(LV2_Handle                instance,
-           LV2_State_Store_Function  store,
-           void*                     callback_data,
-           uint32_t                  flags,
-           const LV2_Feature* const* features)
+static LV2_State_Status
+envgen_save(LV2_Handle        instance,
+		LV2_State_Store_Function  store,
+		LV2_State_Handle          handle,
+		uint32_t                  flags,
+		const LV2_Feature* const* features)
 {
 	printf("Envelope Generator save stub.\n");
+	return LV2_STATE_SUCCESS;
 }
 
 
-static void
-envgen_restore(LV2_Handle                  instance,
-              LV2_State_Retrieve_Function retrieve,
-              void*                       callback_data,
-              uint32_t                    flags,
-              const LV2_Feature* const*   features)
+static LV2_State_Status
+envgen_restore(LV2_Handle       instance,
+		LV2_State_Retrieve_Function retrieve,
+		LV2_State_Handle            handle,
+		uint32_t                    flags,
+		const LV2_Feature* const*   features)
 {
 	printf("Envelope Generator restore stub.\n");
+	return LV2_STATE_SUCCESS;
 }
 
 

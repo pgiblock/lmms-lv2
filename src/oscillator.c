@@ -67,7 +67,7 @@ osc_destroy(Oscillator* o) {
 void
 osc_print(Oscillator* o) {
 	fprintf(stderr, "{wave_shape=%f\n modulation_algo=%f\n freq=%f\n "
-	        "detuning=%f\n volume=%f\n ext_phase_offset=%f\n sub_osc=%lx\n "
+	        "detuning=%f\n volume=%f\n ext_phase_offset=%f\n sub_osc=%p\n "
 	        "phase_offset=%f\n phase=%f\n sample_rate=%f\n}\n",
 	        o->wave_shape, o->modulation_algo, o->freq,
 	        o->detuning, o->volume, o->ext_phase_offset, o->sub_osc,
@@ -249,5 +249,6 @@ osc_get_sample(Oscillator* o, float sample) {
 			return osc_sample_noise(sample);
 		default:
 			fprintf(stderr, "Oscillator: Invalid wave shape\n");
+			return 0;
 	}
 }

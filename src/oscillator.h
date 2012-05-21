@@ -28,6 +28,7 @@
 #include <stdlib.h>
 
 #include "lmms_lv2.h"
+#include "lmms_math.h"
 
 enum WaveShapes {
 	OSC_WAVE_SINE,
