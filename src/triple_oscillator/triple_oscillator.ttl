@@ -539,5 +539,205 @@
 		lv2:default 1.0 ;
 		lv2:minimum 0.0 ;
 		lv2:maximum 1.0 ;
+	] ;
+
+
+	# Filter settings
+	lv2:port [
+		a lv2:InputPort ,
+			lv2:ControlPort ;
+		lv2:index 39 ;
+		lv2:symbol "fitler_enabled" ;
+		lv2:name "Filter enabled" ;
+		lv2:portProperty lv2:toggled ;
+		lv2:default 0 ;
+	] ,	[
+		a lv2:InputPort ,
+			lv2:ControlPort ;
+		lv2:index 40 ;
+		lv2:symbol "filter_type" ;
+		lv2:name "Filter type" ;
+		lv2:portProperty lv2:enumeration;
+		lv2:default 1 ;
+		lv2:scalePoint [
+			rdfs:label "LowPass" ;
+			rdf:value 0.0
+		], [
+			rdfs:label "HiPass" ;
+			rdf:value 1.0
+		], [
+			rdfs:label "BandPass csg" ;
+			rdf:value 2.0
+		], [
+			rdfs:label "BandPass czpg" ;
+			rdf:value 3.0
+		], [
+			rdfs:label "Notch" ;
+			rdf:value 4.0
+		], [
+			rdfs:label "Allpass" ;
+			rdf:value 5.0
+		], [
+			rdfs:label "Moog" ;
+			rdf:value 6.0
+		], [
+			rdfs:label "2x LowPass" ;
+			rdf:value 7.0
+		], [
+			rdfs:label "RC LowPass 12dB" ;
+			rdf:value 8.0
+		], [
+			rdfs:label "RC BandPass 12dB" ;
+			rdf:value 9.0
+		], [
+			rdfs:label "RC HighPass 12dB" ;
+			rdf:value 10.0
+		], [
+			rdfs:label "RC LowPass 24dB" ;
+			rdf:value 11.0
+		], [
+			rdfs:label "RC BandPass 24dB" ;
+			rdf:value 12.0
+		], [
+			rdfs:label "RC HighPass 24dB" ;
+			rdf:value 13.0
+		], [
+			rdfs:label "Vocal Formant Filter" ;
+			rdf:value 14.0
+		]
+	] ;
+
+
+	# Cutoff Envelope
+	lv2:port [
+		a lv2:InputPort ,
+			lv2:ControlPort ;
+		lv2:index 41 ;
+		lv2:symbol "env_cut_del" ;
+		lv2:name "Cutoff Envelope Delay" ;
+		lv2:default 0.0 ;
+		lv2:minimum 0.0 ;
+		lv2:maximum 1.0 ;
+	] ,	[
+		a lv2:InputPort ,
+			lv2:ControlPort ;
+		lv2:index 42 ;
+		lv2:symbol "env_cut_att" ;
+		lv2:name "Cutoff Envelope Attack" ;
+		lv2:default 0.3 ;
+		lv2:minimum 0.0 ;
+		lv2:maximum 1.0 ;
+	] ,	[
+		a lv2:InputPort ,
+			lv2:ControlPort ;
+		lv2:index 43 ;
+		lv2:symbol "env_cut_hold" ;
+		lv2:name "Cutoff Envelope Hold" ;
+		lv2:default 0.4 ;
+		lv2:minimum 0.0 ;
+		lv2:maximum 1.0 ;
+	] ,	[
+		a lv2:InputPort ,
+			lv2:ControlPort ;
+		lv2:index 44 ;
+		lv2:symbol "env_cut_dec" ;
+		lv2:name "Cutoff Envelope Decay" ;
+		lv2:default 0.5 ;
+		lv2:minimum 0.0 ;
+		lv2:maximum 1.0 ;
+	] ,	[
+		a lv2:InputPort ,
+			lv2:ControlPort ;
+		lv2:index 45 ;
+		lv2:symbol "env_cut_sus" ;
+		lv2:name "Cutoff Envelope Sustain" ;
+		lv2:default 0.5 ;
+		lv2:minimum 0.0 ;
+		lv2:maximum 1.0 ;
+	] ,	[
+		a lv2:InputPort ,
+			lv2:ControlPort ;
+		lv2:index 46 ;
+		lv2:symbol "env_cut_rel" ;
+		lv2:name "Cutoff Envelope Release" ;
+		lv2:default 0.5 ;
+		lv2:minimum 0.0 ;
+		lv2:maximum 1.0 ;
+	] ,	[
+		a lv2:InputPort ,
+			lv2:ControlPort ;
+		lv2:index 47 ;
+		lv2:symbol "env_cut_mod" ;
+		lv2:name "Cutoff Envelope Modulation" ;
+		lv2:default 1.0 ;
+		lv2:minimum 0.0 ;
+		lv2:maximum 1.0 ;
+	] ;
+
+
+	# Resonance Envelope
+	lv2:port [
+		a lv2:InputPort ,
+			lv2:ControlPort ;
+		lv2:index 48 ;
+		lv2:symbol "env_res_del" ;
+		lv2:name "Resonance Envelope Delay" ;
+		lv2:default 0.0 ;
+		lv2:minimum 0.0 ;
+		lv2:maximum 1.0 ;
+	] ,	[
+		a lv2:InputPort ,
+			lv2:ControlPort ;
+		lv2:index 49 ;
+		lv2:symbol "env_res_att" ;
+		lv2:name "Resonance Envelope Attack" ;
+		lv2:default 0.3 ;
+		lv2:minimum 0.0 ;
+		lv2:maximum 1.0 ;
+	] ,	[
+		a lv2:InputPort ,
+			lv2:ControlPort ;
+		lv2:index 50 ;
+		lv2:symbol "env_res_hold" ;
+		lv2:name "Resonance Envelope Hold" ;
+		lv2:default 0.4 ;
+		lv2:minimum 0.0 ;
+		lv2:maximum 1.0 ;
+	] ,	[
+		a lv2:InputPort ,
+			lv2:ControlPort ;
+		lv2:index 51 ;
+		lv2:symbol "env_res_dec" ;
+		lv2:name "Resonance Envelope Decay" ;
+		lv2:default 0.5 ;
+		lv2:minimum 0.0 ;
+		lv2:maximum 1.0 ;
+	] ,	[
+		a lv2:InputPort ,
+			lv2:ControlPort ;
+		lv2:index 52 ;
+		lv2:symbol "env_res_sus" ;
+		lv2:name "Resonance Envelope Sustain" ;
+		lv2:default 0.5 ;
+		lv2:minimum 0.0 ;
+		lv2:maximum 1.0 ;
+	] ,	[
+		a lv2:InputPort ,
+			lv2:ControlPort ;
+		lv2:index 53 ;
+		lv2:symbol "env_res_rel" ;
+		lv2:name "Resonance Envelope Release" ;
+		lv2:default 0.5 ;
+		lv2:minimum 0.0 ;
+		lv2:maximum 1.0 ;
+	] ,	[
+		a lv2:InputPort ,
+			lv2:ControlPort ;
+		lv2:index 54 ;
+		lv2:symbol "env_res_mod" ;
+		lv2:name "Resonance Envelope Modulation" ;
+		lv2:default 1.0 ;
+		lv2:minimum 0.0 ;
+		lv2:maximum 1.0 ;
 	] .
 

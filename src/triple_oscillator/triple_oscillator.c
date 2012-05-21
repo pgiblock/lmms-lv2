@@ -57,7 +57,23 @@ enum {
 	TRIPOSC_ENV_VOL_DEC = 35,
 	TRIPOSC_ENV_VOL_SUS = 36,
 	TRIPOSC_ENV_VOL_REL = 37,
-	TRIPOSC_ENV_VOL_MOD = 38
+	TRIPOSC_ENV_VOL_MOD = 38,
+	TRIPOSC_FILTER_ENABLED = 39,
+	TRIPOSC_FILTER_TYPE = 40,
+	TRIPOSC_ENV_CUT_DEL = 41,
+	TRIPOSC_ENV_CUT_ATT = 42,
+	TRIPOSC_ENV_CUT_HOLD = 43,
+	TRIPOSC_ENV_CUT_DEC = 44,
+	TRIPOSC_ENV_CUT_SUS = 45,
+	TRIPOSC_ENV_CUT_REL = 46,
+	TRIPOSC_ENV_CUT_MOD = 47,
+	TRIPOSC_ENV_RES_DEL = 48,
+	TRIPOSC_ENV_RES_ATT = 49,
+	TRIPOSC_ENV_RES_HOLD = 50,
+	TRIPOSC_ENV_RES_DEC = 51,
+	TRIPOSC_ENV_RES_SUS = 52,
+	TRIPOSC_ENV_RES_REL = 53,
+	TRIPOSC_ENV_RES_MOD = 54
 };
 
 
@@ -108,7 +124,12 @@ typedef struct {
 	float*           out_l_port;
 	float*           out_r_port;
 
+	float*           filter_enabled_port;
+	float*           filter_type_port;
+
 	EnvelopeParams env_vol_params;
+	EnvelopeParams env_cut_params;
+	EnvelopeParams env_res_params;
 
 	/* Generic instrument stuff */
 	Voice* voices;
@@ -176,6 +197,8 @@ voice_steal(TripleOscillator* triposc, uint8_t midi_note) {
 
 	// Trigger envelopes
 	envelope_trigger(v->env_vol);
+	envelope_trigger(v->env_cut);
+	envelope_trigger(v->env_res);
 
 	// Pick next victim
 	triposc->victim_idx = (triposc->victim_idx+1) % NUM_VOICES;
@@ -188,6 +211,8 @@ voice_release(TripleOscillator* triposc, uint8_t midi_note) {
 		Voice* v = &triposc->voices[i];
 		if (v->midi_note == midi_note) {
 			envelope_release(v->env_vol);
+			envelope_release(v->env_cut);
+			envelope_release(v->env_res);
 			trip_osc_voice_release(triposc, v);
 		}
 	}
@@ -234,6 +259,54 @@ triposc_connect_port(LV2_Handle instance,
 				break;
 			case TRIPOSC_ENV_VOL_MOD:
 				plugin->env_vol_params.mod = (float*)data;
+				break;
+			case TRIPOSC_FILTER_ENABLED:
+				plugin->filter_enabled_port = (float*)data;
+				break;
+			case TRIPOSC_FILTER_TYPE:
+				plugin->filter_type_port = (float*)data;
+				break;
+			case TRIPOSC_ENV_CUT_DEL:
+				plugin->env_cut_params.del = (float*)data;
+				break;
+			case TRIPOSC_ENV_CUT_ATT:
+				plugin->env_cut_params.att = (float*)data;
+				break;
+			case TRIPOSC_ENV_CUT_HOLD:
+				plugin->env_cut_params.hold = (float*)data;
+				break;
+			case TRIPOSC_ENV_CUT_DEC:
+				plugin->env_cut_params.dec = (float*)data;
+				break;
+			case TRIPOSC_ENV_CUT_SUS:
+				plugin->env_cut_params.sus = (float*)data;
+				break;
+			case TRIPOSC_ENV_CUT_REL:
+				plugin->env_cut_params.rel = (float*)data;
+				break;
+			case TRIPOSC_ENV_CUT_MOD:
+				plugin->env_cut_params.mod = (float*)data;
+				break;
+			case TRIPOSC_ENV_RES_DEL:
+				plugin->env_res_params.del = (float*)data;
+				break;
+			case TRIPOSC_ENV_RES_ATT:
+				plugin->env_res_params.att = (float*)data;
+				break;
+			case TRIPOSC_ENV_RES_HOLD:
+				plugin->env_res_params.hold = (float*)data;
+				break;
+			case TRIPOSC_ENV_RES_DEC:
+				plugin->env_res_params.dec = (float*)data;
+				break;
+			case TRIPOSC_ENV_RES_SUS:
+				plugin->env_res_params.sus = (float*)data;
+				break;
+			case TRIPOSC_ENV_RES_REL:
+				plugin->env_res_params.rel = (float*)data;
+				break;
+			case TRIPOSC_ENV_RES_MOD:
+				plugin->env_res_params.mod = (float*)data;
 				break;
 			default:
 				break;
@@ -313,6 +386,8 @@ triposc_instantiate(const LV2_Descriptor*     descriptor,
 
 	// FIXME: Hardcoding envelope for now. Yuck
 	plugin->env_vol_params.time_base = rate * 3.0f; 
+	plugin->env_cut_params.time_base = rate * 3.0f; 
+	plugin->env_res_params.time_base = rate * 3.0f; 
 
 	// FIXME: Leak!
 	TripOscGenerator *generators = malloc(sizeof(TripOscGenerator) * NUM_VOICES);
@@ -326,6 +401,8 @@ triposc_instantiate(const LV2_Descriptor*     descriptor,
 	for (int i=0; i<NUM_VOICES; ++i) {
 		plugin->voices[i].midi_note = 0xFF;
 		plugin->voices[i].env_vol = envelope_create(&plugin->env_vol_params);
+		plugin->voices[i].env_cut = envelope_create(&plugin->env_cut_params);
+		plugin->voices[i].env_res = envelope_create(&plugin->env_res_params);
 
 
 		plugin->voices[i].generator = generators + i;

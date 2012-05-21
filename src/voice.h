@@ -14,6 +14,8 @@ typedef struct {
 
 	// Volume Envelope TODO: Remove from generic Voice?
 	Envelope  *env_vol;
+	Envelope  *env_cut;
+	Envelope  *env_res;
 
 	// TODO: Function pointers for processing the voice
 	
