@@ -28,11 +28,7 @@ enum {
 
 typedef struct {
 	/* Features */
-#ifdef USE_LV2_URID
-	LV2_URID_Map*              map;
-#else
-	LV2_URI_Map_Feature*       map;
-#endif
+	LV2_URID_Map* map;
 
 	/* Ports */
 	float*  gate_in_port;
@@ -45,8 +41,8 @@ typedef struct {
 
 	/* URIs TODO: Global*/
 	struct {
-		URI_t midi_event;
-		URI_t atom_message;
+		LV2_URID midi_event;
+		LV2_URID atom_message;
 	} uris;
 
 	/* Playback state */
@@ -139,7 +135,6 @@ envgen_instantiate(const LV2_Descriptor*     descriptor,
 
 	/* Scan host features for URID map and map everything */
 	for (int i = 0; features[i]; ++i) {
-#ifdef USE_LV2_URID
 		if (!strcmp(features[i]->URI, LV2_URID_URI "#map")) {
 			plugin->map = (LV2_URID_Map*)features[i]->data;
 			plugin->uris.midi_event = plugin->map->map(
@@ -147,18 +142,6 @@ envgen_instantiate(const LV2_Descriptor*     descriptor,
 			plugin->uris.atom_message = plugin->map->map(
 					plugin->map->handle, ATOM_MESSAGE_URI);
 		}
-#else
-		if (!strcmp(features[i]->URI, LV2_URI_MAP_URI)) {
-			fprintf(stderr, "Found URI-Map.");
-			plugin->map = (LV2_URI_Map_Feature*)features[i]->data;
-			plugin->uris.midi_event = plugin->map->uri_to_id(
-					plugin->map->callback_data, NULL, MIDI_EVENT_URI);
-			plugin->uris.atom_message = plugin->map->uri_to_id(
-					plugin->map->callback_data, NULL, ATOM_MESSAGE_URI);
-			fprintf(stderr, "%s -> %d\n", MIDI_EVENT_URI, plugin->uris.midi_event);
-			fprintf(stderr, "%s -> %d\n", ATOM_MESSAGE_URI, plugin->uris.atom_message);
-		}
-#endif
 	}
 
 	if (!plugin->map) {
@@ -203,11 +186,7 @@ envgen_run(LV2_Handle instance,
 static uint32_t
 envgen_map_uri(EnvelopeGenerator* plugin, const char* uri)
 {
-#ifdef USE_LV2_ATOM
 	return plugin->map->map(plugin->map->handle, uri);
-#else
-	return plugin->map->uri_to_id(plugin->map->callback_data, NULL, uri);
-#endif
 }
 
 

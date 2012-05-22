@@ -5,29 +5,10 @@
 
 #include "config.h"
 
-// "Standard" LV2 Headers
-
 #include "lv2/lv2plug.in/ns/lv2core/lv2.h"
 #include "lv2/lv2plug.in/ns/ext/state/state.h"
-
-// Switch "Experimental" LV2
-
-#ifdef USE_LV2_ATOM
 #include "lv2/lv2plug.in/ns/ext/atom/util.h"
-typedef LV2_Atom_Sequence      Event_Buffer_t;
-#else
-#include "lv2/lv2plug.in/ns/ext/event/event.h"
-#include "lv2/lv2plug.in/ns/ext/event/event-helpers.h"
-typedef LV2_Event_Buffer     Event_Buffer_t;
-#endif
-
-#ifdef USE_LV2_URID
 #include "lv2/lv2plug.in/ns/ext/urid/urid.h"
-typedef LV2_URID    URI_t;
-#else
-#include "lv2/lv2plug.in/ns/ext/uri-map/uri-map.h"
-typedef uint32_t    URI_t;
-#endif // USE_LV2_URID
 
 // Typedefs and Utility functions
 

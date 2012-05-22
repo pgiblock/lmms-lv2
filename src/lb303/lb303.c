@@ -95,14 +95,10 @@ typedef struct {
 
 typedef struct {
 	/* Features */
-#ifdef USE_LV2_URID
 	LV2_URID_Map*              map;
-#else
-	LV2_URI_Map_Feature*       map;
-#endif
 
 	/* Ports */
-	Event_Buffer_t*  event_port;
+	LV2_Atom_Sequence*  event_port;
 	float*           output_port;
 	float*           slide_port;
 	float*           slide_dec_port;
@@ -117,8 +113,8 @@ typedef struct {
 
 	/* URIs TODO: Global*/
 	struct {
-		URI_t midi_event;
-		URI_t atom_message;
+		LV2_URID midi_event;
+		LV2_URID atom_message;
 	} uris;
 
 	/* Playback state */
@@ -161,7 +157,7 @@ lb303_connect_port(LV2_Handle instance,
 
 	switch (port) {
 		case LB303_CONTROL:
-			plugin->event_port = (Event_Buffer_t*)data;
+			plugin->event_port = (LV2_Atom_Sequence*)data;
 			break;
 		case LB303_OUT:
 			plugin->output_port = (float*)data;
@@ -268,7 +264,6 @@ lb303_instantiate(const LV2_Descriptor*     descriptor,
 
 	/* Scan host features for URID map and map everything */
 	for (int i = 0; features[i]; ++i) {
-#ifdef USE_LV2_URID
 		if (!strcmp(features[i]->URI, LV2_URID_URI "#map")) {
 			plugin->map = (LV2_URID_Map*)features[i]->data;
 			plugin->uris.midi_event = plugin->map->map(
@@ -276,18 +271,6 @@ lb303_instantiate(const LV2_Descriptor*     descriptor,
 			plugin->uris.atom_message = plugin->map->map(
 					plugin->map->handle, ATOM_MESSAGE_URI);
 		}
-#else
-		if (!strcmp(features[i]->URI, LV2_URI_MAP_URI)) {
-			fprintf(stderr, "Found URI-Map.");
-			plugin->map = (LV2_URI_Map_Feature*)features[i]->data;
-			plugin->uris.midi_event = plugin->map->uri_to_id(
-					plugin->map->callback_data, NULL, MIDI_EVENT_URI);
-			plugin->uris.atom_message = plugin->map->uri_to_id(
-					plugin->map->callback_data, NULL, ATOM_MESSAGE_URI);
-			fprintf(stderr, "%s -> %d\n", MIDI_EVENT_URI, plugin->uris.midi_event);
-			fprintf(stderr, "%s -> %d\n", ATOM_MESSAGE_URI, plugin->uris.atom_message);
-		}
-#endif
 	}
 
 	if (!plugin->map) {
@@ -314,7 +297,6 @@ lb303_run(LV2_Handle instance,
 	uint32_t    ev_frames;
 	uint32_t    f = plugin->frame;
 
-#ifdef USE_LV2_ATOM
 	LV2_Atom_Event* ev = lv2_atom_sequence_begin(&plugin->event_port->body);
 
 	for (pos = 0; pos < sample_count;) {
@@ -325,22 +307,6 @@ lb303_run(LV2_Handle instance,
 			ev = NULL;
 			ev_frames = sample_count;
 		}
-#else
-	LV2_Event_Iterator ev_i;
-	lv2_event_begin(&ev_i, plugin->event_port);
-	LV2_Event const * ev = NULL;
-
-	for (pos = 0; pos < sample_count;) {
-		// Check for next event
-		if (lv2_event_is_valid(&ev_i)) {
-			ev        = lv2_event_get(&ev_i, NULL);
-			ev_frames = ev->frames;
-			lv2_event_increment(&ev_i);
-		} else {
-			ev = NULL;
-			ev_frames = sample_count;
-		}
-#endif
 
 		// Run until next event
 		for (; pos < ev_frames; ++pos, ++f) {
@@ -411,14 +377,9 @@ lb303_run(LV2_Handle instance,
 
 		// Process event
 		if (ev) {
-#ifdef USE_LV2_ATOM
 			if (ev->body.type == plugin->uris.midi_event) {
 				uint8_t* const data = (uint8_t* const)(ev + 1);
 				ev = lv2_atom_sequence_next(ev);
-#else
-			if (ev->type == plugin->uris.midi_event || ev->type == 1) {
-				uint8_t* const data = (uint8_t* const)(ev) + sizeof(LV2_Event);
-#endif
 				uint8_t const  cmd  = data[0] & 0xF0;
 				//fprintf(stderr, "  cmd=%d data1=%d data2=%d\n", cmd, data[1], data[2]);
 				if (cmd == 0x90) {
@@ -493,11 +454,7 @@ lb303_run(LV2_Handle instance,
 					}
 				}
 			} else {
-#ifdef USE_LV2_ATOM
 				fprintf(stderr, "Unknown event type %d\n", ev->body.type);
-#else
-				fprintf(stderr, "Unknown event type %d (size %d)\n", ev->type, ev->size);
-#endif
 			}
 		}
 
@@ -511,11 +468,7 @@ lb303_run(LV2_Handle instance,
 static uint32_t
 lb303_map_uri(LB303Synth* plugin, const char* uri)
 {
-#ifdef USE_LV2_ATOM
 	return plugin->map->map(plugin->map->handle, uri);
-#else
-	return plugin->map->uri_to_id(plugin->map->callback_data, NULL, uri);
-#endif
 }
 
 

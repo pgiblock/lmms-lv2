@@ -2,6 +2,7 @@
 import os
 import shutil
 from waflib import Logs
+from waflib import Options
 
 # Variables for 'waf dist'
 APPNAME = 'lmms.lv2'
@@ -16,17 +17,12 @@ out = 'build'
 def options(opt):
     opt.load('compiler_c')
 
-    opt.add_option('--use-urid', dest='use_urid', default=False, action='store_true',
-                   help='Use the urid extension in instead of uri-map')
-    opt.add_option('--use-atom', dest='use_atom', default=False, action='store_true',
-                   help='Use the atom extension in instead of event')
+    opt.add_option('--max-polyphony', dest='max_polyphony', type='int', default=8,
+                   help='Maximum instrument polyphony (static parameter for now)')
 
 def configure(conf):
     conf.load('compiler_c')
-    conf.env.append_value('CFLAGS', '-Wall')
-    conf.env.append_value('CFLAGS', '-ggdb')
-    conf.env.append_value('CFLAGS', '-std=c99')
-    conf.env.append_value('CFLAGS', '-fPIC')
+    conf.env.append_value('CFLAGS', ['-Wall', '-ggdb', '-std=c99', '-fPIC'])
 
     # TODO: don't hardcode
     conf.env.LV2DIR = LV2DIR;
@@ -43,14 +39,14 @@ def configure(conf):
             uselib_store='GTK2', args=['--cflags', '--libs'], 
             mandatory=False)
 
-    conf.define('USE_LV2_URID', 1)
-    conf.define('USE_LV2_ATOM', 1)
-
     # Pre-calculate pattern for plugin *.so files
     pat = conf.env['cshlib_PATTERN']
     if pat.startswith('lib'):
         pat = pat[3:]
     conf.env['pluginlib_PATTERN'] = pat
+
+    # Additional macro definitions
+    conf.define('NUM_VOICES', Options.options.max_polyphony)
 
     conf.write_config_header('src/config.h')
 
