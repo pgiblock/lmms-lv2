@@ -14,6 +14,8 @@
 #include "triple_oscillator.h"
 
 #define NUM_VOICES 8
+const float CUT_FREQ_MULTIPLIER = 6000.0f;
+const float RES_MULTIPLIER = 2.0f;
 
 // PORTS
 enum {
@@ -60,20 +62,22 @@ enum {
 	TRIPOSC_ENV_VOL_MOD = 38,
 	TRIPOSC_FILTER_ENABLED = 39,
 	TRIPOSC_FILTER_TYPE = 40,
-	TRIPOSC_ENV_CUT_DEL = 41,
-	TRIPOSC_ENV_CUT_ATT = 42,
-	TRIPOSC_ENV_CUT_HOLD = 43,
-	TRIPOSC_ENV_CUT_DEC = 44,
-	TRIPOSC_ENV_CUT_SUS = 45,
-	TRIPOSC_ENV_CUT_REL = 46,
-	TRIPOSC_ENV_CUT_MOD = 47,
-	TRIPOSC_ENV_RES_DEL = 48,
-	TRIPOSC_ENV_RES_ATT = 49,
-	TRIPOSC_ENV_RES_HOLD = 50,
-	TRIPOSC_ENV_RES_DEC = 51,
-	TRIPOSC_ENV_RES_SUS = 52,
-	TRIPOSC_ENV_RES_REL = 53,
-	TRIPOSC_ENV_RES_MOD = 54
+	TRIPOSC_FILTER_CUT = 41,
+	TRIPOSC_FILTER_RES = 42,
+	TRIPOSC_ENV_CUT_DEL = 43,
+	TRIPOSC_ENV_CUT_ATT = 44,
+	TRIPOSC_ENV_CUT_HOLD = 45,
+	TRIPOSC_ENV_CUT_DEC = 46,
+	TRIPOSC_ENV_CUT_SUS = 47,
+	TRIPOSC_ENV_CUT_REL = 48,
+	TRIPOSC_ENV_CUT_MOD = 49,
+	TRIPOSC_ENV_RES_DEL = 50,
+	TRIPOSC_ENV_RES_ATT = 51,
+	TRIPOSC_ENV_RES_HOLD = 52,
+	TRIPOSC_ENV_RES_DEC = 53,
+	TRIPOSC_ENV_RES_SUS = 54,
+	TRIPOSC_ENV_RES_REL = 55,
+	TRIPOSC_ENV_RES_MOD = 56
 };
 
 
@@ -126,6 +130,8 @@ typedef struct {
 
 	float*           filter_enabled_port;
 	float*           filter_type_port;
+	float*           filter_cut_port;
+	float*           filter_res_port;
 
 	EnvelopeParams env_vol_params;
 	EnvelopeParams env_cut_params;
@@ -185,7 +191,7 @@ trip_osc_voice_release(TripleOscillator* triposc, Voice* v) {
 }
 
 
-void
+Voice*
 voice_steal(TripleOscillator* triposc, uint8_t midi_note) {
 	// We are just going round-robin for now
 	// TODO: Prioritize on vol-envelope state
@@ -193,6 +199,7 @@ voice_steal(TripleOscillator* triposc, uint8_t midi_note) {
 
 	// Stealing
 	v->midi_note = midi_note;
+	// Would be func-pointer or voice_steal would be called by tovs()
 	trip_osc_voice_steal(triposc, v);
 
 	// Trigger envelopes
@@ -202,6 +209,7 @@ voice_steal(TripleOscillator* triposc, uint8_t midi_note) {
 
 	// Pick next victim
 	triposc->victim_idx = (triposc->victim_idx+1) % NUM_VOICES;
+	return v;
 }
 	
 
@@ -265,6 +273,12 @@ triposc_connect_port(LV2_Handle instance,
 				break;
 			case TRIPOSC_FILTER_TYPE:
 				plugin->filter_type_port = (float*)data;
+				break;
+			case TRIPOSC_FILTER_CUT:
+				plugin->filter_cut_port = (float*)data;
+				break;
+			case TRIPOSC_FILTER_RES:
+				plugin->filter_res_port = (float*)data;
 				break;
 			case TRIPOSC_ENV_CUT_DEL:
 				plugin->env_cut_params.del = (float*)data;
@@ -403,7 +417,7 @@ triposc_instantiate(const LV2_Descriptor*     descriptor,
 		plugin->voices[i].env_vol = envelope_create(&plugin->env_vol_params);
 		plugin->voices[i].env_cut = envelope_create(&plugin->env_cut_params);
 		plugin->voices[i].env_res = envelope_create(&plugin->env_res_params);
-
+		plugin->voices[i].filter  = filter_create(rate);
 
 		plugin->voices[i].generator = generators + i;
 		// TODO: Another callback voice_alloc and voice_free??
@@ -469,8 +483,8 @@ triposc_run(LV2_Handle instance,
 	uint32_t    ev_frames;
 	uint32_t    f = plugin->frame;
 
-	float outbuf[sample_count];
-	float envbuf[sample_count];
+	float outbuf[2][sample_count];
+	float envbuf[3][sample_count];
 
 #ifdef USE_LV2_ATOM
 	LV2_Atom_Event* ev = lv2_atom_sequence_begin(&plugin->event_port->body);
@@ -511,18 +525,26 @@ triposc_run(LV2_Handle instance,
 		for (int i=0; i<NUM_VOICES; ++i) {
 			Voice* v = &plugin->voices[i];
 			if (v->midi_note != 0xFF) {
-				envelope_run(v->env_vol, envbuf, outlen);
+				// Calculate envelopes
+				envelope_run(v->env_vol, envbuf[0], outlen);
+				envelope_run(v->env_cut, envbuf[1], outlen);
+				envelope_run(v->env_res, envbuf[2], outlen);
 
+				// Generate samples and apply filters
 				TripOscGenerator* g = (TripOscGenerator*)v->generator;
-				osc_update(&g->osc_l[0], outbuf, outlen);
-				for (int f=0; f<outlen; ++f) {
-					out_l[f] += outbuf[f] * envbuf[f];
-				}
 				// TODO: Make a mixing version of the run function
-
-				osc_update(&g->osc_r[0], outbuf, outlen);
+				
+				osc_update(&g->osc_l[0], outbuf[0], outlen);
+				osc_update(&g->osc_r[0], outbuf[1], outlen);
 				for (int f=0; f<outlen; ++f) {
-					out_r[f] += outbuf[f] * envbuf[f];
+					// TODO: only recalc when needed
+					const float cut = expKnobVal(envbuf[1][f]) * CUT_FREQ_MULTIPLIER + 
+					                  *plugin->filter_cut_port;
+					const float res = expKnobVal(envbuf[2][f]) * RES_MULTIPLIER +
+					                  *plugin->filter_res_port;
+					filter_calc_coeffs(v->filter, cut, res);
+					out_l[f] +=  filter_get_sample(v->filter, outbuf[0][f], 0) * envbuf[0][f];
+					out_r[f] +=  filter_get_sample(v->filter, outbuf[1][f], 1) * envbuf[0][f];
 				}
 			}
 		}
@@ -543,7 +565,8 @@ triposc_run(LV2_Handle instance,
 				//fprintf(stderr, "  cmd=%d data1=%d data2=%d\n", cmd, data[1], data[2]);
 				if (cmd == 0x90) {
 					// Note On
-					voice_steal(plugin, data[1]);
+					Voice *v = voice_steal(plugin, data[1]);
+					v->filter->type = *plugin->filter_type_port;
 				} else if (cmd == 0x80) {
 					// Note Off
 					// TODO need envelope

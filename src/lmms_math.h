@@ -54,7 +54,11 @@ fraction(float _x) {
 
 #define qMax(x,y) ((x)>(y)?(x):(y))
 #define qMin(x,y) ((x)<(y)?(x):(y))
-#define tLimit(x, x1, x2) ( (x)<(x1)?(x1):( (x)>(x2)?(x2):(x) ) )
+#define tLimit(x, x1, x2) ( qMax((x1), qMin((x), (x2))) )
+
+static inline float expKnobVal( float _val ) {
+	return ( ( _val < 0 ) ? -_val : _val ) * _val;
+}
 
 #define FAST_RAND_MAX 32767
 static inline int
