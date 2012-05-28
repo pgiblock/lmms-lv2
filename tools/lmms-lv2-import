@@ -1,0 +1,129 @@
+#!/usr/bin/env python
+
+import os.path
+import subprocess
+import sys
+from rdflib import Graph
+from rdflib import Literal, URIRef, BNode, Namespace
+from rdflib import RDF, RDFS
+from xml.etree import ElementTree
+
+def bind(g, prefix, uri):
+    g.bind(prefix, uri)
+    return Namespace(uri)
+
+def flt(s):
+    try:
+        return float(s)
+    except ValueError:
+        sys.stderr.write('Warning: Could not parse value "%s" as float.\n' % s)
+        return 0
+
+# Adds a port to preset 
+def add_port(preset, symbol, value):
+    port = BNode()
+    g.add((port, LV2['symbol'], Literal(symbol)))
+    g.add((port, PSET['value'], Literal(value)))
+    g.add((preset, LV2['port'], port))
+
+# Add ports for envelope parameters found in element el
+def parse_envlfo(preset, el, env_name):
+    tx = {  'pdel': 'del',
+            'att' : 'att',
+            'hold': 'hold',
+            'dec' : 'dec',
+            'sus' : 'sus',
+            'rel' : 'rel',
+            'amt' : 'mod' }
+    #'lpdel' , 'latt' , 'lspd' , 'lamt' , 'x100' , 'lshp' 
+
+    for o,n in tx.iteritems():
+        add_port(preset, '%s_%s' % (env_name, n), flt(el.attrib[o])) 
+
+# Add ports for triple oscillator parameters found in element el
+def parse_triposc(preset, el):
+    tx = {  'vol'      : 'vol',
+            'pan'      : 'pan',
+            'coarse'   : 'detune_coarse',
+            'finel'    : 'detune_fine_l',
+            'finer'    : 'detune_fine_r',
+            'phoffset' : 'phase_offset',
+            'stphdetun': 'phase_detune' }
+            #'userwavefile'
+
+    add_port(preset, 'osc1_osc2_mod', flt(el.attrib['modalgo1'])) 
+    add_port(preset, 'osc2_osc3_mod', flt(el.attrib['modalgo2'])) 
+    for i in xrange(3):
+        for o,n in tx.iteritems():
+            add_port(preset, 'osc%d_%s' % (i+1, n), flt(el.attrib['%s%d'%(o,i)])) 
+
+####
+
+out_dir = sys.argv[-1:][0]
+devnull = open(os.devnull, 'w')
+
+# Manifest
+manifest = Graph()
+LV2      = bind(manifest, 'lv2',      'http://lv2plug.in/ns/lv2core#')
+PSET     = bind(manifest, 'pset',     'http://lv2plug.in/ns/ext/presets#')
+PGPLUG   = bind(manifest, 'pgplug',   'http://pgiblock.net/plugins/')
+PGPRESET = bind(manifest, 'pgpreset', 'http://pgiblock.net/presets/')
+
+# Preset files
+for xml_fn in sys.argv[1:-1]:
+    base_fn = os.path.basename(xml_fn)
+    ttl_fn  = '%s.ttl' % os.path.splitext(base_fn)[0]
+    print(base_fn)
+
+    xml  = subprocess.check_output(['lmms', '-u', xml_fn], stderr=devnull)
+    tree = ElementTree.ElementTree(ElementTree.fromstring(xml))
+
+    # get the root "multimediaproject" element
+    root = tree.getroot()
+
+    # validate file type
+    if root.tag not in ['multimediaproject', 'multimedia-project'] or root.attrib['type'] not in ['channelsettings', 'instrumenttracksettings']:
+        print('%s: File must be an LMMS preset.' % xml_fn)
+        sys.exit(1)
+
+    # useful elements
+    settings = root.find('instrumenttracksettings')
+    track    = settings.find('instrumenttrack')
+    eldata   = track.find('eldata')
+
+    # create graph, add common prefixes
+    g = Graph()
+    LV2      = bind(g, 'lv2',      'http://lv2plug.in/ns/lv2core#')
+    PSET     = bind(g, 'pset',     'http://lv2plug.in/ns/ext/presets#')
+    PGPLUG   = bind(g, 'pgplug',   'http://pgiblock.net/plugins/')
+
+    # preset info
+    preset = URIRef('')
+    g.add((preset, RDF.type, PSET['Preset']))
+    try:
+        g.add((preset, RDFS.label, Literal(track.attrib['name'])))
+    except:
+        g.add((preset, RDFS.label, Literal(settings.attrib['name'])))
+    g.add((preset, LV2['appliesTo'], PGPLUG['triple-oscillator']))
+
+    # preset ports
+    if track.find('tripleoscillator') is not None:
+        parse_triposc(preset, track.find('tripleoscillator'))
+    else:
+        parse_triposc(preset, track.find('instrument/tripleoscillator'))
+    parse_envlfo(preset, eldata.find('elvol'), 'env_vol')
+    parse_envlfo(preset, eldata.find('elcut'), 'env_cut')
+    parse_envlfo(preset, eldata.find('elres'), 'env_res')
+
+    # barf it out
+    g.serialize(os.path.join(out_dir, ttl_fn), format='turtle')
+
+    # manifest description
+    preset = URIRef(ttl_fn)
+    manifest.add((preset, RDF.type, PSET['Preset']))
+    manifest.add((preset, RDFS.seeAlso, URIRef(ttl_fn)))
+    manifest.add((preset, LV2['appliesTo'], PGPLUG['triple-oscillator']))
+
+manifest.serialize(os.path.join(out_dir, 'manifest.ttl'), format='turtle')
+
+devnull.close()
