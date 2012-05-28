@@ -496,21 +496,31 @@ triposc_run(LV2_Handle instance,
 				envelope_run(v->env_cut, envbuf[1], outlen);
 				envelope_run(v->env_res, envbuf[2], outlen);
 
-				// Generate samples and apply filters
 				TripOscGenerator* g = (TripOscGenerator*)v->generator;
 				// TODO: Make a mixing version of the run function
 				
+				// Generate samples
 				osc_update(&g->osc_l[0], outbuf[0], outlen);
 				osc_update(&g->osc_r[0], outbuf[1], outlen);
-				for (int f=0; f<outlen; ++f) {
-					// TODO: only recalc when needed
-					const float cut = expKnobVal(envbuf[1][f]) * CUT_FREQ_MULTIPLIER + 
-					                  *plugin->filter_cut_port;
-					const float res = expKnobVal(envbuf[2][f]) * RES_MULTIPLIER +
-					                  *plugin->filter_res_port;
-					filter_calc_coeffs(v->filter, cut, res);
-					out_l[f] +=  filter_get_sample(v->filter, outbuf[0][f], 0) * envbuf[0][f];
-					out_r[f] +=  filter_get_sample(v->filter, outbuf[1][f], 1) * envbuf[0][f];
+
+				if (*plugin->filter_enabled_port > 0.5f) {
+					// Filter enabled
+					for (int f=0; f<outlen; ++f) {
+						// TODO: only recalc when needed
+						const float cut = expKnobVal(envbuf[1][f]) * CUT_FREQ_MULTIPLIER + 
+															*plugin->filter_cut_port;
+						const float res = expKnobVal(envbuf[2][f]) * RES_MULTIPLIER +
+															*plugin->filter_res_port;
+						filter_calc_coeffs(v->filter, cut, res);
+						out_l[f] +=  filter_get_sample(v->filter, outbuf[0][f], 0) * envbuf[0][f];
+						out_r[f] +=  filter_get_sample(v->filter, outbuf[1][f], 1) * envbuf[0][f];
+					}
+				} else {
+					// No Filter
+					for (int f=0; f<outlen; ++f) {
+						out_l[f] +=  outbuf[0][f] * envbuf[0][f];
+						out_r[f] +=  outbuf[1][f] * envbuf[0][f];
+					}
 				}
 			}
 		}

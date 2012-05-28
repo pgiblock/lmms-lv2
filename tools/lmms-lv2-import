@@ -38,7 +38,17 @@ def parse_envlfo(preset, el, env_name):
     #'lpdel' , 'latt' , 'lspd' , 'lamt' , 'x100' , 'lshp' 
 
     for o,n in tx.iteritems():
-        add_port(preset, '%s_%s' % (env_name, n), flt(el.attrib[o])) 
+        add_port(preset, '%s_%s' % (env_name, n), flt(el.attrib[o]))
+
+# Add ports for "global" envlfo filter settings        
+def parse_eldata(preset, el):
+    tx = {  'fwet' : 'filter_enabled',
+            'ftype': 'filter_type',
+            'fcut' : 'filter_cut',
+            'fres' : 'filter_res' }
+
+    for o,n in tx.iteritems():
+        add_port(preset, n, flt(el.attrib[o]))
 
 # Add ports for triple oscillator parameters found in element el
 def parse_triposc(preset, el):
@@ -81,10 +91,10 @@ except OSError as ex:
 
 # Manifest
 manifest = Graph()
-LV2      = bind(manifest, 'lv2',      'http://lv2plug.in/ns/lv2core#')
-PSET     = bind(manifest, 'pset',     'http://lv2plug.in/ns/ext/presets#')
-PGPLUG   = bind(manifest, 'pgplug',   'http://pgiblock.net/plugins/')
-PGPRESET = bind(manifest, 'pgpreset', 'http://pgiblock.net/presets/')
+LV2    = bind(manifest, 'lv2',    'http://lv2plug.in/ns/lv2core#')
+PSET   = bind(manifest, 'pset',   'http://lv2plug.in/ns/ext/presets#')
+PGPLUG = bind(manifest, 'pgplug', 'http://pgiblock.net/plugins/')
+PGPSET = bind(manifest, 'pgpset', 'http://pgiblock.net/presets/')
 
 # Preset files
 for xml_fn in sys.argv[1:-1]:
@@ -111,7 +121,6 @@ for xml_fn in sys.argv[1:-1]:
     # create graph, add common prefixes
     g = Graph()
     LV2      = bind(g, 'lv2',      'http://lv2plug.in/ns/lv2core#')
-    PSET     = bind(g, 'pset',     'http://lv2plug.in/ns/ext/presets#')
     PGPLUG   = bind(g, 'pgplug',   'http://pgiblock.net/plugins/')
 
     # preset info
@@ -128,6 +137,7 @@ for xml_fn in sys.argv[1:-1]:
         parse_triposc(preset, track.find('tripleoscillator'))
     else:
         parse_triposc(preset, track.find('instrument/tripleoscillator'))
+    parse_eldata(preset, eldata)    
     parse_envlfo(preset, eldata.find('elvol'), 'env_vol')
     parse_envlfo(preset, eldata.find('elcut'), 'env_cut')
     parse_envlfo(preset, eldata.find('elres'), 'env_res')
