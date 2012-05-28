@@ -433,12 +433,8 @@ triposc_instantiate(const LV2_Descriptor*     descriptor,
 
 	/* Scan host features for URID map and map everything */
 	for (int i = 0; features[i]; ++i) {
-		if (!strcmp(features[i]->URI, LV2_URID_URI "#map")) {
+		if (!strcmp(features[i]->URI, LV2_URID__map)) {
 			plugin->map = (LV2_URID_Map*)features[i]->data;
-			plugin->uris.midi_event = plugin->map->map(
-					plugin->map->handle, MIDI_EVENT_URI);
-			plugin->uris.atom_message = plugin->map->map(
-					plugin->map->handle, ATOM_MESSAGE_URI);
 		}
 	}
 
@@ -446,6 +442,11 @@ triposc_instantiate(const LV2_Descriptor*     descriptor,
 		fprintf(stderr, "Host does not support urid:map.\n");
 		goto fail;
 	}
+
+	plugin->uris.midi_event = plugin->map->map(
+			plugin->map->handle, MIDI_EVENT_URI);
+	plugin->uris.atom_message = plugin->map->map(
+			plugin->map->handle, ATOM_MESSAGE_URI);
 
 	return (LV2_Handle)plugin;
 
