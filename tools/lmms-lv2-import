@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-import os.path
+import errno, os, os.path
 import subprocess
 import sys
 from rdflib import Graph
@@ -59,8 +59,25 @@ def parse_triposc(preset, el):
 
 ####
 
+# Verify and store options
+if len(sys.argv) < 3:
+    sys.stderr.write(
+            'Usage: %s <preset1.xpf> [preset2.xpf ...] <out-directory>\n'
+            % sys.argv[0])
+    sys.exit(1)
+
 out_dir = sys.argv[-1:][0]
 devnull = open(os.devnull, 'w')
+
+# Create output directory if needed
+try:
+    os.makedirs(out_dir)
+except OSError as ex:
+    if ex.errno == errno.EEXIST:
+        pass
+    else:
+        sys.stderr.write('Error: Could not create output directory\n')
+        sys.exit(1)
 
 # Manifest
 manifest = Graph()
@@ -83,7 +100,7 @@ for xml_fn in sys.argv[1:-1]:
 
     # validate file type
     if root.tag not in ['multimediaproject', 'multimedia-project'] or root.attrib['type'] not in ['channelsettings', 'instrumenttracksettings']:
-        print('%s: File must be an LMMS preset.' % xml_fn)
+        sys.stderr.write('%s: File must be an LMMS preset.\n' % xml_fn)
         sys.exit(1)
 
     # useful elements
@@ -125,5 +142,6 @@ for xml_fn in sys.argv[1:-1]:
     manifest.add((preset, LV2['appliesTo'], PGPLUG['triple-oscillator']))
 
 manifest.serialize(os.path.join(out_dir, 'manifest.ttl'), format='turtle')
-
 devnull.close()
+
+print('Done.')
