@@ -503,25 +503,32 @@ triposc_run(LV2_Handle instance,
 				osc_update(&g->osc_l[0], outbuf[0], outlen);
 				osc_update(&g->osc_r[0], outbuf[1], outlen);
 
+				float vol_amt_add = (1.0f - *plugin->env_vol_params.mod);
 				if (*plugin->filter_enabled_port > 0.5f) {
 					// Filter enabled
 					for (int f=0; f<outlen; ++f) {
 						// TODO: only recalc when needed
+						// WHOAA??? OR IS IT expKnoVal(port) + envbuf; with possible multiplier and/or zeroAmount???
 						const float cut = expKnobVal(envbuf[1][f]) * CUT_FREQ_MULTIPLIER + 
 															*plugin->filter_cut_port;
 						const float res = expKnobVal(envbuf[2][f]) * RES_MULTIPLIER +
 															*plugin->filter_res_port;
+						// FIXME: Is calc_coeffs supposed to run each frame?
 						filter_calc_coeffs(v->filter, cut, res);
-						out_l[f] +=  filter_get_sample(v->filter, outbuf[0][f], 0) * envbuf[0][f];
-						out_r[f] +=  filter_get_sample(v->filter, outbuf[1][f], 1) * envbuf[0][f];
+						out_l[f] +=  filter_get_sample(v->filter, outbuf[0][f], 0) * (envbuf[0][f] + vol_amt_add);
+						out_r[f] +=  filter_get_sample(v->filter, outbuf[1][f], 1) * (envbuf[0][f] + vol_amt_add);
 					}
 				} else {
 					// No Filter
 					for (int f=0; f<outlen; ++f) {
-						out_l[f] +=  outbuf[0][f] * envbuf[0][f];
-						out_r[f] +=  outbuf[1][f] * envbuf[0][f];
+						out_l[f] +=  outbuf[0][f] * (envbuf[0][f] + vol_amt_add);
+						out_r[f] +=  outbuf[1][f] * (envbuf[0][f] + vol_amt_add);
 					}
 				}
+/*TODO:
+				Actually kill notes
+				Apply default release
+				*/
 			}
 		}
 		pos = ev_frames;
