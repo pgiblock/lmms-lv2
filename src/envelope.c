@@ -6,6 +6,7 @@
 #include <string.h>
 
 #include "envelope.h"
+#include "lmms_math.h"
 
 // STATES
 enum {
@@ -18,11 +19,49 @@ enum {
 	ENV_REL
 };
 
-
-static inline float
-envelope_exp_val( float val )
+// Advance envelope state to next non-zero-length section
+static void
+advance_state(EnvelopeParams* p, EnvelopeState* st)
 {
-	return ( ( val < 0 ) ? -val : val ) * val;
+	switch (st->q) {
+		case ENV_OFF:
+			if (*p->del > 0.0f) {
+				st->q       = ENV_DEL;
+				st->nframes = p->time_base * expKnobVal(*p->del);
+				st->frame   = 0;
+				return;
+			}
+			// Fall-through
+		case ENV_DEL:
+			if (*p->att > 0.0f) {
+				st->q       = ENV_ATT;
+				st->nframes = p->time_base * expKnobVal(*p->att);
+				st->frame   = 0;
+				return;
+			}
+			// Fall-through
+		case ENV_ATT:
+			if (*p->hold > 0.0f) {
+				st->q       = ENV_HOLD;
+				st->nframes = p->time_base * expKnobVal(*p->hold);
+				st->frame   = 0;
+				return;
+			}
+			// Fall-through
+		case ENV_HOLD:
+			if (*p->dec > 0.0f && *p->sus > 0.0f) {
+				st->q       = ENV_DEC;
+				st->nframes = p->time_base * expKnobVal((*p->dec)*(*p->sus));
+				st->frame   = 0;
+				return;
+			}
+			// Fall-through
+		case ENV_DEC:
+			st->q       = ENV_SUS;
+			st->nframes = 0;
+			st->frame   = 0;
+			return;
+	}
 }
 
 
@@ -55,9 +94,8 @@ envelope_destroy(Envelope* e)
 void
 envelope_trigger(Envelope* e)
 {
-	e->st.q       = ENV_DEL;
-	e->st.nframes = e->p->time_base * envelope_exp_val(*e->p->del);
-	e->st.frame   = 0;
+	e->st.q = ENV_OFF;
+	advance_state(e->p, &e->st);
 }
 
 
@@ -72,10 +110,15 @@ envelope_release(Envelope* e)
 			e->st.q = ENV_OFF;
 			break;
 		default:
-			e->st.q        = ENV_REL;
-			e->st.nframes  = e->p->time_base * envelope_exp_val(*e->p->rel);
-			e->st.frame    = 0;
-			e->st.rel_base = e->st.last_sample; 
+			// Only do release if release has any length
+			if (*e->p->rel > 0.0f) {
+				e->st.q        = ENV_REL;
+				e->st.nframes  = e->p->time_base * expKnobVal(*e->p->rel);
+				e->st.frame    = 0;
+				e->st.rel_base = e->st.last_sample;
+			} else {
+				e->st.q = ENV_OFF;
+			}
 			break;
 	}
 }
@@ -103,9 +146,7 @@ envelope_run(Envelope* e, float* samples, uint32_t nsamples)
 				// State change
 				e->st.frame++;
 				if (e->st.frame > e->st.nframes) {
-					e->st.q       = ENV_ATT;
-					e->st.nframes = e->p->time_base * envelope_exp_val(*e->p->att);
-					e->st.frame   = 0;
+					advance_state(e->p, &e->st);
 				}
 				break;
 
@@ -115,9 +156,7 @@ envelope_run(Envelope* e, float* samples, uint32_t nsamples)
 				// State
 				e->st.frame++;
 				if (e->st.frame >= e->st.nframes) {
-					e->st.q       = ENV_HOLD;
-					e->st.nframes = e->p->time_base * envelope_exp_val(*e->p->hold);
-					e->st.frame   = 0;
+					advance_state(e->p, &e->st);
 				}
 				break;
 
@@ -127,9 +166,7 @@ envelope_run(Envelope* e, float* samples, uint32_t nsamples)
 				// State
 				e->st.frame++;
 				if (e->st.frame > e->st.nframes) {
-					e->st.q       = ENV_DEC;
-					e->st.nframes = e->p->time_base * envelope_exp_val((*e->p->dec)*(*e->p->sus));
-					e->st.frame   = 0;
+					advance_state(e->p, &e->st);
 				}
 				break;
 
@@ -140,9 +177,7 @@ envelope_run(Envelope* e, float* samples, uint32_t nsamples)
 				//State
 				e->st.frame++;
 				if (e->st.frame > e->st.nframes) {
-					e->st.q       = ENV_SUS;
-					e->st.nframes = 0;
-					e->st.frame   = 0;
+					advance_state(e->p, &e->st);
 				}
 				break;
 
