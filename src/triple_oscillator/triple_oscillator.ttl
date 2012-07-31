@@ -547,7 +547,7 @@
 		a lv2:InputPort ,
 			lv2:ControlPort ;
 		lv2:index 39 ;
-		lv2:symbol "fitler_enabled" ;
+		lv2:symbol "filter_enabled" ;
 		lv2:name "Filter enabled" ;
 		lv2:portProperty lv2:toggled ;
 		lv2:default 0 ;

@@ -58,7 +58,8 @@ def parse_triposc(preset, el):
             'finel'    : 'detune_fine_l',
             'finer'    : 'detune_fine_r',
             'phoffset' : 'phase_offset',
-            'stphdetun': 'phase_detune' }
+            'stphdetun': 'phase_detune',
+            'wavetype' : 'wave_shape'}
             #'userwavefile'
 
     add_port(preset, 'osc1_osc2_mod', flt(el.attrib['modalgo1'])) 
