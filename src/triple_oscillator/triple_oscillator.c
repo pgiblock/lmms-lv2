@@ -546,7 +546,6 @@ triposc_run(LV2_Handle instance,
 					// Filter enabled
 					for (int f=0; f<outlen; ++f) {
 						// TODO: only recalc when needed
-						// WHOAA??? OR IS IT expKnoVal(port) + envbuf; with possible multiplier and/or zeroAmount???
 						const float cut = expKnobVal(envbuf_cut[f]) * CUT_FREQ_MULTIPLIER
 															+ *plugin->filter_cut_port;
 						const float res = envbuf_res[f] * RES_MULTIPLIER
@@ -556,6 +555,7 @@ triposc_run(LV2_Handle instance,
 						float out_mod_amt = envbuf_vol[f] + vol_amt_add;
 						out_mod_amt = out_mod_amt * out_mod_amt;
 
+						//printf("%f\t%f\t%f\t%f\n", cut, res, outbuf[0][f], outbuf[1][f]);
 						// FIXME: Is calc_coeffs supposed to run each frame?
 						filter_calc_coeffs(v->filter, cut, res);
 						out_l[f] +=  filter_get_sample(v->filter, outbuf[0][f], 0) * out_mod_amt;
@@ -564,7 +564,7 @@ triposc_run(LV2_Handle instance,
 				} else {
 					// No Filter
 					for (int f=0; f<outlen; ++f) {
-						// The actual volume for this sample (squared mix of envolope and 1.0f)
+						// The actual volume for this sample (squared mix of envelope and 1.0f)
 						float out_mod_amt = envbuf_vol[f] + vol_amt_add;
 						out_mod_amt = out_mod_amt * out_mod_amt;
 

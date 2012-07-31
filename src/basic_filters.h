@@ -54,6 +54,8 @@ enum FilterTypes {
 
 
 struct Filter_st {
+	// TODO: Collapse all these coeffs into a union or something
+	
 	// filter coeffs
 	float b0a0, b1a0, b2a0, a1a0, a2a0;
 

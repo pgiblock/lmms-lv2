@@ -50,6 +50,15 @@ filter_create(float sample_rate) {
 
 void
 filter_reset(Filter *f, float sample_rate) {
+	// These coeff assignments are probably unneccessary
+	f->b0a0 = 0.0f;
+	f->b1a0 = 0.0f;
+	f->b2a0 = 0.0f;
+	f->a1a0 = 0.0f;
+	f->a2a0 = 0.0f;
+	f->rca  = 0.0f;
+	f->rcb  = 1.0f;
+	f->rcc  = 0.0f;
 	f->sample_rate = sample_rate;
 	filter_clear_history(f);
 }
@@ -212,9 +221,10 @@ filter_get_sample_rc24(Filter* f, sample_t in0, int chnl) {
 
 static inline sample_t
 filter_get_sample_formant(Filter* f, sample_t in0, int chnl) {
-	sample_t lp, hp, bp, in;
-	int out = 0, o;
+	sample_t lp, hp, bp, in, out;
+	int o;
 
+	out = 0.f;
 	for(o=0; o<4; o++) {
 		// first formant
 		in = in0 + f->vfbp[0][chnl] * f->vfq;
@@ -390,6 +400,9 @@ filter_get_sample(Filter* f, sample_t in, int chnl) {
 
 		default:
 			// filter
+			//printf("%d %f %f %f %f %f %f %f %f %f %f\n", chnl, in,
+			//		f->b0a0, f->b1a0, f->b2a0, f->a1a0, f->a2a0,
+			//		f->in1[chnl], f->in2[chnl], f->ou1[chnl], f->ou2[chnl]);
 			out = f->b0a0*in +
 				f->b1a0*f->in1[chnl] +
 				f->b2a0*f->in2[chnl] -
@@ -422,80 +435,87 @@ filter_calc_coeffs(Filter* f, float freq, float q) {
 	freq = qMax(freq, MIN_FREQ);
 	q    = qMax(q, MIN_Q);
 
-	if( f->type == FILTER_LOWPASS_RC12  ||
-			f->type == FILTER_BANDPASS_RC12 ||
-			f->type == FILTER_HIGHPASS_RC12 ||
-			f->type == FILTER_LOWPASS_RC24  ||
-			f->type == FILTER_BANDPASS_RC24 ||
-			f->type == FILTER_HIGHPASS_RC24 ) {
+	switch (f->type) {
+		case FILTER_LOWPASS_RC12:
+		case FILTER_BANDPASS_RC12:
+		case FILTER_HIGHPASS_RC12:
+		case FILTER_LOWPASS_RC24:
+		case FILTER_BANDPASS_RC24:
+		case FILTER_HIGHPASS_RC24:
+		{
+			if (freq < 50.f) {
+				freq = 50.f;
+			}
 
-		if( freq < 50.f ) {
-			freq = 50.f;
+			f->rca = 1.0f - (1.0f/(f->sample_rate*4)) / ( (1.0f/(freq*2.0f*M_PI)) + (1.0f/(f->sample_rate*4)) );
+			f->rcb = 1.0f - f->rca;
+			f->rcc = (1.0f/(freq*2.0f*M_PI)) / ( (1.0f/(freq*2.0f*M_PI)) + (1.0f/(f->sample_rate*4)) );
+
+			// Stretch Q/resonance, as self-oscillation reliably starts at a q of ~2.5 - ~2.6
+			f->rcq = q/4.f;
+			return;
 		}
+		case FILTER_FORMANTFILTER:
+		{
+			// formats for a, e, i, o, u, a
+			const float formants[5][2] = {
+				{ 1000, 1400 },
+				{ 500, 2300 },
+				{ 320, 3200 },
+				{ 500, 1000 },
+				{ 320, 800 }
+			};
 
-		f->rca = 1.0f - (1.0f/(f->sample_rate*4)) / ( (1.0f/(freq*2.0f*M_PI)) + (1.0f/(f->sample_rate*4)) );
-		f->rcb = 1.0f - f->rca;
-		f->rcc = (1.0f/(freq*2.0f*M_PI)) / ( (1.0f/(freq*2.0f*M_PI)) + (1.0f/(f->sample_rate*4)) );
+			// Stretch Q/resonance
+			f->vfq = q/4.f;
 
-		// Stretch Q/resonance, as self-oscillation reliably starts at a q of ~2.5 - ~2.6
-		f->rcq = q/4.f;
-	}
-	else if( f->type == FILTER_FORMANTFILTER ) {
-		// formats for a, e, i, o, u, a
-		const float formants[5][2] = {
-			{ 1000, 1400 },
-			{ 500, 2300 },
-			{ 320, 3200 },
-			{ 500, 1000 },
-			{ 320, 800 } };
+			// frequency in lmms ranges from 1Hz to 14000Hz
+			const int   vowel = (int)( floor( freq/14000.f * 4.f ) );
+			const float fract = ( freq/14000.f * 4.f ) - (float)vowel;
 
-		// Stretch Q/resonance
-		f->vfq = q/4.f;
+			// interpolate between formant frequencies
+			const float f0 = formants[vowel+0][0] * (1.0f - fract) + 
+			                 formants[vowel+1][0] * (fract);
 
-		// frequency in lmms ranges from 1Hz to 14000Hz
-		const int   vowel = (int)( floor( freq/14000.f * 4.f ) );
-		const float fract = ( freq/14000.f * 4.f ) - (float)vowel;
+			const float f1 = formants[vowel+0][1] * (1.0f - fract) +
+			                 formants[vowel+1][1] * (fract);
 
-		// interpolate between formant frequencies         
-		const float f0 = formants[vowel+0][0] * (1.0f - fract) + 
-		                 formants[vowel+1][0] * (fract);
+			f->vfa[0] = 1.0f - (1.0f/(f->sample_rate*4)) /
+			            ( (1.0f/(f0*2.0f*M_PI)) + (1.0f/(f->sample_rate*4)) );
+			f->vfb[0] = 1.0f - f->vfa[0];
+			f->vfc[0] = (1.0f/(f0*2.0f*M_PI)) /
+			            ( (1.0f/(f0*2.0f*M_PI)) + (1.0f/(f->sample_rate*4)) );
 
-		const float f1 = formants[vowel+0][1] * (1.0f - fract) +
-		                 formants[vowel+1][1] * (fract);
+			f->vfa[1] = 1.0f - (1.0f/(f->sample_rate*4)) /
+			            ( (1.0f/(f1*2.0f*M_PI)) + (1.0f/(f->sample_rate*4)) );
+			f->vfb[1] = 1.0f - f->vfa[1];
+			f->vfc[1] = (1.0f/(f1*2.0f*M_PI)) /
+			            ( (1.0f/(f1*2.0f*M_PI)) + (1.0f/(f->sample_rate*4)) );
+			return;
+		}
+		case FILTER_MOOG:
+		{
+			// [ 0 - 0.5 ]
+			const float fr = freq / f->sample_rate;
+			// (Empirical tuning)
+			f->p = (3.6f - 3.2f * fr) * fr;
+			f->k = 2.0f * f->p - 1;
+			f->r = q * powf( M_E, (1 - f->p) * 1.386249f );
 
-		f->vfa[0] = 1.0f - (1.0f/(f->sample_rate*4)) /
-			( (1.0f/(f0*2.0f*M_PI)) + (1.0f/(f->sample_rate*4)) );
-		f->vfb[0] = 1.0f - f->vfa[0];
-		f->vfc[0] = (1.0f/(f0*2.0f*M_PI)) /
-			( (1.0f/(f0*2.0f*M_PI)) + (1.0f/(f->sample_rate*4)) );
-
-		f->vfa[1] = 1.0f - (1.0f/(f->sample_rate*4)) /
-			( (1.0f/(f1*2.0f*M_PI)) + (1.0f/(f->sample_rate*4)) );
-		f->vfb[1] = 1.0f - f->vfa[1];
-		f->vfc[1] = (1.0f/(f1*2.0f*M_PI)) /
-			( (1.0f/(f1*2.0f*M_PI)) + (1.0f/(f->sample_rate*4)) );
-	}
-
-	if( f->type == FILTER_MOOG )
-	{
-		// [ 0 - 0.5 ]
-		const float fr = freq / f->sample_rate;
-		// (Empirical tuning)
-		f->p = (3.6f - 3.2f * fr) * fr;
-		f->k = 2.0f * f->p - 1;
-		f->r = q * powf( M_E, (1 - f->p) * 1.386249f );
-
-		/* TODO
-		if( f->doubleFilter ) {
-			f->subFilter->f->r = f->r;
-			f->subFilter->f->p = f->p;
-			f->subFilter->f->k = f->k;
-		} */
-		return;
+			/* TODO
+			if( f->doubleFilter ) {
+				f->subFilter->f->r = f->r;
+				f->subFilter->f->p = f->p;
+				f->subFilter->f->k = f->k;
+			} */
+			return;
+		}
+		default:
+			break;
 	}
 
 	// other filters
-	const float omega = M_2_PI * freq / f->sample_rate;
+	const float omega = 2.0f*M_PI * freq / f->sample_rate;
 	const float tsin = sinf(omega);
 	const float tcos = cosf(omega);
 	//float alpha;
@@ -507,6 +527,9 @@ filter_calc_coeffs(Filter* f, float freq, float q) {
 	const float alpha = 0.5f * tsin / q;
 
 	const float a0 = 1.0f / (1.0f + alpha);
+	
+	//printf("CALC: %f %f %f %f %f %f %f\n", freq, f->sample_rate,
+	//       omega, tsin, tcos, alpha, a0);
 
 	f->a1a0 = -2.0f * tcos * a0;
 	f->a2a0 = ( 1.0f - alpha ) * a0;
