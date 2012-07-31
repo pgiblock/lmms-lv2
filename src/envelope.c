@@ -124,7 +124,7 @@ envelope_release(Envelope* e)
 }
 
 
-void
+int
 envelope_run(Envelope* e, float* samples, uint32_t nsamples)
 {
 	// FIXME: Crap
@@ -208,4 +208,7 @@ envelope_run(Envelope* e, float* samples, uint32_t nsamples)
 		}
 	}
 	e->st.last_sample = o;
+
+	// Return 1 if envelope is still active
+	return e->st.q != ENV_OFF;
 }

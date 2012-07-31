@@ -523,9 +523,12 @@ triposc_run(LV2_Handle instance,
 		// Accumulate voices
 		for (int i=0; i<NUM_VOICES; ++i) {
 			Voice* v = &plugin->voices[i];
+
 			if (v->midi_note != 0xFF) {
+				int active;
+
 				// Calculate envelopes
-				envelope_run(v->env_vol, envbuf_vol, outlen);
+				active = envelope_run(v->env_vol, envbuf_vol, outlen);
 				envelope_run(v->env_cut, envbuf_cut, outlen);
 				envelope_run(v->env_res, envbuf_res, outlen);
 
@@ -572,10 +575,13 @@ triposc_run(LV2_Handle instance,
 						out_r[f] +=  outbuf[1][f] * out_mod_amt;
 					}
 				}
-/*TODO:
-				Actually kill notes
-				Apply default release
-				*/
+
+				// Kill finished voice
+				if (!active) {
+					v->midi_note = 0xFF;
+				}
+
+				/* TODO: Apply default release */
 			}
 		}
 		pos = ev_frames;
