@@ -27,6 +27,12 @@
 
 #include "oscillator.h"
 
+float blep_table[BLEPSIZE];
+float blamp_table[BLEPSIZE];
+
+// FIXME: refactor
+sample_t osc_get_aa_sample_saw (Oscillator *o, float increment, float sync_offset);
+
 Oscillator*
 osc_create() {
 	Oscillator* o = (Oscillator*)malloc(sizeof(Oscillator));
@@ -40,10 +46,12 @@ osc_create() {
 }
 
 void
-osc_reset(Oscillator* o, float wave_shape, float modulation_algo,
+osc_reset (Oscillator* o, float wave_shape, float modulation_algo,
            float freq, float detuning, float volume,
            Oscillator* sub_osc, float phase_offset,
-           float sample_rate) {
+           float sample_rate)
+{
+	int i;
 
 	// FIXME: Ideally share some config across oscillators in the same instrument
 	o->wave_shape = wave_shape;
@@ -56,6 +64,16 @@ osc_reset(Oscillator* o, float wave_shape, float modulation_algo,
 	o->phase_offset = phase_offset;
 	o->phase = phase_offset;
 	o->sample_rate = sample_rate;
+
+	// TODO: Singleton construction of BLEP/BLAMP tables
+	if (!blep_table[0] && !blamp_table[0]) {
+		fprintf(stderr, "Creating MINBLEP tables.\n");
+		blep_init(blep_table, blamp_table, BLEPSIZE);
+	}
+
+	for (i = 0; i < NROFBLEPS; ++i) {
+		blep_state_init(o->bleps + i);
+	}
 }
 
 
@@ -110,9 +128,11 @@ osc_sync_init(Oscillator* o, sample_t* buff, const fpp_t len) {
 
 
 // if we have no sub-osc, we can't do any modulation... just get our samples
-void osc_update_no_sub(Oscillator* o, sample_t* buff, fpp_t len) {
+static void
+osc_update_no_sub(Oscillator* o, sample_t* buff, fpp_t len) {
 	const float osc_coeff = o->freq * o->detuning;
 
+	/* OLD
 	osc_recalc_phase(o);
 
 	for (fpp_t frame = 0; frame < len; ++frame) {
@@ -120,11 +140,18 @@ void osc_update_no_sub(Oscillator* o, sample_t* buff, fpp_t len) {
 		//printf("b[f]=%f, ph=%f, vol=%f, coef=%f\n", buff[frame], o->phase, o->volume, osc_coeff);
 		o->phase += osc_coeff;
 	}
+	*/
+	
+  o->phase_mod = 0;
+	for (fpp_t frame = 0; frame < len; ++frame ) {
+		buff[frame] = osc_get_aa_sample_saw(o, osc_coeff, -1.0); // * m_volume;
+	}
 }
 
 
 // do pm by using sub-osc as modulator
-void osc_update_pm(Oscillator* o, sample_t* buff, fpp_t len) {
+static void
+osc_update_pm(Oscillator* o, sample_t* buff, fpp_t len) {
 	const float osc_coeff = o->freq * o->detuning;
 
 	osc_update(o->sub_osc, buff, len);
@@ -138,7 +165,8 @@ void osc_update_pm(Oscillator* o, sample_t* buff, fpp_t len) {
 
 
 // do am by using sub-osc as modulator
-void osc_update_am(Oscillator* o, sample_t* buff, fpp_t len) {
+static void
+osc_update_am(Oscillator* o, sample_t* buff, fpp_t len) {
 	const float osc_coeff = o->freq * o->detuning;
 
 	osc_update(o->sub_osc, buff, len);
@@ -152,7 +180,7 @@ void osc_update_am(Oscillator* o, sample_t* buff, fpp_t len) {
 
 
 // do mix by using sub-osc as mix-sample
-void osc_update_mix(Oscillator* o, sample_t* buff, fpp_t len) {
+static void osc_update_mix(Oscillator* o, sample_t* buff, fpp_t len) {
 	const float osc_coeff = o->freq * o->detuning;
 
 	osc_update(o->sub_osc, buff, len);
@@ -167,7 +195,7 @@ void osc_update_mix(Oscillator* o, sample_t* buff, fpp_t len) {
 
 // sync with sub-osc (every time sub-osc starts new period, we also start new
 // period)
-void osc_update_sync(Oscillator* o, sample_t* buff, fpp_t len) {
+static void osc_update_sync(Oscillator* o, sample_t* buff, fpp_t len) {
 	const float osc_coeff = o->freq * o->detuning;
 	const float sub_osc_coeff = osc_sync_init(o->sub_osc, buff, len);
 
@@ -184,7 +212,7 @@ void osc_update_sync(Oscillator* o, sample_t* buff, fpp_t len) {
 
 
 // do fm by using sub-osc as modulator
-void osc_update_fm(Oscillator* o, sample_t* buff, fpp_t len) {
+static void osc_update_fm(Oscillator* o, sample_t* buff, fpp_t len) {
 	const float osc_coeff = o->freq * o->detuning;
 	const float srate_correction = 44100.0f / o->sample_rate;
 
@@ -252,3 +280,78 @@ osc_get_sample(Oscillator* o, float sample) {
 			return 0;
 	}
 }
+
+
+// FIXME: increment can be deduced from Oscillator o.
+sample_t
+osc_get_aa_sample_saw (Oscillator *o, float increment, float sync_offset)
+{
+	// limit increment to C9 (higher does not make any musical sense and just
+	// causes us a lot of trouble to correct this...)
+	float inc_limit = 8372.018089619 / o->sample_rate;
+	float inc = ( increment > inc_limit )? inc_limit:increment;
+
+	// initialize current result with 0.0
+	float value      = 0.0;
+	float last_value = 0.0;
+	float corr_amp   = 0.0;
+	float corr_phs   = 0.0;
+
+	int i;
+
+	// update phase
+	if (sync_offset < 0.0) {
+		o->last_phase = o->phase;
+		o->phase      = o->phase + inc + o->phase_mod;
+
+		if (o->phase >= 1.0) {
+			o->phase = fmodf( o->phase + 4.0, 1.0 );
+			corr_phs = o->phase / (inc + o->phase_mod);
+			corr_amp = 2.0;
+		} else if (o->phase <  0.0) {
+			o->phase = fmodf( o->phase + 4.0, 1.0 );
+			corr_phs = (1.0 - o->phase)/(inc - o->phase_mod);
+			corr_amp = -2.0;
+		}
+
+		// Actual saw sample FIXME: use function
+		value = -1.0f + o->phase * 2.0f;
+	} else {
+		o->last_phase = o->phase + inc*(1.0 - sync_offset);
+		o->phase      = sync_offset;
+
+		last_value = -1.0f + o->last_phase * 2.0f;
+		value      = -1.0f + o->phase      * 2.0f;
+		corr_phs   = o->phase / inc;
+		corr_amp   = last_value - value;      
+	}
+
+	if (fabsf(corr_amp) > 0.00001) { // need to correct this samples?
+		// find an currently unused correction-pipeline and activate it
+		// FIXME: Just do round-robin, no search
+		for (i = 0; i < NROFBLEPS; ++i) {
+			// unused correction pipeline 1?
+			if (o->bleps[i].ptr >= 8) { 
+				o->bleps[i].ptr = 0;  // reset table-pointer to activate it
+				o->bleps[i].vol = corr_amp;
+				o->bleps[i].phs = corr_phs;
+				break; // quit this after the first free pipeline found
+			}
+		}
+	}
+
+	// now go through all pipelines, check if active and process if so...
+	// TODO: Fold into loop above
+	for (i = 0; i < NROFBLEPS; ++i) {
+		// FIXME: When is ptr < 0?
+		if (o->bleps[i].ptr >= 0 && o->bleps[i].ptr < 8) {
+			const int offset = ( o->bleps[i].ptr + o->bleps[i].phs ) * BLEPLEN;    
+			value += o->bleps[i].vol * blep_table[ offset % BLEPSIZE ];
+			o->bleps[i].ptr++;
+		}
+	}
+
+	// puuhh... finished here... ;-)
+	return value;
+}
+

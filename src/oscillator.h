@@ -27,8 +27,13 @@
 
 #include <stdlib.h>
 
+#include "blep.h"
 #include "lmms_lv2.h"
 #include "lmms_math.h"
+
+#define BLEPSIZE 8192
+#define BLEPLEN  (BLEPSIZE/8)
+#define NROFBLEPS 8
 
 enum WaveShapes {
 	OSC_WAVE_SINE,
@@ -63,6 +68,11 @@ struct Oscillator_st {
 	struct Oscillator_st* sub_osc;
 	float phase_offset;
 	float phase;
+	// Experimental MINBLEP stuff
+	float phase_mod;
+	float last_phase;
+	BlepState bleps[NROFBLEPS];
+
 	// TODO: const sampleBuffer * m_userWave;
 	float sample_rate;
 };
