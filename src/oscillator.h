@@ -68,10 +68,12 @@ struct Oscillator_st {
 	struct Oscillator_st* sub_osc;
 	float phase_offset;
 	float phase;
+	
 	// Experimental MINBLEP stuff
+	BlepState bleps[NROFBLEPS];
+	int   blep_idx;
 	float phase_mod;
 	float last_phase;
-	BlepState bleps[NROFBLEPS];
 
 	// TODO: const sampleBuffer * m_userWave;
 	float sample_rate;

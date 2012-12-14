@@ -71,8 +71,10 @@ osc_reset (Oscillator* o, float wave_shape, float modulation_algo,
 		blep_init(blep_table, blamp_table, BLEPSIZE);
 	}
 
+	// Init bleps for this oscillator
 	for (i = 0; i < NROFBLEPS; ++i) {
 		blep_state_init(o->bleps + i);
+		blep_idx = 0;
 	}
 }
 
@@ -142,7 +144,7 @@ osc_update_no_sub(Oscillator* o, sample_t* buff, fpp_t len) {
 	}
 	*/
 	
-  o->phase_mod = 0;
+	o->phase_mod = 0;
 	for (fpp_t frame = 0; frame < len; ++frame ) {
 		buff[frame] = osc_get_aa_sample_saw(o, osc_coeff, -1.0); // * m_volume;
 	}
@@ -195,7 +197,8 @@ static void osc_update_mix(Oscillator* o, sample_t* buff, fpp_t len) {
 
 // sync with sub-osc (every time sub-osc starts new period, we also start new
 // period)
-static void osc_update_sync(Oscillator* o, sample_t* buff, fpp_t len) {
+static void osc_update_sync (Oscillator* o, sample_t* buff, fpp_t len)
+{
 	const float osc_coeff = o->freq * o->detuning;
 	const float sub_osc_coeff = osc_sync_init(o->sub_osc, buff, len);
 
@@ -212,7 +215,9 @@ static void osc_update_sync(Oscillator* o, sample_t* buff, fpp_t len) {
 
 
 // do fm by using sub-osc as modulator
-static void osc_update_fm(Oscillator* o, sample_t* buff, fpp_t len) {
+static void
+osc_update_fm (Oscillator* o, sample_t* buff, fpp_t len)
+{
 	const float osc_coeff = o->freq * o->detuning;
 	const float srate_correction = 44100.0f / o->sample_rate;
 
@@ -228,7 +233,8 @@ static void osc_update_fm(Oscillator* o, sample_t* buff, fpp_t len) {
 
 
 void
-osc_update(Oscillator* o, sample_t* buff, fpp_t len) {
+osc_update (Oscillator* o, sample_t* buff, fpp_t len)
+{
 	if (o->freq >= o->sample_rate / 2) {
 		return;
 	}
@@ -259,7 +265,8 @@ osc_update(Oscillator* o, sample_t* buff, fpp_t len) {
 
 
 sample_t
-osc_get_sample(Oscillator* o, float sample) {
+osc_get_sample (Oscillator* o, float sample)
+{
 	switch ((int)(o->wave_shape)) {
 		case OSC_WAVE_SINE:
 			return osc_sample_sin(sample);
@@ -301,15 +308,19 @@ osc_get_aa_sample_saw (Oscillator *o, float increment, float sync_offset)
 
 	// update phase
 	if (sync_offset < 0.0) {
+		// Normal case, just increment phase
 		o->last_phase = o->phase;
 		o->phase      = o->phase + inc + o->phase_mod;
 
+		// TODO: Would be nice to remove this conditional somehow
 		if (o->phase >= 1.0) {
-			o->phase = fmodf( o->phase + 4.0, 1.0 );
+			// sawtooth just fell down cliff
+			o->phase = safe_fmodf(o->phase);
 			corr_phs = o->phase / (inc + o->phase_mod);
 			corr_amp = 2.0;
 		} else if (o->phase <  0.0) {
-			o->phase = fmodf( o->phase + 4.0, 1.0 );
+			// sawtooth just went up cliff 
+			o->phase = safe_fmodf(o->phase);
 			corr_phs = (1.0 - o->phase)/(inc - o->phase_mod);
 			corr_amp = -2.0;
 		}
@@ -317,33 +328,30 @@ osc_get_aa_sample_saw (Oscillator *o, float increment, float sync_offset)
 		// Actual saw sample FIXME: use function
 		value = -1.0f + o->phase * 2.0f;
 	} else {
+		// Syncing, 
 		o->last_phase = o->phase + inc*(1.0 - sync_offset);
 		o->phase      = sync_offset;
 
 		last_value = -1.0f + o->last_phase * 2.0f;
 		value      = -1.0f + o->phase      * 2.0f;
+		// Get new values for correction.
 		corr_phs   = o->phase / inc;
-		corr_amp   = last_value - value;      
+		corr_amp   = last_value - value;
 	}
 
+
 	if (fabsf(corr_amp) > 0.00001) { // need to correct this samples?
-		// find an currently unused correction-pipeline and activate it
-		// FIXME: Just do round-robin, no search
-		for (i = 0; i < NROFBLEPS; ++i) {
-			// unused correction pipeline 1?
-			if (o->bleps[i].ptr >= 8) { 
-				o->bleps[i].ptr = 0;  // reset table-pointer to activate it
-				o->bleps[i].vol = corr_amp;
-				o->bleps[i].phs = corr_phs;
-				break; // quit this after the first free pipeline found
-			}
-		}
+		// Round-robin assignment of BLEP pipelines
+		o->bleps[blep_idx].ptr = 0;  // reset table-pointer to activate it
+		o->bleps[blep_idx].vol = corr_amp;
+		o->bleps[blep_idx].phs = corr_phs;
+		blep_idx = (blep_idx+1) % NROFBLEPS;
 	}
 
 	// now go through all pipelines, check if active and process if so...
-	// TODO: Fold into loop above
 	for (i = 0; i < NROFBLEPS; ++i) {
 		// FIXME: When is ptr < 0?
+		// TODO: Could start at blep_idx and search until we find an expired one
 		if (o->bleps[i].ptr >= 0 && o->bleps[i].ptr < 8) {
 			const int offset = ( o->bleps[i].ptr + o->bleps[i].phs ) * BLEPLEN;    
 			value += o->bleps[i].vol * blep_table[ offset % BLEPSIZE ];

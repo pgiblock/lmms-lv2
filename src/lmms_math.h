@@ -68,4 +68,6 @@ fast_rand() {
 	return( (unsigned)( next / 65536 ) % 32768 );
 }
 
+#define safe_fmodf(x) fmodf((x) + 4.0f, 1.0f)
+
 #endif

@@ -9,6 +9,6 @@ typedef struct BlepState_st {
 } BlepState;
 
 void blep_init (float *blep, float *blamp, int n);
-void blep_state_init(BlepState* st);
+void blep_state_init (BlepState* st);
 
 #endif // BLEP_H__
