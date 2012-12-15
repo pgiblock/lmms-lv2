@@ -31,7 +31,12 @@ float blep_table[BLEPSIZE];
 float blamp_table[BLEPSIZE];
 
 // FIXME: refactor
+sample_t osc_get_aa_sample (Oscillator* o, float increment, float sync_offset);
+
+sample_t osc_get_aa_sample_triangle (Oscillator *o, float increment, float sync_offset);
 sample_t osc_get_aa_sample_saw (Oscillator *o, float increment, float sync_offset);
+
+////
 
 Oscillator*
 osc_create() {
@@ -74,7 +79,7 @@ osc_reset (Oscillator* o, float wave_shape, float modulation_algo,
 	// Init bleps for this oscillator
 	for (i = 0; i < NROFBLEPS; ++i) {
 		blep_state_init(o->bleps + i);
-		blep_idx = 0;
+		o->blep_idx = 0;
 	}
 }
 
@@ -146,7 +151,7 @@ osc_update_no_sub(Oscillator* o, sample_t* buff, fpp_t len) {
 	
 	o->phase_mod = 0;
 	for (fpp_t frame = 0; frame < len; ++frame ) {
-		buff[frame] = osc_get_aa_sample_saw(o, osc_coeff, -1.0); // * m_volume;
+		buff[frame] = osc_get_aa_sample(o, osc_coeff, -1.0); // * m_volume;
 	}
 }
 
@@ -271,15 +276,15 @@ osc_get_sample (Oscillator* o, float sample)
 		case OSC_WAVE_SINE:
 			return osc_sample_sin(sample);
 		case OSC_WAVE_TRIANGLE:
-			return osc_sample_triangle(sample);
+			return osc_sample_triangle(fraction(sample));
 		case OSC_WAVE_SAW:
-			return osc_sample_saw(sample);
+			return osc_sample_saw(fraction(sample));
 		case OSC_WAVE_SQUARE:
-			return osc_sample_square(sample);
+			return osc_sample_square(fraction(sample));
 		case OSC_WAVE_MOOG:
-			return osc_sample_moog_saw(sample);
+			return osc_sample_moog_saw(fraction(sample));
 		case OSC_WAVE_EXPONENTIAL:
-			return osc_sample_exp(sample);
+			return osc_sample_exp(fraction(sample));
 		case OSC_WAVE_NOISE:
 			return osc_sample_noise(sample);
 		default:
@@ -288,6 +293,82 @@ osc_get_sample (Oscillator* o, float sample)
 	}
 }
 
+
+sample_t
+osc_get_aa_sample_triangle (Oscillator *o, float increment, float sync_offset)
+{
+	// limit increment to C9 (higher does not make any musical sense and just
+	// causes us a lot of trouble to correct this...)
+	const float inc_limit = 8372.018089619 / o->sample_rate;
+	const float inc = ( increment > inc_limit )? inc_limit:increment;
+
+	// initialize current result with 0.0
+	float value      = 0.0f;
+	float last_value = 0.0f;
+	float corr_amp   = 0.0f;
+	float corr_phs   = 0.0f;
+	int   corr_typ   = 1;
+
+	// update phase
+	if (sync_offset < 0.0f) {
+		o->last_phase = o->phase;
+		o->phase      = safe_fmodf(o->phase + inc + o->phase_mod);
+
+		// TODO: Figure out where 16 and -16 came from.
+		//       I can only come up with 8 = 4 (ramps per period) * 2 (amplitude range)
+		//       Also, why is it not divided by (inc * o->phase_mod)?
+		//       Finally, do we need to handle last_phase <= 0.25 && phase > 0.75?
+		if (o->last_phase <= 0.25 && o->phase > 0.25) {
+			// Discontinuity at the peak
+			corr_phs = (o->phase - 0.25 )/inc;
+			corr_amp = +16*inc;
+		} else if (o->last_phase <= 0.75 && o->phase > 0.75) {
+			// Discontinuity at the trough
+			corr_phs = (o->phase - 0.75 )/inc;
+			corr_amp = -16*inc;
+		}
+
+		value = osc_sample_triangle(o->phase);
+	} else {
+		// sync
+		o->last_phase = o->phase + inc*(1.0 - sync_offset);
+		o->phase      = sync_offset;
+
+		last_value = osc_sample_triangle(o->last_phase);
+		value      = osc_sample_triangle(o->phase);
+		corr_phs   = o->phase / inc;
+		corr_amp   = last_value - value;      
+		corr_typ   = false; // this needs a blep
+	}
+
+	if (fabsf(corr_amp) > 0.00001) { // need to correct this samples?
+		// Round-robin assignment of BLEP pipelines
+		o->bleps[o->blep_idx].ptr = 0;  // reset table-pointer to activate it
+		o->bleps[o->blep_idx].vol = corr_amp;
+		o->bleps[o->blep_idx].phs = corr_phs;
+		o->bleps[o->blep_idx].typ = corr_typ;
+		o->blep_idx = (o->blep_idx+1) % NROFBLEPS;
+	}
+
+	// now go through all pipelines, check if active and process if so...
+	for (int i = 0; i < NROFBLEPS; ++i) {
+		// FIXME: When is ptr < 0?
+		// TODO: Could start at blep_idx and search until we find an expired one
+		if (o->bleps[i].ptr >= 0 && o->bleps[i].ptr < 8) {
+			const int offset = ( o->bleps[i].ptr + o->bleps[i].phs ) * BLEPLEN;
+			// FIXME: EASY to remove this if
+			if (o->bleps[i].typ) {
+				value += o->bleps[i].vol * blamp_table[ offset % BLEPSIZE ];
+			} else {
+				value += o->bleps[i].vol * blep_table[ offset % BLEPSIZE ];
+			}
+			o->bleps[i].ptr++;
+		}
+	}
+
+	// puuhh... finished here... ;-)
+	return value;
+}
 
 // FIXME: increment can be deduced from Oscillator o.
 sample_t
@@ -326,26 +407,28 @@ osc_get_aa_sample_saw (Oscillator *o, float increment, float sync_offset)
 		}
 
 		// Actual saw sample FIXME: use function
-		value = -1.0f + o->phase * 2.0f;
+		value = osc_sample_saw(o->phase);
 	} else {
 		// Syncing, 
 		o->last_phase = o->phase + inc*(1.0 - sync_offset);
 		o->phase      = sync_offset;
 
-		last_value = -1.0f + o->last_phase * 2.0f;
-		value      = -1.0f + o->phase      * 2.0f;
+		last_value = osc_sample_saw(o->last_phase);
+		value      = osc_sample_saw(o->phase);
 		// Get new values for correction.
 		corr_phs   = o->phase / inc;
 		corr_amp   = last_value - value;
+		// corr_typ   = false; (Default behavior)
 	}
 
 
 	if (fabsf(corr_amp) > 0.00001) { // need to correct this samples?
 		// Round-robin assignment of BLEP pipelines
-		o->bleps[blep_idx].ptr = 0;  // reset table-pointer to activate it
-		o->bleps[blep_idx].vol = corr_amp;
-		o->bleps[blep_idx].phs = corr_phs;
-		blep_idx = (blep_idx+1) % NROFBLEPS;
+		o->bleps[o->blep_idx].ptr = 0;  // reset table-pointer to activate it
+		o->bleps[o->blep_idx].vol = corr_amp;
+		o->bleps[o->blep_idx].phs = corr_phs;
+		o->bleps[o->blep_idx].typ = 0;  // NOTE: This was missing in the original
+		o->blep_idx = (o->blep_idx+1) % NROFBLEPS;
 	}
 
 	// now go through all pipelines, check if active and process if so...
@@ -353,7 +436,7 @@ osc_get_aa_sample_saw (Oscillator *o, float increment, float sync_offset)
 		// FIXME: When is ptr < 0?
 		// TODO: Could start at blep_idx and search until we find an expired one
 		if (o->bleps[i].ptr >= 0 && o->bleps[i].ptr < 8) {
-			const int offset = ( o->bleps[i].ptr + o->bleps[i].phs ) * BLEPLEN;    
+			const int offset = ( o->bleps[i].ptr + o->bleps[i].phs ) * BLEPLEN;
 			value += o->bleps[i].vol * blep_table[ offset % BLEPSIZE ];
 			o->bleps[i].ptr++;
 		}
@@ -362,4 +445,30 @@ osc_get_aa_sample_saw (Oscillator *o, float increment, float sync_offset)
 	// puuhh... finished here... ;-)
 	return value;
 }
+
+
+sample_t
+osc_get_aa_sample (Oscillator* o, float increment, float sync_offset)
+{
+	switch ((int)(o->wave_shape)) {
+		case OSC_WAVE_SINE:
+			return 0.0f;
+		case OSC_WAVE_TRIANGLE:
+			return osc_get_aa_sample_triangle(o, increment, sync_offset);
+		case OSC_WAVE_SAW:
+			return osc_get_aa_sample_saw(o, increment, sync_offset);
+		case OSC_WAVE_SQUARE:
+			return 0.0f;
+		case OSC_WAVE_MOOG:
+			return 0.0f;
+		case OSC_WAVE_EXPONENTIAL:
+			return 0.0f;
+		case OSC_WAVE_NOISE:
+			return 0.0f;
+		default:
+			fprintf(stderr, "Oscillator: Invalid wave shape\n");
+			return 0;
+	}
+}
+
 

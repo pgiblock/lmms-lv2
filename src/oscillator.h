@@ -101,56 +101,57 @@ void osc_print(Oscillator* o);
 // Waveform sample routines
 
 static inline sample_t
-osc_sample_sin(const float _sample) {
-	return sinf( _sample * M_PI * 2.0f );
+osc_sample_sin (const float sample)
+{
+	return sinf(sample * M_PI * 2.0f);
 }
 
 static inline sample_t
-osc_sample_triangle(const float _sample) {
-	const float ph = fraction( _sample );
-	if( ph <= 0.25f )
-	{
+osc_sample_triangle (const float ph)
+{
+	if (ph <= 0.25f) {
 		return ph * 4.0f;
-	}
-	else if( ph <= 0.75f )
-	{
+	} else if (ph <= 0.75f) {
 		return 2.0f - ph * 4.0f;
+	} else {
+		return ph * 4.0f - 4.0f;
 	}
-	return ph * 4.0f - 4.0f;
 }
 
 static inline sample_t
-osc_sample_saw(const float _sample) {
-	return -1.0f + fraction( _sample ) * 2.0f;
+osc_sample_saw (const float ph)
+{
+	return -1.0f + ph * 2.0f;
 }
 
 static inline sample_t
-osc_sample_square(const float _sample) {
-	return ( fraction( _sample ) > 0.5f ) ? -1.0f : 1.0f;
+osc_sample_square (const float ph)
+{
+	return (ph > 0.5f) ? -1.0f : 1.0f;
 }
 
 static inline sample_t
-osc_sample_moog_saw(const float _sample) {
-	const float ph = fraction( _sample );
-	if( ph < 0.5f )
-	{
+osc_sample_moog_saw (const float ph)
+{
+	if (ph < 0.5f) {
 		return -1.0f + ph * 4.0f;
+	} else {
+		return 1.0f - 2.0f * ph;
 	}
-	return 1.0f - 2.0f * ph;
 }
 
 static inline sample_t
-osc_sample_exp(const float _sample) {
-	float ph = fraction( _sample );
-	if( ph > 0.5f )
-	{
-		ph = 1.0f - ph;
+osc_sample_exp (const float ph)
+{
+	if (ph > 0.5f) {
+		return -1.0f + 8.0f * (1.0f - ph) * (1.0f - ph);
+	} else {
+		return -1.0f + 8.0f * ph * ph;
 	}
-	return -1.0f + 8.0f * ph * ph;
 }
 
 static inline sample_t
-osc_sample_noise(const float _sample) {
+osc_sample_noise (const float sample) {
 	// Precise implementation
 	// return 1.0f - rand() * 2.0f / RAND_MAX;
 
