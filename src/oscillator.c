@@ -35,6 +35,7 @@ sample_t osc_get_aa_sample (Oscillator* o, float increment, float sync_offset);
 
 sample_t osc_get_aa_sample_triangle (Oscillator *o, float increment, float sync_offset);
 sample_t osc_get_aa_sample_saw (Oscillator *o, float increment, float sync_offset);
+sample_t osc_get_aa_sample_square (Oscillator *o, float increment, float sync_offset);
 
 ////
 
@@ -299,7 +300,7 @@ osc_get_aa_sample_triangle (Oscillator *o, float increment, float sync_offset)
 {
 	// limit increment to C9 (higher does not make any musical sense and just
 	// causes us a lot of trouble to correct this...)
-	const float inc_limit = 8372.018089619 / o->sample_rate;
+	const float inc_limit = 8372.018089619f / o->sample_rate;
 	const float inc = ( increment > inc_limit )? inc_limit:increment;
 
 	// initialize current result with 0.0
@@ -308,6 +309,8 @@ osc_get_aa_sample_triangle (Oscillator *o, float increment, float sync_offset)
 	float corr_amp   = 0.0f;
 	float corr_phs   = 0.0f;
 	int   corr_typ   = 1;
+
+	int i;
 
 	// update phase
 	if (sync_offset < 0.0f) {
@@ -318,20 +321,20 @@ osc_get_aa_sample_triangle (Oscillator *o, float increment, float sync_offset)
 		//       I can only come up with 8 = 4 (ramps per period) * 2 (amplitude range)
 		//       Also, why is it not divided by (inc * o->phase_mod)?
 		//       Finally, do we need to handle last_phase <= 0.25 && phase > 0.75?
-		if (o->last_phase <= 0.25 && o->phase > 0.25) {
+		if (o->last_phase <= 0.25f && o->phase > 0.25f) {
 			// Discontinuity at the peak
-			corr_phs = (o->phase - 0.25 )/inc;
+			corr_phs = (o->phase - 0.25f)/inc;
 			corr_amp = +16*inc;
-		} else if (o->last_phase <= 0.75 && o->phase > 0.75) {
+		} else if (o->last_phase <= 0.75f && o->phase > 0.75f) {
 			// Discontinuity at the trough
-			corr_phs = (o->phase - 0.75 )/inc;
+			corr_phs = (o->phase - 0.75f)/inc;
 			corr_amp = -16*inc;
 		}
 
 		value = osc_sample_triangle(o->phase);
 	} else {
 		// sync
-		o->last_phase = o->phase + inc*(1.0 - sync_offset);
+		o->last_phase = o->phase + inc*(1.0f - sync_offset);
 		o->phase      = sync_offset;
 
 		last_value = osc_sample_triangle(o->last_phase);
@@ -341,7 +344,7 @@ osc_get_aa_sample_triangle (Oscillator *o, float increment, float sync_offset)
 		corr_typ   = false; // this needs a blep
 	}
 
-	if (fabsf(corr_amp) > 0.00001) { // need to correct this samples?
+	if (fabsf(corr_amp) > 0.00001f) { // need to correct this samples?
 		// Round-robin assignment of BLEP pipelines
 		o->bleps[o->blep_idx].ptr = 0;  // reset table-pointer to activate it
 		o->bleps[o->blep_idx].vol = corr_amp;
@@ -351,7 +354,7 @@ osc_get_aa_sample_triangle (Oscillator *o, float increment, float sync_offset)
 	}
 
 	// now go through all pipelines, check if active and process if so...
-	for (int i = 0; i < NROFBLEPS; ++i) {
+	for (i = 0; i < NROFBLEPS; ++i) {
 		// FIXME: When is ptr < 0?
 		// TODO: Could start at blep_idx and search until we find an expired one
 		if (o->bleps[i].ptr >= 0 && o->bleps[i].ptr < 8) {
@@ -370,47 +373,47 @@ osc_get_aa_sample_triangle (Oscillator *o, float increment, float sync_offset)
 	return value;
 }
 
+
 // FIXME: increment can be deduced from Oscillator o.
 sample_t
 osc_get_aa_sample_saw (Oscillator *o, float increment, float sync_offset)
 {
 	// limit increment to C9 (higher does not make any musical sense and just
 	// causes us a lot of trouble to correct this...)
-	float inc_limit = 8372.018089619 / o->sample_rate;
+	float inc_limit = 8372.018089619f / o->sample_rate;
 	float inc = ( increment > inc_limit )? inc_limit:increment;
 
 	// initialize current result with 0.0
-	float value      = 0.0;
-	float last_value = 0.0;
-	float corr_amp   = 0.0;
-	float corr_phs   = 0.0;
+	float value      = 0.0f;
+	float last_value = 0.0f;
+	float corr_amp   = 0.0f;
+	float corr_phs   = 0.0f;
 
 	int i;
 
 	// update phase
-	if (sync_offset < 0.0) {
+	if (sync_offset < 0.0f) {
 		// Normal case, just increment phase
 		o->last_phase = o->phase;
 		o->phase      = o->phase + inc + o->phase_mod;
 
 		// TODO: Would be nice to remove this conditional somehow
-		if (o->phase >= 1.0) {
+		if (o->phase >= 1.0f) {
 			// sawtooth just fell down cliff
 			o->phase = safe_fmodf(o->phase);
 			corr_phs = o->phase / (inc + o->phase_mod);
-			corr_amp = 2.0;
-		} else if (o->phase <  0.0) {
+			corr_amp = 2.0f;
+		} else if (o->phase <  0.0f) {
 			// sawtooth just went up cliff 
 			o->phase = safe_fmodf(o->phase);
-			corr_phs = (1.0 - o->phase)/(inc - o->phase_mod);
-			corr_amp = -2.0;
+			corr_phs = (1.0f - o->phase)/(inc - o->phase_mod);
+			corr_amp = -2.0f;
 		}
 
-		// Actual saw sample FIXME: use function
 		value = osc_sample_saw(o->phase);
 	} else {
 		// Syncing, 
-		o->last_phase = o->phase + inc*(1.0 - sync_offset);
+		o->last_phase = o->phase + inc*(1.0f - sync_offset);
 		o->phase      = sync_offset;
 
 		last_value = osc_sample_saw(o->last_phase);
@@ -422,7 +425,7 @@ osc_get_aa_sample_saw (Oscillator *o, float increment, float sync_offset)
 	}
 
 
-	if (fabsf(corr_amp) > 0.00001) { // need to correct this samples?
+	if (fabsf(corr_amp) > 0.00001f) { // need to correct this samples?
 		// Round-robin assignment of BLEP pipelines
 		o->bleps[o->blep_idx].ptr = 0;  // reset table-pointer to activate it
 		o->bleps[o->blep_idx].vol = corr_amp;
@@ -447,6 +450,80 @@ osc_get_aa_sample_saw (Oscillator *o, float increment, float sync_offset)
 }
 
 
+// TODO: constify parameters
+sample_t
+osc_get_aa_sample_square (Oscillator *o, float increment, float sync_offset)
+{
+	// limit increment to C9 (higher does not make any musical sense and just
+	// causes us a lot of trouble to correct this...)
+	const float inc_limit = 8372.018089619f / o->sample_rate;
+	const float inc = ( increment > inc_limit )? inc_limit:increment;
+
+	// initialize current result with 0.0
+	float value      = 0.0f;
+	float last_value = 0.0f;
+	float corr_amp   = 0.0f;
+	float corr_phs   = 0.0f;
+
+	int i;
+
+	// update phase
+	if (sync_offset < 0.0f) {
+		o->last_phase = o->phase;
+		o->phase      = o->phase + inc + o->phase_mod;
+
+		if (o->phase >= 1.0f) {
+			// Rising edge
+			o->phase = safe_fmodf(o->phase);
+			corr_phs = o->phase / (inc + o->phase_mod);
+			corr_amp = -2.0f;
+		} else if (o->phase < 0.0f) {
+			// Falling edge
+			o->phase = safe_fmodf(o->phase);
+			corr_phs = (1.0f - o->phase)/(inc - o->phase_mod);
+			corr_amp = 2.0f;
+		}
+
+		// Middle
+		// TODO: what about phase < 0.5 && last_phase >= 0.5 (reverse direction)? 
+		if (o->phase > 0.5f && o->last_phase <= 0.5f) {
+			corr_phs = (o->phase - 0.5f) / inc;
+			corr_amp = 2.0f;
+		}
+
+		value = osc_sample_square(o->phase);
+	} else {
+		o->last_phase = o->phase;
+		o->phase      = sync_offset;
+
+		last_value = osc_sample_square(o->last_phase);
+		value      = osc_sample_square(o->phase);
+		// New values for correction
+		corr_phs   = o->phase / inc;
+		corr_amp   = last_value - value;      
+	}
+
+	if (fabsf(corr_amp) > 0.00001f) { // need to correct this samples?
+		o->bleps[o->blep_idx].ptr = 0;  // reset table-pointer to activate it
+		o->bleps[o->blep_idx].vol = corr_amp;
+		o->bleps[o->blep_idx].phs = corr_phs;
+		o->bleps[o->blep_idx].typ = 0;  // NOTE: This was missing in the original
+	}
+
+	// now go through all pipelines, check if active and process if so...
+	for (i = 0; i < NROFBLEPS; ++i) {
+		if (o->bleps[i].ptr >= 0 && o->bleps[i].ptr < 8) {
+			const int offset = ( o->bleps[i].ptr + o->bleps[i].phs ) * BLEPLEN;    
+			value += o->bleps[i].vol * blep_table[ offset % BLEPSIZE ];
+			o->bleps[i].ptr++;
+		}
+	}
+
+	// puuhh... finished here... ;-)
+	return value;
+}
+
+
 sample_t
 osc_get_aa_sample (Oscillator* o, float increment, float sync_offset)
 {
@@ -458,7 +535,7 @@ osc_get_aa_sample (Oscillator* o, float increment, float sync_offset)
 		case OSC_WAVE_SAW:
 			return osc_get_aa_sample_saw(o, increment, sync_offset);
 		case OSC_WAVE_SQUARE:
-			return 0.0f;
+			return osc_get_aa_sample_square(o, increment, sync_offset);
 		case OSC_WAVE_MOOG:
 			return 0.0f;
 		case OSC_WAVE_EXPONENTIAL:
