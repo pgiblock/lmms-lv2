@@ -40,9 +40,9 @@ sample_t osc_get_aa_sample_square (Oscillator *o, float increment, float sync_of
 ////
 
 Oscillator*
-osc_create() {
+osc_create () {
 	Oscillator* o = (Oscillator*)malloc(sizeof(Oscillator));
-	osc_reset(o, 0.f, 0.f, 404.f, 1.f, 1.f, NULL, 0.f, 0.f);
+	osc_reset(o, 0.f, 0.f, 440.f, 1.f, NULL, 0.f, 0.f);
 	if (!o) {
 		fprintf(stderr, "Could not allocate Oscillator.\n");
 		return NULL;
@@ -51,9 +51,10 @@ osc_create() {
 	return o;
 }
 
+
 void
 osc_reset (Oscillator* o, float wave_shape, float modulation_algo,
-           float freq, float detuning, float volume,
+           float freq, float volume,
            Oscillator* sub_osc, float phase_offset,
            float sample_rate)
 {
@@ -63,7 +64,6 @@ osc_reset (Oscillator* o, float wave_shape, float modulation_algo,
 	o->wave_shape = wave_shape;
 	o->modulation_algo = modulation_algo;
 	o->freq = freq;
-	o->detuning = detuning;
 	o->volume = volume;
 	o->ext_phase_offset = phase_offset;
 	o->sub_osc = sub_osc;
@@ -90,13 +90,14 @@ osc_destroy(Oscillator* o) {
 	free(o);
 }
 
+
 void
 osc_print(Oscillator* o) {
 	fprintf(stderr, "{wave_shape=%f\n modulation_algo=%f\n freq=%f\n "
-	        "detuning=%f\n volume=%f\n ext_phase_offset=%f\n sub_osc=%p\n "
+	        "volume=%f\n ext_phase_offset=%f\n sub_osc=%p\n "
 	        "phase_offset=%f\n phase=%f\n sample_rate=%f\n}\n",
 	        o->wave_shape, o->modulation_algo, o->freq,
-	        o->detuning, o->volume, o->ext_phase_offset, o->sub_osc,
+	        o->volume, o->ext_phase_offset, o->sub_osc,
 	        o->phase_offset, o->phase, o->sample_rate);
 }
 
@@ -114,31 +115,11 @@ osc_recalc_phase(Oscillator* o) {
 }
 
 
-static inline bool
-osc_sync_ok(Oscillator* o, float _osc_coeff) {
-	const float v1 = o->phase;
-	o->phase += _osc_coeff;
-
-	// check whether m_phase is in next period
-	return( floorf( o->phase ) > floorf( v1 ) );
-}
-
-
-static float
-osc_sync_init(Oscillator* o, sample_t* buff, const fpp_t len) {
-	if (o->sub_osc != NULL) {
-		osc_update(o->sub_osc, buff, len);
-	}
-	osc_recalc_phase(o);
-	return( o->freq * o->detuning );
-}
-
-
 
 // if we have no sub-osc, we can't do any modulation... just get our samples
 static void
-osc_update_no_sub(Oscillator* o, sample_t* buff, fpp_t len) {
-	const float osc_coeff = o->freq * o->detuning;
+osc_update_no_sub(Oscillator* o, sample_t* buff, sample_t* bend, fpp_t len) {
+	const float osc_coeff = o->freq;
 
 	/* OLD
 	osc_recalc_phase(o);
@@ -152,17 +133,17 @@ osc_update_no_sub(Oscillator* o, sample_t* buff, fpp_t len) {
 	
 	o->phase_mod = 0;
 	for (fpp_t frame = 0; frame < len; ++frame ) {
-		buff[frame] = osc_get_aa_sample(o, osc_coeff, -1.0); // * m_volume;
+		buff[frame] = osc_get_aa_sample(o, osc_coeff * bend[frame], -1.0); // * m_volume;
 	}
 }
 
 
 // do pm by using sub-osc as modulator
 static void
-osc_update_pm(Oscillator* o, sample_t* buff, fpp_t len) {
-	const float osc_coeff = o->freq * o->detuning;
+osc_update_pm(Oscillator* o, sample_t* buff, sample_t* bend, fpp_t len) {
+	const float osc_coeff = o->freq;
 
-	osc_update(o->sub_osc, buff, len);
+	osc_update(o->sub_osc, buff, bend, len);
 	osc_recalc_phase(o);
 
 	for (fpp_t frame = 0; frame < len; ++frame) {
@@ -174,10 +155,10 @@ osc_update_pm(Oscillator* o, sample_t* buff, fpp_t len) {
 
 // do am by using sub-osc as modulator
 static void
-osc_update_am(Oscillator* o, sample_t* buff, fpp_t len) {
-	const float osc_coeff = o->freq * o->detuning;
+osc_update_am(Oscillator* o, sample_t* buff, sample_t* bend, fpp_t len) {
+	const float osc_coeff = o->freq;
 
-	osc_update(o->sub_osc, buff, len);
+	osc_update(o->sub_osc, buff, bend, len);
 	osc_recalc_phase(o);
 
 	for (fpp_t frame = 0; frame < len; ++frame) {
@@ -188,10 +169,10 @@ osc_update_am(Oscillator* o, sample_t* buff, fpp_t len) {
 
 
 // do mix by using sub-osc as mix-sample
-static void osc_update_mix(Oscillator* o, sample_t* buff, fpp_t len) {
-	const float osc_coeff = o->freq * o->detuning;
+static void osc_update_mix(Oscillator* o, sample_t* buff, sample_t* bend, fpp_t len) {
+	const float osc_coeff = o->freq;
 
-	osc_update(o->sub_osc, buff, len);
+	osc_update(o->sub_osc, buff, bend, len);
 	osc_recalc_phase(o);
 
 	for (fpp_t frame = 0; frame < len; ++frame) {
@@ -201,12 +182,33 @@ static void osc_update_mix(Oscillator* o, sample_t* buff, fpp_t len) {
 }
 
 
+static inline bool
+osc_sync_ok(Oscillator* o, float _osc_coeff) {
+	const float v1 = o->phase;
+	o->phase += _osc_coeff;
+
+	// check whether m_phase is in next period
+	return( floorf( o->phase ) > floorf( v1 ) );
+}
+
+
+static float
+osc_sync_init(Oscillator* o, sample_t* buff, sample_t* bend, const fpp_t len) {
+	if (o->sub_osc != NULL) {
+		osc_update(o->sub_osc, buff, bend, len);
+	}
+	osc_recalc_phase(o);
+	return( o->freq );
+}
+
+
 // sync with sub-osc (every time sub-osc starts new period, we also start new
 // period)
-static void osc_update_sync (Oscillator* o, sample_t* buff, fpp_t len)
+static void osc_update_sync (Oscillator* o, sample_t* buff, sample_t* bend, fpp_t len)
 {
-	const float osc_coeff = o->freq * o->detuning;
-	const float sub_osc_coeff = osc_sync_init(o->sub_osc, buff, len);
+	const float osc_coeff = o->freq;
+	// FIXME: sub_osc_coeff is not correct.  Fix for bend!
+	const float sub_osc_coeff = osc_sync_init(o->sub_osc, buff, bend, len);
 
 	osc_recalc_phase(o);
 
@@ -222,12 +224,12 @@ static void osc_update_sync (Oscillator* o, sample_t* buff, fpp_t len)
 
 // do fm by using sub-osc as modulator
 static void
-osc_update_fm (Oscillator* o, sample_t* buff, fpp_t len)
+osc_update_fm (Oscillator* o, sample_t* buff, sample_t* bend, fpp_t len)
 {
-	const float osc_coeff = o->freq * o->detuning;
+	const float osc_coeff = o->freq;
 	const float srate_correction = 44100.0f / o->sample_rate;
 
-	osc_update(o->sub_osc, buff, len);
+	osc_update(o->sub_osc, buff, bend, len);
 	osc_recalc_phase(o);
 
 	for (fpp_t frame = 0; frame < len; ++frame) {
@@ -239,7 +241,7 @@ osc_update_fm (Oscillator* o, sample_t* buff, fpp_t len)
 
 
 void
-osc_update (Oscillator* o, sample_t* buff, fpp_t len)
+osc_update (Oscillator* o, sample_t* buff, sample_t* bend, fpp_t len)
 {
 	if (o->freq >= o->sample_rate / 2) {
 		return;
@@ -247,25 +249,25 @@ osc_update (Oscillator* o, sample_t* buff, fpp_t len)
 	if (o->sub_osc != NULL) {
 		switch ((int)o->modulation_algo) {
 			case OSC_MOD_PM:
-				osc_update_pm(o, buff, len);
+				osc_update_pm(o, buff, bend, len);
 				break;
 			case OSC_MOD_AM:
-				osc_update_am(o, buff, len);
+				osc_update_am(o, buff, bend, len);
 				break;
 			case OSC_MOD_MIX:
-				osc_update_mix(o, buff, len);
+				osc_update_mix(o, buff, bend, len);
 				break;
 			case OSC_MOD_SYNC:
-				osc_update_sync(o, buff, len);
+				osc_update_sync(o, buff, bend, len);
 				break;
 			case OSC_MOD_FM:
-				osc_update_fm(o, buff, len);
+				osc_update_fm(o, buff, bend, len);
 				break;
 			default:
 				fprintf(stderr, "Oscillator: Invalid modulation algorithm\n");
 		}
 	} else {
-		osc_update_no_sub(o, buff, len);
+		osc_update_no_sub(o, buff, bend, len);
 	}
 }
 

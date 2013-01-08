@@ -61,7 +61,6 @@ struct Oscillator_st {
 	float modulation_algo;
 	// This oscillator's config
 	float freq;
-	float detuning;
 	float volume;
 	float ext_phase_offset;
 	// State
@@ -75,6 +74,9 @@ struct Oscillator_st {
 	float phase_mod;
 	float last_phase;
 
+	// Experimental pitch-bend smoothing
+	float freq_lagged;
+
 	// TODO: const sampleBuffer * m_userWave;
 	float sample_rate;
 };
@@ -87,13 +89,13 @@ Oscillator* osc_create();
 
 void osc_reset(Oscillator* osc,
 		float wave_shape, float modulation_algo,
-		float freq, float detuning, float volume,
+		float freq, float volume,
 		Oscillator* sub_osc, float phase_offset,
 		float sample_rate);
 
 void osc_destroy(Oscillator* o);
 
-void osc_update(Oscillator* o, sample_t* buff, fpp_t len);
+void osc_update(Oscillator* o, sample_t* buff, sample_t* bend, fpp_t len);
 sample_t osc_get_sample(Oscillator* o, float sample);
 
 void osc_print(Oscillator* o);
@@ -151,7 +153,8 @@ osc_sample_exp (const float ph)
 }
 
 static inline sample_t
-osc_sample_noise (const float sample) {
+osc_sample_noise (const float sample)
+{
 	// Precise implementation
 	// return 1.0f - rand() * 2.0f / RAND_MAX;
 

@@ -127,7 +127,7 @@ typedef struct {
 // The entire instrument
 typedef struct {
 	/* Features */
-	LV2_URID_Map*              map;
+	LV2_URID_Map*    map;
 
 	/* Instrument Ports */
 	LV2_Atom_Sequence*  event_port;
@@ -147,6 +147,9 @@ typedef struct {
 	Voice* voices;
 	int    victim_idx;
 
+	float  pitch_bend;        // Pitchbend in-value
+	float  pitch_bend_lagged; // Pitchbend out-value
+
 	/* URIs TODO: Global*/
 	struct {
 		LV2_URID midi_event;
@@ -159,9 +162,16 @@ typedef struct {
 	/* Playback state */
 	uint32_t frame; // TODO: frame_t
 	float    srate;
-
+	
 } TripleOscillator;
 
+
+
+static uint32_t
+triposc_map_uri (TripleOscillator *plugin, const char *uri)
+{
+	return plugin->map->map(plugin->map->handle, uri);
+}
 
 
 static void
@@ -197,13 +207,13 @@ trip_osc_voice_steal(TripleOscillator* triposc, Voice* v) {
 		float po_r = *u->phase_offset_port / 360.0f;
 
 		osc_reset(&(g->osc_l[i]), *u->wave_shape_port, mod,
-							freq, detune_l, vol_l,
-							i==2?NULL:&(g->osc_l[i+1]), po_l,
-							triposc->srate);
+		          freq * detune_l, vol_l,
+		          i==2?NULL:&(g->osc_l[i+1]), po_l,
+		          triposc->srate);
 		osc_reset(&(g->osc_r[i]), *u->wave_shape_port, mod,
-							freq, detune_r, vol_r,
-							i==2?NULL:&(g->osc_r[i+1]), po_r,
-							triposc->srate);
+		          freq * detune_r, vol_r,
+		          i==2?NULL:&(g->osc_r[i+1]), po_r,
+		          triposc->srate);
 	}
 }
 
@@ -251,9 +261,9 @@ voice_release(TripleOscillator* triposc, uint8_t midi_note) {
 
 
 static void
-triposc_connect_port(LV2_Handle instance,
-                     uint32_t   port,
-                     void*      data)
+triposc_connect_port (LV2_Handle instance,
+                      uint32_t   port,
+                      void*      data)
 {
 	TripleOscillator* plugin = (TripleOscillator*)instance;
 	int oscidx, oscport;
@@ -400,7 +410,7 @@ triposc_connect_port(LV2_Handle instance,
 
 
 static void
-triposc_cleanup(LV2_Handle instance)
+triposc_cleanup (LV2_Handle instance)
 {
 	TripleOscillator* plugin = (TripleOscillator*)instance;
 	free(plugin->voices);
@@ -409,13 +419,13 @@ triposc_cleanup(LV2_Handle instance)
 
 
 static LV2_Handle
-triposc_instantiate(const LV2_Descriptor*     descriptor,
-                    double                    rate,
-                    const char*               path,
-                    const LV2_Feature* const* features)
+triposc_instantiate (const LV2_Descriptor*     descriptor,
+                     double                    rate,
+                     const char*               path,
+                     const LV2_Feature* const* features)
 {
 	/* Malloc and initialize new Synth */
-	TripleOscillator* plugin = (TripleOscillator*)malloc(sizeof(TripleOscillator));
+	TripleOscillator *plugin = (TripleOscillator*)malloc(sizeof(TripleOscillator));
 	if (!plugin) {
 		fprintf(stderr, "Could not allocate TripleOscillator.\n");
 		return NULL;
@@ -451,7 +461,7 @@ triposc_instantiate(const LV2_Descriptor*     descriptor,
 	memset(&plugin->uris, 0, sizeof(plugin->uris));
 
 	// TODO: Initialize properly!!
-	plugin->srate = rate;
+	plugin->srate      = rate;
 
 	/*float wave_shape, float modulation_algo,
 		float freq, float detuning, float volume,
@@ -471,10 +481,8 @@ triposc_instantiate(const LV2_Descriptor*     descriptor,
 		goto fail;
 	}
 
-	plugin->uris.midi_event = plugin->map->map(
-			plugin->map->handle, MIDI_EVENT_URI);
-	plugin->uris.atom_message = plugin->map->map(
-			plugin->map->handle, ATOM_MESSAGE_URI);
+	plugin->uris.midi_event   = triposc_map_uri(plugin, MIDI_EVENT_URI);
+	plugin->uris.atom_message = triposc_map_uri(plugin, ATOM_MESSAGE_URI);
 
 	return (LV2_Handle)plugin;
 
@@ -485,8 +493,8 @@ fail:
 
 
 static void
-triposc_run(LV2_Handle instance,
-            uint32_t   sample_count)
+triposc_run (LV2_Handle instance,
+             uint32_t   sample_count)
 {
 	TripleOscillator* plugin = (TripleOscillator*)instance;
 
@@ -494,7 +502,9 @@ triposc_run(LV2_Handle instance,
 	uint32_t    ev_frames;
 	uint32_t    f = plugin->frame;
 
+	// TODO: Reuse buffers when possible (bendbuf+cut, vol+res)
 	float outbuf[2][sample_count];
+	float bendbuf[sample_count];
 	float envbuf_vol[sample_count];
 	float envbuf_cut[sample_count];
 	float envbuf_res[sample_count];
@@ -516,10 +526,17 @@ triposc_run(LV2_Handle instance,
 		float *out_r = &plugin->out_r_port[pos];
 		int    outlen = ev_frames-pos;
 
-		// Zero the output buffers
+		// Zero the output buffers and fill pitch-bend
+		float p0 = plugin->pitch_bend_lagged;
+		const float lag = 0.2f;
 		for (int f=0; f<outlen; ++f) {
 			out_l[f] = out_r[f] = 0.0f;
+
+			// Lag (TODO: refactor)
+			bendbuf[f] = p0 = (1.0f-lag)*(plugin->pitch_bend) + lag*p0;
 		}
+		plugin->pitch_bend_lagged = p0;
+
 		// Accumulate voices
 		for (int i=0; i<NUM_VOICES; ++i) {
 			Voice* v = &plugin->voices[i];
@@ -536,8 +553,8 @@ triposc_run(LV2_Handle instance,
 				// TODO: Make a mixing version of the run function
 				
 				// Generate samples
-				osc_update(&g->osc_l[0], outbuf[0], outlen);
-				osc_update(&g->osc_r[0], outbuf[1], outlen);
+				osc_update(&g->osc_l[0], outbuf[0], bendbuf, outlen);
+				osc_update(&g->osc_r[0], outbuf[1], bendbuf, outlen);
 
 				// Amount to add to value generated by envelope
 				// For volume, the envelope is more of a "mix" than a pure mod
@@ -550,16 +567,17 @@ triposc_run(LV2_Handle instance,
 					for (int f=0; f<outlen; ++f) {
 						// TODO: only recalc when needed
 						const float cut = expKnobVal(envbuf_cut[f]) * CUT_FREQ_MULTIPLIER
-															+ *plugin->filter_cut_port;
+						                  + *plugin->filter_cut_port;
 						const float res = envbuf_res[f] * RES_MULTIPLIER
-															+ *plugin->filter_res_port;
+						                  + *plugin->filter_res_port;
 
-						// The actual volume for this sample (squared mix of envolope and 1.0f)
+						// The actual volume for this sample (squared mix of envelope and 1.0f)
 						float out_mod_amt = envbuf_vol[f] + vol_amt_add;
 						out_mod_amt = out_mod_amt * out_mod_amt;
 
 						//printf("%f\t%f\t%f\t%f\n", cut, res, outbuf[0][f], outbuf[1][f]);
-						// FIXME: Is calc_coeffs supposed to run each frame?
+						// FIXME: Is calc_coeffs supposed to run each frame? or is it based
+						// off of one of those arbitrary "every 32 frame" rules or whatever?
 						filter_calc_coeffs(v->filter, cut, res);
 						out_l[f] +=  filter_get_sample(v->filter, outbuf[0][f], 0) * out_mod_amt;
 						out_r[f] +=  filter_get_sample(v->filter, outbuf[1][f], 1) * out_mod_amt;
@@ -592,7 +610,7 @@ triposc_run(LV2_Handle instance,
 			if (ev->body.type == plugin->uris.midi_event) {
 				uint8_t* const data = (uint8_t* const)(ev + 1);
 			  ev = lv2_atom_sequence_next(ev);
-				uint8_t const  cmd  = data[0] & 0xF0;
+				uint8_t const  cmd  = data[0];
 				//fprintf(stderr, "  cmd=%d data1=%d data2=%d\n", cmd, data[1], data[2]);
 				if (cmd == 0x90) {
 					// Note On
@@ -602,8 +620,12 @@ triposc_run(LV2_Handle instance,
 					// Note Off
 					// TODO need envelope
 					voice_release(plugin, data[1]);
+				} else if (cmd == 0xe0) {
+					printf("PB 0x%x 0x%x 0x%x 0x%x\n",cmd,data[1],data[2],data[3]);
+					// Two-octave pitch_bend
+					plugin->pitch_bend = powf(2.0f, ((data[2]/127.0f) - 0.5f) * 4.0f); // 2^x : x in [-2.0 .. 2.0]
 				} else {
-					printf("0x%x 0x%x\n",cmd,data[1]);
+					printf("   0x%x 0x%x 0x%x\n",cmd,data[1],data[2]);
 				}
 
 			} else {
@@ -618,39 +640,32 @@ triposc_run(LV2_Handle instance,
 }
 
 
-static uint32_t
-triposc_map_uri(TripleOscillator* plugin, const char* uri)
-{
-	return plugin->map->map(plugin->map->handle, uri);
-}
-
-
 static LV2_State_Status
-triposc_save(LV2_Handle       instance,
+triposc_save (LV2_Handle      instance,
 		LV2_State_Store_Function  store,
 		LV2_State_Handle          handle,
 		uint32_t                  flags,
 		const LV2_Feature* const* features)
 {
-	printf("TripleOscillator save stub.\n");
+	fprintf(stderr, "TripleOscillator save stub.\n");
 	return LV2_STATE_SUCCESS;
 }
 
 
 static LV2_State_Status
-triposc_restore(LV2_Handle      instance,
+triposc_restore (LV2_Handle     instance,
 		LV2_State_Retrieve_Function retrieve,
 		LV2_State_Handle            handle,
 		uint32_t                    flags,
 		const LV2_Feature* const*   features)
 {
-	printf("TripleOscillator restore stub.\n");
+	fprintf(stderr, "TripleOscillator restore stub.\n");
 	return LV2_STATE_SUCCESS;
 }
 
 
-const void*
-triposc_extension_data(const char* uri)
+const void *
+triposc_extension_data (const char *uri)
 {
 	static const LV2_State_Interface state = { triposc_save, triposc_restore };
 	if (!strcmp(uri, LV2_STATE_URI)) {
