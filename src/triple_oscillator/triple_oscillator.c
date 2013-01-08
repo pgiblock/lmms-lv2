@@ -26,6 +26,13 @@
 #define PAN_MAX 100.0f
 #define VOL_MAX 100.0f
 
+#define PITCH_BEND_LAG   0.3
+#define PITCH_BEND_RANGE 2.0
+
+#define BEGIN_CONNECT_PORTS(port) switch (port) {
+#define CONNECT_PORT(val, buf, type) case val: plugin->buf = (type*)data; break;
+#define END_CONNECT_PORTS() default: break; }
+
 // PORTS
 enum {
 	// Instrument
@@ -270,94 +277,36 @@ triposc_connect_port (LV2_Handle instance,
 
 	// Handle Plugin-global ports
 	if (port < TRIPOSC_OSC1_VOL || port >= TRIPOSC_ENV_VOL_DEL) {
-		switch (port) {
-			case TRIPOSC_CONTROL:
-				plugin->event_port = (LV2_Atom_Sequence*)data;
-				break;
-			case TRIPOSC_OUT_L:
-				plugin->out_l_port = (float*)data;
-				break;
-			case TRIPOSC_OUT_R:
-				plugin->out_r_port = (float*)data;
-				break;
-			case TRIPOSC_ENV_VOL_DEL:
-				plugin->env_vol_params.del = (float*)data;
-				break;
-			case TRIPOSC_ENV_VOL_ATT:
-				plugin->env_vol_params.att = (float*)data;
-				break;
-			case TRIPOSC_ENV_VOL_HOLD:
-				plugin->env_vol_params.hold = (float*)data;
-				break;
-			case TRIPOSC_ENV_VOL_DEC:
-				plugin->env_vol_params.dec = (float*)data;
-				break;
-			case TRIPOSC_ENV_VOL_SUS:
-				plugin->env_vol_params.sus = (float*)data;
-				break;
-			case TRIPOSC_ENV_VOL_REL:
-				plugin->env_vol_params.rel = (float*)data;
-				break;
-			case TRIPOSC_ENV_VOL_MOD:
-				plugin->env_vol_params.mod = (float*)data;
-				break;
-			case TRIPOSC_FILTER_ENABLED:
-				plugin->filter_enabled_port = (float*)data;
-				break;
-			case TRIPOSC_FILTER_TYPE:
-				plugin->filter_type_port = (float*)data;
-				break;
-			case TRIPOSC_FILTER_CUT:
-				plugin->filter_cut_port = (float*)data;
-				break;
-			case TRIPOSC_FILTER_RES:
-				plugin->filter_res_port = (float*)data;
-				break;
-			case TRIPOSC_ENV_CUT_DEL:
-				plugin->env_cut_params.del = (float*)data;
-				break;
-			case TRIPOSC_ENV_CUT_ATT:
-				plugin->env_cut_params.att = (float*)data;
-				break;
-			case TRIPOSC_ENV_CUT_HOLD:
-				plugin->env_cut_params.hold = (float*)data;
-				break;
-			case TRIPOSC_ENV_CUT_DEC:
-				plugin->env_cut_params.dec = (float*)data;
-				break;
-			case TRIPOSC_ENV_CUT_SUS:
-				plugin->env_cut_params.sus = (float*)data;
-				break;
-			case TRIPOSC_ENV_CUT_REL:
-				plugin->env_cut_params.rel = (float*)data;
-				break;
-			case TRIPOSC_ENV_CUT_MOD:
-				plugin->env_cut_params.mod = (float*)data;
-				break;
-			case TRIPOSC_ENV_RES_DEL:
-				plugin->env_res_params.del = (float*)data;
-				break;
-			case TRIPOSC_ENV_RES_ATT:
-				plugin->env_res_params.att = (float*)data;
-				break;
-			case TRIPOSC_ENV_RES_HOLD:
-				plugin->env_res_params.hold = (float*)data;
-				break;
-			case TRIPOSC_ENV_RES_DEC:
-				plugin->env_res_params.dec = (float*)data;
-				break;
-			case TRIPOSC_ENV_RES_SUS:
-				plugin->env_res_params.sus = (float*)data;
-				break;
-			case TRIPOSC_ENV_RES_REL:
-				plugin->env_res_params.rel = (float*)data;
-				break;
-			case TRIPOSC_ENV_RES_MOD:
-				plugin->env_res_params.mod = (float*)data;
-				break;
-			default:
-				break;
-		}
+		BEGIN_CONNECT_PORTS(port);
+		CONNECT_PORT(TRIPOSC_CONTROL, event_port, LV2_Atom_Sequence);
+		CONNECT_PORT(TRIPOSC_OUT_L, out_l_port, float);
+		CONNECT_PORT(TRIPOSC_OUT_R, out_r_port, float);
+		CONNECT_PORT(TRIPOSC_ENV_VOL_DEL, env_vol_params.del, float);
+		CONNECT_PORT(TRIPOSC_ENV_VOL_ATT, env_vol_params.att, float);
+		CONNECT_PORT(TRIPOSC_ENV_VOL_HOLD, env_vol_params.hold, float);
+		CONNECT_PORT(TRIPOSC_ENV_VOL_DEC, env_vol_params.dec, float);
+		CONNECT_PORT(TRIPOSC_ENV_VOL_SUS, env_vol_params.sus, float);
+		CONNECT_PORT(TRIPOSC_ENV_VOL_REL, env_vol_params.rel, float);
+		CONNECT_PORT(TRIPOSC_ENV_VOL_MOD, env_vol_params.mod, float);
+		CONNECT_PORT(TRIPOSC_FILTER_ENABLED, filter_enabled_port, float);
+		CONNECT_PORT(TRIPOSC_FILTER_TYPE, filter_type_port, float);
+		CONNECT_PORT(TRIPOSC_FILTER_CUT, filter_cut_port, float);
+		CONNECT_PORT(TRIPOSC_FILTER_RES, filter_res_port, float);
+		CONNECT_PORT(TRIPOSC_ENV_CUT_DEL, env_cut_params.del, float);
+		CONNECT_PORT(TRIPOSC_ENV_CUT_ATT, env_cut_params.att, float);
+		CONNECT_PORT(TRIPOSC_ENV_CUT_HOLD, env_cut_params.hold, float);
+		CONNECT_PORT(TRIPOSC_ENV_CUT_DEC, env_cut_params.dec, float);
+		CONNECT_PORT(TRIPOSC_ENV_CUT_SUS, env_cut_params.sus, float);
+		CONNECT_PORT(TRIPOSC_ENV_CUT_REL, env_cut_params.rel, float);
+		CONNECT_PORT(TRIPOSC_ENV_CUT_MOD, env_cut_params.mod, float);
+		CONNECT_PORT(TRIPOSC_ENV_RES_DEL, env_res_params.del, float);
+		CONNECT_PORT(TRIPOSC_ENV_RES_ATT, env_res_params.att, float);
+		CONNECT_PORT(TRIPOSC_ENV_RES_HOLD, env_res_params.hold, float);
+		CONNECT_PORT(TRIPOSC_ENV_RES_DEC, env_res_params.dec, float);
+		CONNECT_PORT(TRIPOSC_ENV_RES_SUS, env_res_params.sus, float);
+		CONNECT_PORT(TRIPOSC_ENV_RES_REL, env_res_params.rel, float);
+		CONNECT_PORT(TRIPOSC_ENV_RES_MOD, env_res_params.mod, float);
+		END_CONNECT_PORTS();
 		return;
 	// Calculate osc index of osc-specific ports
 	} else if (port < TRIPOSC_OSC2_VOL) {
@@ -372,42 +321,23 @@ triposc_connect_port (LV2_Handle instance,
 	}
 
 	// Now connect an osc-specific port
-	switch (oscport) {
-		case TRIPOSC_OSC1_VOL:
-			plugin->units[oscidx].vol_port = (float*)data;
-			break;
-		case TRIPOSC_OSC1_PAN:
-			plugin->units[oscidx].pan_port = (float*)data;
-			break;
-		case TRIPOSC_OSC1_DETUNE_COARSE:
-			plugin->units[oscidx].detune_coarse_port = (float*)data;
-			break;
-		case TRIPOSC_OSC1_DETUNE_FINE_L:
-			plugin->units[oscidx].detune_fine_l_port = (float*)data;
-			break;
-		case TRIPOSC_OSC1_DETUNE_FINE_R:
-			plugin->units[oscidx].detune_fine_r_port = (float*)data;
-			break;
-		case TRIPOSC_OSC1_PHASE_OFFSET:
-			plugin->units[oscidx].phase_offset_port = (float*)data;
-			break;
-		case TRIPOSC_OSC1_PHASE_DETUNE:
-			plugin->units[oscidx].phase_detune_port = (float*)data;
-			break;
-		case TRIPOSC_OSC1_PHASE_RANDOM:
-			plugin->units[oscidx].phase_random_port = (float*)data;
-			break;
-		case TRIPOSC_OSC1_WAVE_SHAPE:
-			plugin->units[oscidx].wave_shape_port = (float*)data;
-			break;
-		case TRIPOSC_OSC1_OSC2_MOD:
-			plugin->units[oscidx].modulation_port = (float*)data;
-			break;
-		default:
-			break;
-	}
+	BEGIN_CONNECT_PORTS(oscport);
+	CONNECT_PORT(TRIPOSC_OSC1_VOL, units[oscidx].vol_port, float);
+	CONNECT_PORT(TRIPOSC_OSC1_PAN, units[oscidx].pan_port, float);
+	CONNECT_PORT(TRIPOSC_OSC1_DETUNE_COARSE, units[oscidx].detune_coarse_port, float);
+	CONNECT_PORT(TRIPOSC_OSC1_DETUNE_FINE_L, units[oscidx].detune_fine_l_port, float);
+	CONNECT_PORT(TRIPOSC_OSC1_DETUNE_FINE_R, units[oscidx].detune_fine_r_port, float);
+	CONNECT_PORT(TRIPOSC_OSC1_PHASE_OFFSET, units[oscidx].phase_offset_port, float);
+	CONNECT_PORT(TRIPOSC_OSC1_PHASE_DETUNE, units[oscidx].phase_detune_port, float);
+	CONNECT_PORT(TRIPOSC_OSC1_PHASE_RANDOM, units[oscidx].phase_random_port, float);
+	CONNECT_PORT(TRIPOSC_OSC1_WAVE_SHAPE, units[oscidx].wave_shape_port, float);
+	CONNECT_PORT(TRIPOSC_OSC1_OSC2_MOD, units[oscidx].modulation_port, float);
+	END_CONNECT_PORTS();
 }
 
+#undef BEGIN_CONNECT_PORTS
+#undef CONNECT_PORT
+#undef END_CONNECT_PORTS
 
 static void
 triposc_cleanup (LV2_Handle instance)
@@ -528,12 +458,12 @@ triposc_run (LV2_Handle instance,
 
 		// Zero the output buffers and fill pitch-bend
 		float p0 = plugin->pitch_bend_lagged;
-		const float lag = 0.2f;
 		for (int f=0; f<outlen; ++f) {
 			out_l[f] = out_r[f] = 0.0f;
 
 			// Lag (TODO: refactor)
-			bendbuf[f] = p0 = (1.0f-lag)*(plugin->pitch_bend) + lag*p0;
+			bendbuf[f] = p0 = (1.0f-PITCH_BEND_LAG)*(plugin->pitch_bend)
+		                        + PITCH_BEND_LAG*p0;
 		}
 		plugin->pitch_bend_lagged = p0;
 
@@ -621,11 +551,11 @@ triposc_run (LV2_Handle instance,
 					// TODO need envelope
 					voice_release(plugin, data[1]);
 				} else if (cmd == 0xe0) {
-					printf("PB 0x%x 0x%x 0x%x 0x%x\n",cmd,data[1],data[2],data[3]);
 					// Two-octave pitch_bend
-					plugin->pitch_bend = powf(2.0f, ((data[2]/127.0f) - 0.5f) * 4.0f); // 2^x : x in [-2.0 .. 2.0]
+					plugin->pitch_bend = powf(2.0f, ((data[2]/128.0f) - 0.5f) * PITCH_BEND_RANGE);
+					//printf("PB 0x%x 0x%x 0x%x 0x%x    %f\n",cmd,data[1],data[2],data[3],plugin->pitch_bend);
 				} else {
-					printf("   0x%x 0x%x 0x%x\n",cmd,data[1],data[2]);
+					//printf("   0x%x 0x%x 0x%x\n",cmd,data[1],data[2]);
 				}
 
 			} else {

@@ -132,8 +132,9 @@ osc_update_no_sub(Oscillator* o, sample_t* buff, sample_t* bend, fpp_t len) {
 	*/
 	
 	o->phase_mod = 0;
+	printf("coef: %f Pitch-bend: %f\n", o->freq, bend[0]);
 	for (fpp_t frame = 0; frame < len; ++frame ) {
-		buff[frame] = osc_get_aa_sample(o, osc_coeff * bend[frame], -1.0); // * m_volume;
+		buff[frame] = osc_get_aa_sample(o, osc_coeff * bend[0], -1.0); // * m_volume;
 	}
 }
 
