@@ -1,0 +1,39 @@
+TODO LIST
+=========
+
+X Basic Oscillator Voice
+X Voice stealing
+X Volume Envelope
+  Copy LMMS filters
+X   Standard filter types
+    2x LowPass
+    Formant Filter
+X CUT Envelope
+X RES Envelope
+  Pitch bend
+X   Aquire pitch bend
+X   Smooth input (one-pole filter)
+X   Rework Oscillator
+    Fix value 127 = 1 octave
+  Improve voice with proper oscillator code. (Antialiasing)
+    Sine
+X   Triangle
+X   Saw
+X   Square
+X   Moog
+X   Exp
+    Noise
+  Double-check for working SYNC mod in both AA and non-AA code
+  Figure out pulse-modulation versus frequency-modulation fiasco (Stefan F)
+  Split out instrument code
+  Revisit float vs float[] ports
+  LFOs
+  Tempo-sync knobs?
+X Presets
+  Add lagged inputs wherever else it is needed
+  Create standalone triposc voice plugin
+  Optimize
+
+BUGS:
+  Add default short voice envelope (currently "popping" with min envelope)
+  Preset "The Master"

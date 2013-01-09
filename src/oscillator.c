@@ -35,6 +35,7 @@ sample_t osc_get_aa_sample_triangle (Oscillator *o, float increment, float sync_
 sample_t osc_get_aa_sample_saw (Oscillator *o, float increment, float sync_offset);
 sample_t osc_get_aa_sample_square (Oscillator *o, float increment, float sync_offset);
 sample_t osc_get_aa_sample_moog_saw (Oscillator *o, float increment, float sync_offset);
+sample_t osc_get_aa_sample_exp (Oscillator *o, float increment, float sync_offset);
 
 ////
 
@@ -717,6 +718,78 @@ osc_get_aa_sample_moog_saw (Oscillator *o, float increment, float sync_offset)
 
 
 sample_t
+osc_get_aa_sample_exp (Oscillator *o, float increment, float sync_offset)
+{
+	// limit increment to C9 (higher does not make any musical sense and just
+	// causes us a lot of trouble to correct this...)
+	const float inc_limit = 8372.018089619f / o->sample_rate;
+	const float inc = ( increment > inc_limit )? inc_limit:increment;
+
+	// initialize current result with 0.0
+	float value      = 0.0f;
+	float last_value = 0.0f;
+	float corr_amp   = 0.0f;
+	float corr_phs   = 0.0f;
+	int   corr_typ   = 1;
+
+	int i;
+
+	// update phase
+	if (sync_offset < 0.0f) {
+		o->last_phase = o->phase;
+		o->phase      = safe_fmodf(o->phase + inc + o->phase_mod);
+
+		// TODO: Figure out where 16 came from.
+		if (o->phase > 0.5f && o->last_phase <= 0.5f) {
+			corr_phs = (o->phase - 0.5f) / inc;
+			corr_amp = 16.0f * inc;
+		}
+
+		value = osc_sample_exp(o->phase);
+	} else {
+		// sync
+		o->last_phase = o->phase + inc*(1.0f - sync_offset);
+		o->phase      = sync_offset;
+
+		last_value = osc_sample_exp(o->last_phase);
+		value      = osc_sample_exp(o->phase);
+		corr_phs   = o->phase / inc;
+		corr_amp   = last_value - value;      
+		corr_typ   = false; // this needs a blep
+	}
+
+	if (fabsf(corr_amp) > 0.00001f) { // need to correct this samples?
+		// Round-robin assignment of BLEP pipelines
+		o->bleps[o->blep_idx].ptr = 0;  // reset table-pointer to activate it
+		o->bleps[o->blep_idx].vol = corr_amp;
+		o->bleps[o->blep_idx].phs = corr_phs;
+		o->bleps[o->blep_idx].typ = corr_typ;
+		o->blep_idx = (o->blep_idx+1) % NROFBLEPS;
+	}
+
+	// now go through all pipelines, check if active and process if so...
+	for (i = 0; i < NROFBLEPS; ++i) {
+		// FIXME: When is ptr < 0?
+		// TODO: Could start at blep_idx and search until we find an expired one
+		if (o->bleps[i].ptr >= 0 && o->bleps[i].ptr < 8) {
+			const int offset = ( o->bleps[i].ptr + o->bleps[i].phs ) * BLEPLEN;
+			// FIXME: EASY to remove this if
+			if (o->bleps[i].typ) {
+				value += o->bleps[i].vol * blamp_table[ offset % BLEPSIZE ];
+			} else {
+				value += o->bleps[i].vol * blep_table[ offset % BLEPSIZE ];
+			}
+			o->bleps[i].ptr++;
+		}
+	}
+
+	// puuhh... finished here... ;-)
+	return value;
+}
+
+
+
+sample_t
 osc_get_aa_sample (Oscillator* o, float increment, float sync_offset)
 {
 	switch ((int)(o->wave_shape)) {
@@ -731,7 +804,7 @@ osc_get_aa_sample (Oscillator* o, float increment, float sync_offset)
 		case OSC_WAVE_MOOG:
 			return osc_get_aa_sample_moog_saw(o, increment, sync_offset);
 		case OSC_WAVE_EXPONENTIAL:
-			return 0.0f;
+			return osc_get_aa_sample_exp(o, increment, sync_offset);
 		case OSC_WAVE_NOISE:
 			return 0.0f;
 		default:
