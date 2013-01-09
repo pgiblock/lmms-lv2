@@ -31,8 +31,6 @@ float blep_table[BLEPSIZE];
 float blamp_table[BLEPSIZE];
 
 // FIXME: refactor
-sample_t osc_get_aa_sample (Oscillator* o, float increment, float sync_offset);
-
 sample_t osc_get_aa_sample_triangle (Oscillator *o, float increment, float sync_offset);
 sample_t osc_get_aa_sample_saw (Oscillator *o, float increment, float sync_offset);
 sample_t osc_get_aa_sample_square (Oscillator *o, float increment, float sync_offset);
@@ -115,81 +113,84 @@ osc_recalc_phase(Oscillator* o) {
 }
 
 
+//// Non-antialiased update functions
+
 
 // if we have no sub-osc, we can't do any modulation... just get our samples
 static void
 osc_update_no_sub(Oscillator* o, sample_t* buff, sample_t* bend, fpp_t len) {
-	const float osc_coeff = o->freq;
-
-	/* OLD
 	osc_recalc_phase(o);
 
 	for (fpp_t frame = 0; frame < len; ++frame) {
 		buff[frame] = osc_get_sample(o, o->phase) * o->volume;
-		//printf("b[f]=%f, ph=%f, vol=%f, coef=%f\n", buff[frame], o->phase, o->volume, osc_coeff);
-		o->phase += osc_coeff;
-	}
-	*/
-	
-	o->phase_mod = 0;
-	printf("coef: %f Pitch-bend: %f\n", o->freq, bend[0]);
-	for (fpp_t frame = 0; frame < len; ++frame ) {
-		buff[frame] = osc_get_aa_sample(o, osc_coeff * bend[0], -1.0); // * m_volume;
+		o->phase += o->freq * bend[frame];
 	}
 }
 
 
-// do pm by using sub-osc as modulator
+// do PM by using sub-osc as modulator
 static void
 osc_update_pm(Oscillator* o, sample_t* buff, sample_t* bend, fpp_t len) {
-	const float osc_coeff = o->freq;
-
 	osc_update(o->sub_osc, buff, bend, len);
 	osc_recalc_phase(o);
 
 	for (fpp_t frame = 0; frame < len; ++frame) {
 		buff[frame] = osc_get_sample(o, o->phase + buff[frame]) * o->volume;
-		o->phase += osc_coeff;
+		o->phase += o->freq * bend[frame];
 	}
 }
 
 
-// do am by using sub-osc as modulator
+// do fm by using sub-osc as modulator
+static void
+osc_update_fm (Oscillator* o, sample_t* buff, sample_t* bend, fpp_t len)
+{
+	const float srate_correction = 44100.0f / o->sample_rate;
+
+	osc_update(o->sub_osc, buff, bend, len);
+	osc_recalc_phase(o);
+
+	for (fpp_t frame = 0; frame < len; ++frame) {
+		o->phase += buff[frame] * srate_correction;
+		buff[frame] = osc_get_sample(o, o->phase) * o->volume;
+		o->phase += o->freq * bend[frame];
+	}
+}
+
+
+// do AM by using sub-osc as modulator
 static void
 osc_update_am(Oscillator* o, sample_t* buff, sample_t* bend, fpp_t len) {
-	const float osc_coeff = o->freq;
-
 	osc_update(o->sub_osc, buff, bend, len);
 	osc_recalc_phase(o);
 
 	for (fpp_t frame = 0; frame < len; ++frame) {
 		buff[frame] *= osc_get_sample(o, o->phase) * o->volume;
-		o->phase += osc_coeff;
+		o->phase += o->freq * bend[frame];
 	}
 }
 
 
-// do mix by using sub-osc as mix-sample
-static void osc_update_mix(Oscillator* o, sample_t* buff, sample_t* bend, fpp_t len) {
-	const float osc_coeff = o->freq;
-
+// do mixing by using sub-osc as mix-sample
+static void
+osc_update_mix(Oscillator* o, sample_t* buff, sample_t* bend, fpp_t len) {
 	osc_update(o->sub_osc, buff, bend, len);
 	osc_recalc_phase(o);
 
 	for (fpp_t frame = 0; frame < len; ++frame) {
 		buff[frame] += osc_get_sample(o, o->phase) * o->volume;
-		o->phase += osc_coeff;
+		o->phase += o->freq * bend[frame];
 	}
 }
 
 
 static inline bool
-osc_sync_ok(Oscillator* o, float _osc_coeff) {
+osc_sync_ok(Oscillator* o, float osc_coeff) {
 	const float v1 = o->phase;
-	o->phase += _osc_coeff;
+	o->phase += osc_coeff;
 
 	// check whether m_phase is in next period
-	return( floorf( o->phase ) > floorf( v1 ) );
+	return floorf( o->phase ) > floorf( v1 );
 }
 
 
@@ -199,15 +200,17 @@ osc_sync_init(Oscillator* o, sample_t* buff, sample_t* bend, const fpp_t len) {
 		osc_update(o->sub_osc, buff, bend, len);
 	}
 	osc_recalc_phase(o);
+
+	// FIXME: Do we need to multiply by bend somehow?
 	return( o->freq );
 }
 
 
 // sync with sub-osc (every time sub-osc starts new period, we also start new
 // period)
-static void osc_update_sync (Oscillator* o, sample_t* buff, sample_t* bend, fpp_t len)
+static void 
+osc_update_sync (Oscillator* o, sample_t* buff, sample_t* bend, fpp_t len)
 {
-	const float osc_coeff = o->freq;
 	// FIXME: sub_osc_coeff is not correct.  Fix for bend!
 	const float sub_osc_coeff = osc_sync_init(o->sub_osc, buff, bend, len);
 
@@ -218,25 +221,7 @@ static void osc_update_sync (Oscillator* o, sample_t* buff, sample_t* bend, fpp_
 			o->phase = o->phase_offset;
 		}
 		buff[frame] = osc_get_sample(o, o->phase) * o->volume;
-		o->phase += osc_coeff;
-	}
-}
-
-
-// do fm by using sub-osc as modulator
-static void
-osc_update_fm (Oscillator* o, sample_t* buff, sample_t* bend, fpp_t len)
-{
-	const float osc_coeff = o->freq;
-	const float srate_correction = 44100.0f / o->sample_rate;
-
-	osc_update(o->sub_osc, buff, bend, len);
-	osc_recalc_phase(o);
-
-	for (fpp_t frame = 0; frame < len; ++frame) {
-		o->phase += buff[frame] * srate_correction;
-		buff[frame] = osc_get_sample(o, o->phase) * o->volume;
-		o->phase += osc_coeff;
+		o->phase += o->freq * bend[frame];
 	}
 }
 
@@ -294,6 +279,129 @@ osc_get_sample (Oscillator* o, float sample)
 		default:
 			fprintf(stderr, "Oscillator: Invalid wave shape\n");
 			return 0;
+	}
+}
+
+
+//// Antialiased update functions
+
+
+// if we have no sub-osc, we can't do any modulation... just get our samples
+static void
+osc_aa_update_no_sub(Oscillator* o, sample_t* buff, sample_t* bend, fpp_t len) {
+	o->phase_mod = 0.0f;
+
+	for (fpp_t frame = 0; frame < len; ++frame) {
+		buff[frame] = osc_get_aa_sample(o, o->freq * bend[frame], -1.0f); // * m_volume;
+	}
+}
+
+
+// do PM by using sub-osc as modulator
+static void
+osc_aa_update_pm(Oscillator* o, sample_t* buff, sample_t* bend, fpp_t len) {
+	float osc_coeff;
+
+	osc_aa_update(o->sub_osc, buff, bend, len);
+
+	for (fpp_t frame = 0; frame < len; ++frame) {
+		//TODO: Huh? what is the 2.0f?
+		osc_coeff    = o->freq * bend[frame];
+		o->phase_mod = buff[frame] * osc_coeff / 2.0f;
+		buff[frame]  = osc_get_aa_sample(o, osc_coeff, -1.0f); // * o->volume;
+	}
+}
+
+
+// do FM by using sub-osc as modulator
+static void
+osc_aa_update_fm (Oscillator* o, sample_t* buff, sample_t* bend, fpp_t len)
+{
+	float osc_coeff;
+
+	osc_aa_update(o->sub_osc, buff, bend, len);
+
+	for (fpp_t frame = 0; frame < len; ++frame) {
+		//TODO: Huh? what is the 2.0f?
+		osc_coeff    = o->freq * bend[frame];
+		o->phase_mod = buff[frame] * osc_coeff * 2.0f;
+		buff[frame]  = osc_get_aa_sample(o, osc_coeff, -1.0f); // * o->volume;
+	}
+}
+
+
+// do AM by using sub-osc as modulator
+static void
+osc_aa_update_am(Oscillator* o, sample_t* buff, sample_t* bend, fpp_t len) {
+	osc_aa_update(o->sub_osc, buff, bend, len);
+
+	for (fpp_t frame = 0; frame < len; ++frame) {
+		buff[frame] *= osc_get_aa_sample(o, o->freq * bend[frame], -1.0f); // * o->volume;
+	}
+}
+
+
+// do mix by using sub-osc as mix-sample
+static void
+osc_aa_update_mix(Oscillator* o, sample_t* buff, sample_t* bend, fpp_t len) {
+	osc_aa_update(o->sub_osc, buff, bend, len);
+
+	for (fpp_t frame = 0; frame < len; ++frame) {
+		buff[frame] += osc_get_aa_sample(o, o->freq * bend[frame], -1.0f); // * o->volume;
+	}
+}
+
+
+// sync with sub-osc (every time sub-osc starts new period, we also start new
+// period)
+static void
+osc_aa_update_sync (Oscillator* o, sample_t* buff, sample_t* bend, fpp_t len)
+{
+	// FIXME: sub_osc_coeff is not correct.  Fix for bend!
+	const float sub_osc_coeff = osc_sync_init(o->sub_osc, buff, bend, len);
+	float osc_coeff;
+
+	o->phase_mod = 0.0f;
+
+	for (fpp_t frame = 0; frame < len; ++frame) {
+		osc_coeff = o->freq * bend[frame];
+		if (osc_sync_ok(o->sub_osc, sub_osc_coeff)) {
+			buff[frame] = osc_get_aa_sample(o, osc_coeff, o->phase_offset); // * o->volume;
+		} else {
+			buff[frame] = osc_get_aa_sample(o, osc_coeff, -1.0f); // * o->volume;
+		}
+	}
+}
+
+
+void
+osc_aa_update (Oscillator* o, sample_t* buff, sample_t* bend, fpp_t len)
+{
+	if (o->freq >= o->sample_rate / 2) {
+		return;
+	}
+	if (o->sub_osc != NULL) {
+		switch ((int)o->modulation_algo) {
+			case OSC_MOD_PM:
+				osc_aa_update_pm(o, buff, bend, len);
+				break;
+			case OSC_MOD_AM:
+				osc_aa_update_am(o, buff, bend, len);
+				break;
+			case OSC_MOD_MIX:
+				osc_aa_update_mix(o, buff, bend, len);
+				break;
+			case OSC_MOD_SYNC:
+				osc_aa_update_sync(o, buff, bend, len);
+				break;
+			case OSC_MOD_FM:
+				osc_aa_update_fm(o, buff, bend, len);
+				break;
+			default:
+				fprintf(stderr, "Oscillator: Invalid modulation algorithm\n");
+		}
+	} else {
+		osc_aa_update_no_sub(o, buff, bend, len);
 	}
 }
 

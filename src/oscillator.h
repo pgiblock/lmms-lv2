@@ -74,9 +74,6 @@ struct Oscillator_st {
 	float phase_mod;
 	float last_phase;
 
-	// Experimental pitch-bend smoothing
-	float freq_lagged;
-
 	// TODO: const sampleBuffer * m_userWave;
 	float sample_rate;
 };
@@ -95,8 +92,13 @@ void osc_reset(Oscillator* osc,
 
 void osc_destroy(Oscillator* o);
 
+// Original synthesis functions
 void osc_update(Oscillator* o, sample_t* buff, sample_t* bend, fpp_t len);
 sample_t osc_get_sample(Oscillator* o, float sample);
+
+// Antialiased synthesis functions
+void osc_aa_update(Oscillator* o, sample_t* buff, sample_t* bend, fpp_t len);
+sample_t osc_get_aa_sample(Oscillator* o, float increment, float sync_offset);
 
 void osc_print(Oscillator* o);
 
