@@ -15,6 +15,7 @@ X   Aquire pitch bend
 X   Smooth input (one-pole filter)
 X   Rework Oscillator
     Fix value 127 = 1 octave
+    2-byte MIDI values
   Improve voice with proper oscillator code. (Antialiasing)
     Sine
 X   Triangle
@@ -24,8 +25,8 @@ X   Moog
 X   Exp
     Noise
   Double-check for working SYNC mod in both AA and non-AA code
-  Figure out pulse-modulation versus frequency-modulation fiasco (Stefan F)
   Split out instrument code
+  Figure out pulse-modulation versus frequency-modulation fiasco (Stefan F)
   Revisit float vs float[] ports
   LFOs
   Tempo-sync knobs?
@@ -36,4 +37,4 @@ X Presets
 
 BUGS:
   Add default short voice envelope (currently "popping" with min envelope)
-  Preset "The Master"
+  Preset "The Master" is broken

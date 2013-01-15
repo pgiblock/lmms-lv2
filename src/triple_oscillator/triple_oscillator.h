@@ -1,19 +1,8 @@
 #ifndef TRIPLE_OSCILLATOR_H__
 #define TRIPLE_OSCILLATOR_H__
 
-// Envelope Recalculation period
-#define LB_ENVINC 64
+#include "lv2/lv2plug.in/ns/lv2core/lv2.h"
 
-//
-// New config
-//
-#define LB_24_IGNORE_ENVELOPE   
-#define LB_FILTERED 
-//#define LB_DECAY
-//#define LB_24_RES_TRICK         
-
-#define LB_DIST_RATIO    4.0
-#define LB_24_VOL_ADJUST 3.0
-//#define LB_DECAY_NOTES
+extern const LV2_Descriptor triple_oscillator_descriptor;
 
 #endif // TRIPLE_OSCILLATOR_H__

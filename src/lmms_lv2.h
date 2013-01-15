@@ -16,6 +16,12 @@
 #define BLACK_KEYS_PER_OCTAVE (5)
 #define KEYS_PER_OCTAVE       (WHITE_KEYS_PER_OCTAVE + BLACK_KEYS_PER_OCTAVE)
 
+#define ARRAY_SIZE(x) (sizeof(x) / sizeof((x)[0]))
+
+#define BEGIN_CONNECT_PORTS(port) switch (port) {
+#define CONNECT_PORT(val, buf, type) case val: plugin->buf = (type*)data; break;
+#define END_CONNECT_PORTS() default: break; }
+
 typedef float       sample_t;  // standard sample type
 typedef uint16_t    fpp_t;     // frames per period (0-16384)
 

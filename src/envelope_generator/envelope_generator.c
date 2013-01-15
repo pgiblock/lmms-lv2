@@ -10,6 +10,8 @@
 #include "envelope.h"
 #include "envelope_generator.h"
 
+#define SECS_PER_ENV_SEGMENT (5.0f)
+
 // PORTS
 enum {
 	ENVGEN_DEL       = 0,
@@ -28,13 +30,13 @@ enum {
 
 typedef struct {
 	/* Features */
-	LV2_URID_Map* map;
+	LV2_URID_Map *map;
 
 	/* Ports */
-	float*  gate_in_port;
-	float*  trigger_port;
-	float*  gate_out_port;
-	float*  env_out_port;
+	float *gate_in_port;
+	float *trigger_port;
+	float *gate_out_port;
+	float *env_out_port;
 
 	/* Direct parameter ports */
 	EnvelopeParams params;
@@ -54,6 +56,9 @@ typedef struct {
 } EnvelopeGenerator;
 
 
+static uint32_t envgen_map_uri (EnvelopeGenerator *plugin, const char *uri);
+
+
 static void
 envgen_connect_port(LV2_Handle instance,
                     uint32_t   port,
@@ -61,43 +66,19 @@ envgen_connect_port(LV2_Handle instance,
 {
 	EnvelopeGenerator* plugin = (EnvelopeGenerator*)instance;
 
-	switch (port) {
-		case ENVGEN_DEL:
-			plugin->params.del = (float*)data;
-			break;
-		case ENVGEN_ATT:
-			plugin->params.att = (float*)data;
-			break;
-		case ENVGEN_HOLD:
-			plugin->params.hold = (float*)data;
-			break;
-		case ENVGEN_DEC:
-			plugin->params.dec = (float*)data;
-			break;
-		case ENVGEN_SUS:
-			plugin->params.sus = (float*)data;
-			break;
-		case ENVGEN_REL:
-			plugin->params.rel = (float*)data;
-			break;
-		case ENVGEN_MOD:
-			plugin->params.mod = (float*)data;
-			break;
-		case ENVGEN_GATE_IN:
-			plugin->gate_in_port = (float*)data;
-			break;
-		case ENVGEN_TRIGGER:
-			plugin->trigger_port = (float*)data;
-			break;
-		case ENVGEN_GATE_OUT:
-			plugin->gate_out_port = (float*)data;
-			break;
-		case ENVGEN_ENV_OUT:
-			plugin->env_out_port = (float*)data;
-			break;
-		default:
-			break;
-	}
+	BEGIN_CONNECT_PORTS(port);
+	CONNECT_PORT(ENVGEN_DEL, params.del, float);
+	CONNECT_PORT(ENVGEN_ATT, params.att, float);
+	CONNECT_PORT(ENVGEN_HOLD, params.hold, float);
+	CONNECT_PORT(ENVGEN_DEC, params.dec, float);
+	CONNECT_PORT(ENVGEN_SUS, params.sus, float);
+	CONNECT_PORT(ENVGEN_REL, params.rel, float);
+	CONNECT_PORT(ENVGEN_MOD, params.mod, float);
+	CONNECT_PORT(ENVGEN_GATE_IN, gate_in_port, float);
+	CONNECT_PORT(ENVGEN_TRIGGER, trigger_port, float);
+	CONNECT_PORT(ENVGEN_GATE_OUT, gate_out_port, float);
+	CONNECT_PORT(ENVGEN_ENV_OUT, env_out_port, float);
+	END_CONNECT_PORTS();
 }
 
 
@@ -137,10 +118,8 @@ envgen_instantiate(const LV2_Descriptor*     descriptor,
 	for (int i = 0; features[i]; ++i) {
 		if (!strcmp(features[i]->URI, LV2_URID_URI "#map")) {
 			plugin->map = (LV2_URID_Map*)features[i]->data;
-			plugin->uris.midi_event = plugin->map->map(
-					plugin->map->handle, MIDI_EVENT_URI);
-			plugin->uris.atom_message = plugin->map->map(
-					plugin->map->handle, ATOM_MESSAGE_URI);
+			plugin->uris.midi_event   = envgen_map_uri(plugin, MIDI_EVENT_URI);
+			plugin->uris.atom_message = envgen_map_uri(plugin, ATOM_MESSAGE_URI);
 		}
 	}
 
