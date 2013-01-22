@@ -28,6 +28,9 @@ def configure(conf):
     conf.env.LV2DIR = LV2DIR;
 
     # Required
+    conf.check_cc(lib='m', uselib_store='M',
+            msg="Checking for 'libm' (math library)")
+
     conf.check_cfg(package='lv2core', atleast_version='6.0',
             args=['--cflags', '--libs'])
 
@@ -52,6 +55,6 @@ def configure(conf):
 
 
 def build(bld):
-    bld.recurse('src')
+    bld.recurse('src tests')
 
 # vim: ts=8:sts=4:sw=4:et
