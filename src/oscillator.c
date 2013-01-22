@@ -80,8 +80,11 @@ osc_reset (Oscillator* o, float wave_shape, float modulation_algo,
 	// Init bleps for this oscillator
 	for (i = 0; i < NROFBLEPS; ++i) {
 		blep_state_init(o->bleps + i);
-		o->blep_idx = 0;
 	}
+	// Blep "phase tracking"
+	o->blep_idx   = 0;
+	o->phase_mod  = 0;
+	o->last_phase = 0;
 }
 
 
@@ -379,6 +382,8 @@ osc_aa_update_sync (Oscillator* o, sample_t* buff, sample_t* bend, fpp_t len)
 void
 osc_aa_update (Oscillator* o, sample_t* buff, sample_t* bend, fpp_t len)
 {
+	// FIXME: Seems like this check is basically repeated in the sample code
+	// (inc_limit)
 	if (o->freq >= o->sample_rate / 2) {
 		return;
 	}

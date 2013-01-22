@@ -53,6 +53,7 @@ trip_osc_voice_steal(TripleOscillator* triposc, Voice* v) {
 		}
 		// FIXME: Yet another thing that *should* change during playback?
 		float po_l = (*u->phase_offset_port + *u->phase_detune_port) / 360.0f;
+		// FIXME: Double check this code.  Form is different than line above
 		float po_r = *u->phase_offset_port / 360.0f;
 
 		osc_reset(&(g->osc_l[i]), *u->wave_shape_port, mod,
@@ -204,6 +205,8 @@ triposc_instantiate (const LV2_Descriptor*     descriptor,
 	plugin->env_cut_params.time_base = rate * SECS_PER_ENV_SEGMENT;
 	plugin->env_res_params.time_base = rate * SECS_PER_ENV_SEGMENT;
 
+	plugin->pitch_bend = plugin->pitch_bend_lagged = 1.0f;
+
 	// FIXME: Leak!
 	TripOscGenerator *generators = malloc(sizeof(TripOscGenerator) * NUM_VOICES);
 
@@ -229,6 +232,7 @@ triposc_instantiate (const LV2_Descriptor*     descriptor,
 	memset(&plugin->uris, 0, sizeof(plugin->uris));
 
 	// TODO: Initialize properly!!
+	plugin->frame      = 0;
 	plugin->srate      = rate;
 
 	/*float wave_shape, float modulation_algo,
