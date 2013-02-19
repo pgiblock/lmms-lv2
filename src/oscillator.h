@@ -56,6 +56,8 @@ enum ModulationAlgos {
 
 
 struct Oscillator_st {
+	//// PARAMS:
+
 	// Shared by all oscillators of the group
 	float wave_shape;
 	float modulation_algo;
@@ -63,16 +65,21 @@ struct Oscillator_st {
 	float freq;
 	float volume;
 	float ext_phase_offset;
-	// State
+
 	struct Oscillator_st* sub_osc;
+
+	//// STATE
+
 	float phase_offset;
 	float phase;
-	
+
 	// Experimental MINBLEP stuff
 	BlepState bleps[NROFBLEPS];
 	int   blep_idx;
 	float phase_mod;
 	float last_phase;
+
+	//// HMM????
 
 	// TODO: const sampleBuffer * m_userWave;
 	float sample_rate;

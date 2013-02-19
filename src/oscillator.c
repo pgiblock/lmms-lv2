@@ -63,7 +63,7 @@ osc_reset (Oscillator* o, float wave_shape, float modulation_algo,
 	// FIXME: Ideally share some config across oscillators in the same instrument
 	o->wave_shape = wave_shape;
 	o->modulation_algo = modulation_algo;
-	o->freq = freq;
+	o->freq = freq / sample_rate;
 	o->volume = volume;
 	o->ext_phase_offset = phase_offset;
 	o->sub_osc = sub_osc;
@@ -297,7 +297,7 @@ osc_aa_update_no_sub(Oscillator* o, sample_t* buff, sample_t* bend, fpp_t len) {
 	o->phase_mod = 0.0f;
 
 	for (fpp_t frame = 0; frame < len; ++frame) {
-		buff[frame] = osc_get_aa_sample(o, o->freq * bend[frame], -1.0f); // * m_volume;
+		buff[frame] = osc_get_aa_sample(o, o->freq * bend[frame], -1.0f) * o->volume;
 	}
 }
 
@@ -313,7 +313,7 @@ osc_aa_update_pm(Oscillator* o, sample_t* buff, sample_t* bend, fpp_t len) {
 		//TODO: Huh? what is the 2.0f?
 		osc_coeff    = o->freq * bend[frame];
 		o->phase_mod = buff[frame] * osc_coeff / 2.0f;
-		buff[frame]  = osc_get_aa_sample(o, osc_coeff, -1.0f); // * o->volume;
+		buff[frame]  = osc_get_aa_sample(o, osc_coeff, -1.0f) * o->volume;
 	}
 }
 
@@ -330,7 +330,7 @@ osc_aa_update_fm (Oscillator* o, sample_t* buff, sample_t* bend, fpp_t len)
 		//TODO: Huh? what is the 2.0f?
 		osc_coeff    = o->freq * bend[frame];
 		o->phase_mod = buff[frame] * osc_coeff * 2.0f;
-		buff[frame]  = osc_get_aa_sample(o, osc_coeff, -1.0f); // * o->volume;
+		buff[frame]  = osc_get_aa_sample(o, osc_coeff, -1.0f) * o->volume;
 	}
 }
 
@@ -341,7 +341,7 @@ osc_aa_update_am(Oscillator* o, sample_t* buff, sample_t* bend, fpp_t len) {
 	osc_aa_update(o->sub_osc, buff, bend, len);
 
 	for (fpp_t frame = 0; frame < len; ++frame) {
-		buff[frame] *= osc_get_aa_sample(o, o->freq * bend[frame], -1.0f); // * o->volume;
+		buff[frame] *= osc_get_aa_sample(o, o->freq * bend[frame], -1.0f) * o->volume;
 	}
 }
 
@@ -352,7 +352,7 @@ osc_aa_update_mix(Oscillator* o, sample_t* buff, sample_t* bend, fpp_t len) {
 	osc_aa_update(o->sub_osc, buff, bend, len);
 
 	for (fpp_t frame = 0; frame < len; ++frame) {
-		buff[frame] += osc_get_aa_sample(o, o->freq * bend[frame], -1.0f); // * o->volume;
+		buff[frame] += osc_get_aa_sample(o, o->freq * bend[frame], -1.0f) * o->volume;
 	}
 }
 
@@ -371,9 +371,9 @@ osc_aa_update_sync (Oscillator* o, sample_t* buff, sample_t* bend, fpp_t len)
 	for (fpp_t frame = 0; frame < len; ++frame) {
 		osc_coeff = o->freq * bend[frame];
 		if (osc_sync_ok(o->sub_osc, sub_osc_coeff)) {
-			buff[frame] = osc_get_aa_sample(o, osc_coeff, o->phase_offset); // * o->volume;
+			buff[frame] = osc_get_aa_sample(o, osc_coeff, o->phase_offset) * o->volume;
 		} else {
-			buff[frame] = osc_get_aa_sample(o, osc_coeff, -1.0f); // * o->volume;
+			buff[frame] = osc_get_aa_sample(o, osc_coeff, -1.0f) * o->volume;
 		}
 	}
 }

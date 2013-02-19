@@ -36,8 +36,8 @@ trip_osc_voice_steal(TripleOscillator* triposc, Voice* v) {
 		// FIXME: This check won't be needed if we fix oscillator to just hold float* members bound straight to ports
 		float mod = (i==2)? 0 : *u->modulation_port;
 		// FIXME: Detuning needs to happen occationally even after note-on
-		float detune_l = powf( 2.0f, (*u->detune_coarse_port * 100.0f + *u->detune_fine_l_port) / 1200.0f) / triposc->srate;
-		float detune_r = powf( 2.0f, (*u->detune_coarse_port * 100.0f + *u->detune_fine_r_port) / 1200.0f) / triposc->srate;
+		float detune_l = powf( 2.0f, (*u->detune_coarse_port * 100.0f + *u->detune_fine_l_port) / 1200.0f);
+		float detune_r = powf( 2.0f, (*u->detune_coarse_port * 100.0f + *u->detune_fine_r_port) / 1200.0f);
 		// FIXME: Volume/panning changes also need to happen occationally after note-on
 		float vol_l, vol_r;
 		if (*u->pan_port >= 0.0f ) {
