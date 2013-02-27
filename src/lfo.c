@@ -36,13 +36,13 @@ lfo_get_osc_sample (float wave_shape, float sample)
 static void
 advance_state (LfoParams *p, LfoState *st)
 {
+	// TODO: Bring back expKnobVal
 	switch (st->q) {
 		case LFO_OFF:
 			if (*p->del > 0.0f) {
 				st->q       = LFO_DEL;
 				st->nframes = p->time_base * /*expKnobVal*/(*p->del);
 				st->frame   = 0;
-				printf("State = DEL\n");
 				return;
 			}
 			// Fall-through
@@ -51,7 +51,6 @@ advance_state (LfoParams *p, LfoState *st)
 				st->q       = LFO_ATT;
 				st->nframes = p->time_base * /*expKnobVal*/(*p->att);
 				st->frame   = 0;
-				printf("State = ATT\n");
 				return;
 			}
 			// Fall-through
@@ -59,7 +58,6 @@ advance_state (LfoParams *p, LfoState *st)
 			st->q       = LFO_SUS;
 			st->nframes = 0;
 			st->frame   = 0;
-			printf("State = SUS\n");
 			return;
 	}
 }
@@ -95,6 +93,7 @@ void
 lfo_trigger (Lfo *lfo)
 {
 	lfo->st.q = LFO_OFF;
+	lfo->st.phase = 0.0f;
 	advance_state(lfo->p, &lfo->st);
 }
 
@@ -108,41 +107,43 @@ lfo_run (Lfo *lfo, float *samples, uint32_t nsamples)
 	for (i=0; i<nsamples; ++i) {
 		// Stupid way
 		switch (lfo->st.q) {
-			case LFO_OFF:
-				o = 0.0f;
-				break;
+		case LFO_OFF:
+			o = 0.0f;
+			break;
 
-			case LFO_DEL:
-				// Process
-				o = 0.0f;
-				// State change
-				lfo->st.frame++;
-				if (lfo->st.frame > lfo->st.nframes) {
-					advance_state(lfo->p, &lfo->st);
-				}
-				break;
+		case LFO_DEL:
+			// Process
+			o = 0.0f;
+			// State change
+			lfo->st.frame++;
+			if (lfo->st.frame > lfo->st.nframes) {
+				advance_state(lfo->p, &lfo->st);
+			}
+			break;
 
-			case LFO_ATT:
-				// Process
-				o = ((float)lfo->st.frame) / (lfo->st.nframes);
-				// State
-				lfo->st.frame++;
-				if (lfo->st.frame >= lfo->st.nframes) {
-					advance_state(lfo->p, &lfo->st);
-				}
-				break;
+		case LFO_ATT:
+			// Process
+			o = ((float)lfo->st.frame) / (lfo->st.nframes);
+			// State
+			lfo->st.frame++;
+			if (lfo->st.frame >= lfo->st.nframes) {
+				advance_state(lfo->p, &lfo->st);
+			}
+			break;
 
-			case LFO_SUS:
-				o = 1.0f; // Sustain Level;
-				break;
+		case LFO_SUS:
+			o = 1.0f; // Sustain Level;
+			break;
 
-			default:
-				break;
+		default:
+			break;
 		}
 
-		// LFO amount
-		o *= *lfo->p->mod;
+		// Modulate with LFO-env with LFO-osc
 		o *= lfo_get_osc_sample (*lfo->p->shape, lfo->st.phase);
+		// Total LFO amount
+		o *= *lfo->p->mod * 0.5f;
+		// Update phase
 		// TODO: See if we can yank the divide out (into timebase?)
 		lfo->st.phase += 1.0f/(lfo->p->time_base * *lfo->p->spd);
 
