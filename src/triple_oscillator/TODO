@@ -30,6 +30,7 @@ X   Exp
   Revisit float vs float[] ports
   LFOs
   Tempo-sync knobs?
+  "Un-map" controls like "LFO speed". [20ms, 20000ms] instead of [0.001,1.0]
 X Presets
   Add lagged inputs wherever else it is needed
   Create standalone triposc voice plugin

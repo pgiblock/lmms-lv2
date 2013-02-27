@@ -10,7 +10,7 @@ def build(bld):
     installdir = os.path.join(bld.env.LV2DIR, bundle)
 
     bld.objects(source='triple_oscillator.c', includes='..',
-            use=['basic_filters','blep','envelope','oscillator'],
+            use=['basic_filters','blep','envelope', 'lfo', 'oscillator'],
             target='triple_oscillator')
 
     for f in ['triple_oscillator.ttl']:

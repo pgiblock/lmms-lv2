@@ -1,8 +1,9 @@
 #ifndef VOICE_H__
 #define VOICE_H__
 
-#include "envelope.h"
 #include "basic_filters.h"
+#include "envelope.h"
+#include "lfo.h"
 
 typedef struct {
 	// Standard voice state
@@ -15,10 +16,13 @@ typedef struct {
 
 	// Volume Envelope TODO: Remove from generic Voice?
 	Envelope  *env_vol;
+	Lfo       *lfo_vol;
 
 	// Filter envelopes and state
 	Envelope  *env_cut;
+	Lfo       *lfo_cut;
 	Envelope  *env_res;
+	Lfo       *lfo_res;
 	Filter    *filter;
 
 	// TODO: Function pointers for processing the voice

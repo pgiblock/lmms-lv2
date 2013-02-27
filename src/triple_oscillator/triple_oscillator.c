@@ -90,6 +90,12 @@ voice_steal(TripleOscillator* triposc, uint8_t midi_note) {
 	envelope_trigger(v->env_cut);
 	envelope_trigger(v->env_res);
 
+	// Trigger LFOs
+	lfo_trigger(v->lfo_vol);
+	// FIXME: Do LFOs _always_ retrigger?
+	lfo_trigger(v->lfo_cut);
+	lfo_trigger(v->lfo_res);
+
 	// Pick next victim
 	triposc->victim_idx = (triposc->victim_idx+1) % NUM_VOICES;
 	return v;
@@ -131,6 +137,12 @@ triposc_connect_port (LV2_Handle instance,
 		CONNECT_PORT(TRIPOSC_ENV_VOL_SUS, env_vol_params.sus, float);
 		CONNECT_PORT(TRIPOSC_ENV_VOL_REL, env_vol_params.rel, float);
 		CONNECT_PORT(TRIPOSC_ENV_VOL_MOD, env_vol_params.mod, float);
+		CONNECT_PORT(TRIPOSC_LFO_VOL_DEL, lfo_vol_params.del, float);
+		CONNECT_PORT(TRIPOSC_LFO_VOL_ATT, lfo_vol_params.att, float);
+		CONNECT_PORT(TRIPOSC_LFO_VOL_SPD, lfo_vol_params.spd, float);
+		CONNECT_PORT(TRIPOSC_LFO_VOL_SHAPE, lfo_vol_params.shape, float);
+		CONNECT_PORT(TRIPOSC_LFO_VOL_MOD, lfo_vol_params.mod, float);
+		CONNECT_PORT(TRIPOSC_LFO_VOL_OP, lfo_vol_params.op, float);
 		CONNECT_PORT(TRIPOSC_FILTER_ENABLED, filter_enabled_port, float);
 		CONNECT_PORT(TRIPOSC_FILTER_TYPE, filter_type_port, float);
 		CONNECT_PORT(TRIPOSC_FILTER_CUT, filter_cut_port, float);
@@ -142,6 +154,12 @@ triposc_connect_port (LV2_Handle instance,
 		CONNECT_PORT(TRIPOSC_ENV_CUT_SUS, env_cut_params.sus, float);
 		CONNECT_PORT(TRIPOSC_ENV_CUT_REL, env_cut_params.rel, float);
 		CONNECT_PORT(TRIPOSC_ENV_CUT_MOD, env_cut_params.mod, float);
+		CONNECT_PORT(TRIPOSC_LFO_CUT_DEL, lfo_cut_params.del, float);
+		CONNECT_PORT(TRIPOSC_LFO_CUT_ATT, lfo_cut_params.att, float);
+		CONNECT_PORT(TRIPOSC_LFO_CUT_SPD, lfo_cut_params.spd, float);
+		CONNECT_PORT(TRIPOSC_LFO_CUT_SHAPE, lfo_cut_params.shape, float);
+		CONNECT_PORT(TRIPOSC_LFO_CUT_MOD, lfo_cut_params.mod, float);
+		CONNECT_PORT(TRIPOSC_LFO_CUT_OP, lfo_cut_params.op, float);
 		CONNECT_PORT(TRIPOSC_ENV_RES_DEL, env_res_params.del, float);
 		CONNECT_PORT(TRIPOSC_ENV_RES_ATT, env_res_params.att, float);
 		CONNECT_PORT(TRIPOSC_ENV_RES_HOLD, env_res_params.hold, float);
@@ -149,6 +167,12 @@ triposc_connect_port (LV2_Handle instance,
 		CONNECT_PORT(TRIPOSC_ENV_RES_SUS, env_res_params.sus, float);
 		CONNECT_PORT(TRIPOSC_ENV_RES_REL, env_res_params.rel, float);
 		CONNECT_PORT(TRIPOSC_ENV_RES_MOD, env_res_params.mod, float);
+		CONNECT_PORT(TRIPOSC_LFO_RES_DEL, lfo_res_params.del, float);
+		CONNECT_PORT(TRIPOSC_LFO_RES_ATT, lfo_res_params.att, float);
+		CONNECT_PORT(TRIPOSC_LFO_RES_SPD, lfo_res_params.spd, float);
+		CONNECT_PORT(TRIPOSC_LFO_RES_SHAPE, lfo_res_params.shape, float);
+		CONNECT_PORT(TRIPOSC_LFO_RES_MOD, lfo_res_params.mod, float);
+		CONNECT_PORT(TRIPOSC_LFO_RES_OP, lfo_res_params.op, float);
 		END_CONNECT_PORTS();
 		return;
 	// Calculate osc index of osc-specific ports
@@ -201,9 +225,14 @@ triposc_instantiate (const LV2_Descriptor*     descriptor,
 	}
 
 	// FIXME: Hardcoding envelope for now. Yuck
-	plugin->env_vol_params.time_base = rate * SECS_PER_ENV_SEGMENT;
-	plugin->env_cut_params.time_base = rate * SECS_PER_ENV_SEGMENT;
+	plugin->env_vol_params.time_base =
+	plugin->env_cut_params.time_base =
 	plugin->env_res_params.time_base = rate * SECS_PER_ENV_SEGMENT;
+
+	// FIXME: What to use for time_base?? 
+	plugin->lfo_vol_params.time_base =
+	plugin->lfo_cut_params.time_base =
+	plugin->lfo_res_params.time_base = rate * SECS_PER_LFO_PERIOD;
 
 	plugin->pitch_bend = plugin->pitch_bend_lagged = 1.0f;
 
@@ -221,6 +250,9 @@ triposc_instantiate (const LV2_Descriptor*     descriptor,
 		plugin->voices[i].env_vol = envelope_create(&plugin->env_vol_params);
 		plugin->voices[i].env_cut = envelope_create(&plugin->env_cut_params);
 		plugin->voices[i].env_res = envelope_create(&plugin->env_res_params);
+		plugin->voices[i].lfo_vol = lfo_create(&plugin->lfo_vol_params);
+		plugin->voices[i].lfo_cut = lfo_create(&plugin->lfo_cut_params);
+		plugin->voices[i].lfo_res = lfo_create(&plugin->lfo_res_params);
 		plugin->voices[i].filter  = filter_create(rate);
 
 		plugin->voices[i].generator = generators + i;
@@ -299,7 +331,6 @@ triposc_run (LV2_Handle instance,
 		int    outlen = ev_frames-pos;
 
 		// Zero the output buffers and fill pitch-bend
-		float p0 = plugin->pitch_bend_lagged;
 		for (int f=0; f<outlen; ++f) {
 			out_l[f] = out_r[f] = 0.0f;
 
@@ -307,7 +338,6 @@ triposc_run (LV2_Handle instance,
 			                    plugin->pitch_bend,
 			                    PITCH_BEND_LAG);
 		}
-		plugin->pitch_bend_lagged = p0;
 
 		// Accumulate voices
 		for (int i=0; i<NUM_VOICES; ++i) {
@@ -321,7 +351,12 @@ triposc_run (LV2_Handle instance,
 				envelope_run(v->env_cut, envbuf_cut, outlen);
 				envelope_run(v->env_res, envbuf_res, outlen);
 
-				TripOscGenerator* g = (TripOscGenerator*)v->generator;
+				// Calculate LFOs
+				lfo_run(v->lfo_vol, envbuf_vol, outlen);
+				lfo_run(v->lfo_cut, envbuf_cut, outlen);
+				lfo_run(v->lfo_res, envbuf_res, outlen);
+
+				TripOscGenerator *g = (TripOscGenerator *)v->generator;
 				// TODO: Make a mixing version of the run function
 				
 				// Generate samples
@@ -331,9 +366,10 @@ triposc_run (LV2_Handle instance,
 				// Amount to add to value generated by envelope
 				// For volume, the envelope is more of a "mix" than a pure mod
 				float vol_amt_add = (*plugin->env_vol_params.mod >= 0.0f)
-						? 1.0f - *plugin->env_vol_params.mod
-						: 1.0f;
+				                    ? 1.0f - *plugin->env_vol_params.mod
+				                    : 1.0f;
 
+				// Standard filter
 				if (*plugin->filter_enabled_port > 0.5f) {
 					// Filter enabled
 					for (int f=0; f<outlen; ++f) {
@@ -353,6 +389,7 @@ triposc_run (LV2_Handle instance,
 						filter_calc_coeffs(v->filter, cut, res);
 						out_l[f] +=  filter_get_sample(v->filter, outbuf[0][f], 0) * out_mod_amt;
 						out_r[f] +=  filter_get_sample(v->filter, outbuf[1][f], 1) * out_mod_amt;
+						//printf("%f %f %f %f %f\n", cut, envbuf_cut[f], *plugin->filter_cut_port, out_l[f], outbuf[0][f] * out_mod_amt);
 					}
 				} else {
 					// No Filter
@@ -394,7 +431,7 @@ triposc_run (LV2_Handle instance,
 					voice_release(plugin, data[1]);
 				} else if (cmd == 0xe0) {
 					// Two-octave pitch_bend
-					plugin->pitch_bend = powf(2.0f, ((data[2]/128.0f) - 0.5f) * PITCH_BEND_RANGE);
+					plugin->pitch_bend = powf(2.0f, ((data[2]/64.0f) - 1.0f) * PITCH_BEND_RANGE);
 					//printf("PB 0x%x 0x%x 0x%x 0x%x    %f\n",cmd,data[1],data[2],data[3],plugin->pitch_bend);
 				} else {
 					//printf("   0x%x 0x%x 0x%x\n",cmd,data[1],data[2]);
@@ -413,11 +450,11 @@ triposc_run (LV2_Handle instance,
 
 
 static LV2_State_Status
-triposc_save (LV2_Handle      instance,
-		LV2_State_Store_Function  store,
-		LV2_State_Handle          handle,
-		uint32_t                  flags,
-		const LV2_Feature* const* features)
+triposc_save (LV2_Handle                instance,
+              LV2_State_Store_Function  store,
+              LV2_State_Handle          handle,
+              uint32_t                  flags,
+              const LV2_Feature* const* features)
 {
 	fprintf(stderr, "TripleOscillator save stub.\n");
 	return LV2_STATE_SUCCESS;
@@ -425,11 +462,11 @@ triposc_save (LV2_Handle      instance,
 
 
 static LV2_State_Status
-triposc_restore (LV2_Handle     instance,
-		LV2_State_Retrieve_Function retrieve,
-		LV2_State_Handle            handle,
-		uint32_t                    flags,
-		const LV2_Feature* const*   features)
+triposc_restore (LV2_Handle                  instance,
+                 LV2_State_Retrieve_Function retrieve,
+                 LV2_State_Handle            handle,
+                 uint32_t                    flags,
+                 const LV2_Feature* const*   features)
 {
 	fprintf(stderr, "TripleOscillator restore stub.\n");
 	return LV2_STATE_SUCCESS;
