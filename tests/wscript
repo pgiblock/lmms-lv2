@@ -11,11 +11,13 @@ def build(bld):
     bld.program(source='test_oscillator.c',
             target='test_oscillator',
             includes='. ../src',
-            use='oscillator blep M')
+            use='oscillator blep M',
+            install_path=None)
     
     bld.program(source='test_lfo.c',
             target='test_lfo',
             includes='. ../src',
-            use='lfo oscillator blep M')
+            use='lfo oscillator blep M',
+            install_path=None)
 
 # vim: ts=8:sts=4:sw=4:et
