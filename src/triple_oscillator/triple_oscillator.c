@@ -24,7 +24,7 @@ triposc_map_uri (TripleOscillator *plugin, const char *uri)
 
 
 static void
-trip_osc_voice_steal(TripleOscillator* triposc, Voice* v) {
+trip_osc_voice_steal(TripleOscillator* triposc, Voice* v, uint8_t velocity) {
 	TripOscGenerator* g = (TripOscGenerator*)v->generator;
 
 	// Init note
@@ -40,6 +40,8 @@ trip_osc_voice_steal(TripleOscillator* triposc, Voice* v) {
 		float detune_r = powf( 2.0f, (*u->detune_coarse_port * 100.0f + *u->detune_fine_r_port) / 1200.0f);
 		// FIXME: Volume/panning changes also need to happen occationally after note-on
 		float vol_l, vol_r;
+		
+		// Combine volume and panning
 		if (*u->pan_port >= 0.0f ) {
 			vol_l = ( *u->vol_port * (PAN_MAX - *u->pan_port) ) /
 			        ( PAN_MAX * VOL_MAX );
@@ -51,6 +53,10 @@ trip_osc_voice_steal(TripleOscillator* triposc, Voice* v) {
 			vol_r = ( *u->vol_port * (PAN_MAX + *u->pan_port) ) /
 			        ( PAN_MAX * VOL_MAX);
 		}
+		// Apply velocity (TODO: Make sure velocity is supposed to be pre-filter)
+		vol_l *= ((float)velocity) / 127.0;
+		vol_r *= ((float)velocity) / 127.0;
+
 		// FIXME: Yet another thing that *should* change during playback?
 		float po_l = (*u->phase_offset_port + *u->phase_detune_port) / 360.0f;
 		// FIXME: Double check this code.  Form is different than line above
@@ -75,7 +81,7 @@ trip_osc_voice_release(TripleOscillator* triposc, Voice* v) {
 
 
 Voice*
-voice_steal(TripleOscillator* triposc, uint8_t midi_note) {
+voice_steal(TripleOscillator* triposc, uint8_t midi_note, uint8_t velocity) {
 	// We are just going round-robin for now
 	// TODO: Prioritize on vol-envelope state
 	Voice* v = &triposc->voices[triposc->victim_idx];
@@ -83,7 +89,7 @@ voice_steal(TripleOscillator* triposc, uint8_t midi_note) {
 	// Stealing
 	v->midi_note = midi_note;
 	// Would be func-pointer or voice_steal would be called by tovs()
-	trip_osc_voice_steal(triposc, v);
+	trip_osc_voice_steal(triposc, v, velocity);
 
 	// Trigger envelopes
 	envelope_trigger(v->env_vol);
@@ -422,15 +428,21 @@ triposc_run (LV2_Handle instance,
 				uint8_t const  cmd  = data[0];
 				//fprintf(stderr, "  cmd=%d data1=%d data2=%d\n", cmd, data[1], data[2]);
 				if (cmd == 0x90) {
-					// Note On
-					Voice *v = voice_steal(plugin, data[1]);
-					v->filter->type = *plugin->filter_type_port;
+					// Note On (probably)
+					if (data[2] == 0x00) {
+						// Actually a Note Off due to zero velocity
+						voice_release(plugin, data[1]);
+					} else {
+						// Yep, really Note On
+						Voice *v = voice_steal(plugin, data[1], data[2]);
+						v->filter->type = *plugin->filter_type_port;
+					}
 				} else if (cmd == 0x80) {
 					// Note Off
 					// TODO need envelope
 					voice_release(plugin, data[1]);
 				} else if (cmd == 0xe0) {
-					// Two-octave pitch_bend
+					// Pitch Bend
 					plugin->pitch_bend = powf(2.0f, ((data[2]/64.0f) - 1.0f) * PITCH_BEND_RANGE);
 					//printf("PB 0x%x 0x%x 0x%x 0x%x    %f\n",cmd,data[1],data[2],data[3],plugin->pitch_bend);
 				} else {
