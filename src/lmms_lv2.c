@@ -11,14 +11,14 @@
 const LV2_Descriptor* lv2_descriptor(uint32_t index)
 {
 	switch (index) {
-		case 0:
-			return &lb303_descriptor;
-		case 1:
-			return &triple_oscillator_descriptor;
-		case 2:
-			return &envelope_generator_descriptor;
-		default:
-			return NULL;
+	case 0:
+		return &lb303_descriptor;
+	case 1:
+		return &triple_oscillator_descriptor;
+	case 2:
+		return &envelope_generator_descriptor;
+	default:
+		return NULL;
 	}
 }
 

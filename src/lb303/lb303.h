@@ -5,5 +5,4 @@
 
 extern const LV2_Descriptor lb303_descriptor;
 
-
 #endif // LB303_H__

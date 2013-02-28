@@ -66,7 +66,7 @@ struct Oscillator_st {
 	float volume;
 	float ext_phase_offset;
 
-	struct Oscillator_st* sub_osc;
+	struct Oscillator_st *sub_osc;
 
 	//// STATE
 
@@ -91,23 +91,23 @@ typedef struct Oscillator_st Oscillator;
 
 Oscillator* osc_create();
 
-void osc_reset(Oscillator* osc,
+void osc_reset(Oscillator *osc,
 		float wave_shape, float modulation_algo,
 		float freq, float volume,
-		Oscillator* sub_osc, float phase_offset,
+		Oscillator *sub_osc, float phase_offset,
 		float sample_rate);
 
-void osc_destroy(Oscillator* o);
+void osc_destroy(Oscillator *o);
 
 // Original synthesis functions
-void osc_update(Oscillator* o, sample_t* buff, sample_t* bend, fpp_t len);
-sample_t osc_get_sample(Oscillator* o, float sample);
+void osc_update(Oscillator *o, sample_t *buff, sample_t *bend, fpp_t len);
+sample_t osc_get_sample(Oscillator *o, float sample);
 
 // Antialiased synthesis functions
-void osc_aa_update(Oscillator* o, sample_t* buff, sample_t* bend, fpp_t len);
-sample_t osc_get_aa_sample(Oscillator* o, float increment, float sync_offset);
+void osc_aa_update(Oscillator *o, sample_t *buff, sample_t *bend, fpp_t len);
+sample_t osc_get_aa_sample(Oscillator *o, float increment, float sync_offset);
 
-void osc_print(Oscillator* o);
+void osc_print(Oscillator *o);
 
 // Waveform sample routines
 

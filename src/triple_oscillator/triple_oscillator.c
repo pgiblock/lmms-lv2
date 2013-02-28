@@ -24,15 +24,16 @@ triposc_map_uri (TripleOscillator *plugin, const char *uri)
 
 
 static void
-trip_osc_voice_steal(TripleOscillator* triposc, Voice* v, uint8_t velocity) {
-	TripOscGenerator* g = (TripOscGenerator*)v->generator;
+trip_osc_voice_steal (TripleOscillator *triposc, Voice *v, uint8_t velocity)
+{
+	TripOscGenerator *g = (TripOscGenerator*)v->generator;
 
 	// Init note
 	float freq  = powf(2.0f, ((float)v->midi_note-69.0f) / 12.0f) * 440.0f;
 
 	// Reset oscillators backwards, wee...
 	for (int i=2; i>=0; --i) {
-		OscillatorUnit* u = &triposc->units[i];
+		OscillatorUnit *u = &triposc->units[i];
 		// FIXME: This check won't be needed if we fix oscillator to just hold float* members bound straight to ports
 		float mod = (i==2)? 0 : *u->modulation_port;
 		// FIXME: Detuning needs to happen occationally even after note-on
@@ -75,16 +76,18 @@ trip_osc_voice_steal(TripleOscillator* triposc, Voice* v, uint8_t velocity) {
 
 
 static void
-trip_osc_voice_release(TripleOscillator* triposc, Voice* v) {
+trip_osc_voice_release (TripleOscillator *triposc, Voice *v)
+{
 	// Noop
 }
 
 
 Voice*
-voice_steal(TripleOscillator* triposc, uint8_t midi_note, uint8_t velocity) {
+voice_steal (TripleOscillator *triposc, uint8_t midi_note, uint8_t velocity)
+{
 	// We are just going round-robin for now
 	// TODO: Prioritize on vol-envelope state
-	Voice* v = &triposc->voices[triposc->victim_idx];
+	Voice *v = &triposc->voices[triposc->victim_idx];
 
 	// Stealing
 	v->midi_note = midi_note;
@@ -109,9 +112,10 @@ voice_steal(TripleOscillator* triposc, uint8_t midi_note, uint8_t velocity) {
 	
 
 void
-voice_release(TripleOscillator* triposc, uint8_t midi_note) {
+voice_release (TripleOscillator *triposc, uint8_t midi_note)
+{
 	for (int i=0; i<NUM_VOICES; ++i) {
-		Voice* v = &triposc->voices[i];
+		Voice *v = &triposc->voices[i];
 		if (v->midi_note == midi_note) {
 			envelope_release(v->env_vol);
 			envelope_release(v->env_cut);
@@ -127,7 +131,7 @@ triposc_connect_port (LV2_Handle instance,
                       uint32_t   port,
                       void*      data)
 {
-	TripleOscillator* plugin = (TripleOscillator*)instance;
+	TripleOscillator *plugin = (TripleOscillator *)instance;
 	int oscidx, oscport;
 
 	// Handle Plugin-global ports
@@ -211,18 +215,20 @@ triposc_connect_port (LV2_Handle instance,
 static void
 triposc_cleanup (LV2_Handle instance)
 {
-	TripleOscillator* plugin = (TripleOscillator*)instance;
+	TripleOscillator *plugin = (TripleOscillator *)instance;
 	free(plugin->voices);
 	free(instance);
 }
 
 
 static LV2_Handle
-triposc_instantiate (const LV2_Descriptor*     descriptor,
+triposc_instantiate (const LV2_Descriptor     *descriptor,
                      double                    rate,
-                     const char*               path,
-                     const LV2_Feature* const* features)
+                     const char               *path,
+                     const LV2_Feature * const *features)
 {
+	int i;
+	
 	/* Malloc and initialize new Synth */
 	TripleOscillator *plugin = (TripleOscillator*)malloc(sizeof(TripleOscillator));
 	if (!plugin) {
@@ -251,7 +257,7 @@ triposc_instantiate (const LV2_Descriptor*     descriptor,
 		fprintf(stderr, "Could not allocate TripleOscillator voices.\n");
 		return NULL;
 	}
-	for (int i=0; i<NUM_VOICES; ++i) {
+	for (i=0; i<NUM_VOICES; ++i) {
 		plugin->voices[i].midi_note = 0xFF;
 		plugin->voices[i].env_vol = envelope_create(&plugin->env_vol_params);
 		plugin->voices[i].env_cut = envelope_create(&plugin->env_cut_params);
@@ -280,7 +286,7 @@ triposc_instantiate (const LV2_Descriptor*     descriptor,
 	//plugin->osc = osc_create(0.f, 0.f, 440.f, 1.f, 1.f, NULL, 0.f, plugin->srate);
 
 	/* Scan host features for URID map and map everything */
-	for (int i = 0; features[i]; ++i) {
+	for (i = 0; features[i]; ++i) {
 		if (!strcmp(features[i]->URI, LV2_URID__map)) {
 			plugin->map = (LV2_URID_Map*)features[i]->data;
 		}
@@ -306,7 +312,7 @@ static void
 triposc_run (LV2_Handle instance,
              uint32_t   sample_count)
 {
-	TripleOscillator* plugin = (TripleOscillator*)instance;
+	TripleOscillator *plugin = (TripleOscillator *)instance;
 
 	uint32_t    pos;
 	uint32_t    ev_frames;
@@ -319,7 +325,7 @@ triposc_run (LV2_Handle instance,
 	float envbuf_cut[sample_count];
 	float envbuf_res[sample_count];
 
-	LV2_Atom_Event* ev = lv2_atom_sequence_begin(&plugin->event_port->body);
+	LV2_Atom_Event *ev = lv2_atom_sequence_begin(&plugin->event_port->body);
 
 	for (pos = 0; pos < sample_count;) {
 		// Check for next event
@@ -347,7 +353,7 @@ triposc_run (LV2_Handle instance,
 
 		// Accumulate voices
 		for (int i=0; i<NUM_VOICES; ++i) {
-			Voice* v = &plugin->voices[i];
+			Voice *v = &plugin->voices[i];
 
 			if (v->midi_note != 0xFF) {
 				int active;
@@ -423,7 +429,7 @@ triposc_run (LV2_Handle instance,
 		// Process event
 		if (ev) {
 			if (ev->body.type == plugin->uris.midi_event) {
-				uint8_t* const data = (uint8_t* const)(ev + 1);
+				uint8_t * const data = (uint8_t * const)(ev + 1);
 			  ev = lv2_atom_sequence_next(ev);
 				uint8_t const  cmd  = data[0];
 				//fprintf(stderr, "  cmd=%d data1=%d data2=%d\n", cmd, data[1], data[2]);
@@ -462,11 +468,11 @@ triposc_run (LV2_Handle instance,
 
 
 static LV2_State_Status
-triposc_save (LV2_Handle                instance,
-              LV2_State_Store_Function  store,
-              LV2_State_Handle          handle,
-              uint32_t                  flags,
-              const LV2_Feature* const* features)
+triposc_save (LV2_Handle                 instance,
+              LV2_State_Store_Function   store,
+              LV2_State_Handle           handle,
+              uint32_t                   flags,
+              const LV2_Feature * const *features)
 {
 	fprintf(stderr, "TripleOscillator save stub.\n");
 	return LV2_STATE_SUCCESS;
@@ -478,7 +484,7 @@ triposc_restore (LV2_Handle                  instance,
                  LV2_State_Retrieve_Function retrieve,
                  LV2_State_Handle            handle,
                  uint32_t                    flags,
-                 const LV2_Feature* const*   features)
+                 const LV2_Feature * const  *features)
 {
 	fprintf(stderr, "TripleOscillator restore stub.\n");
 	return LV2_STATE_SUCCESS;

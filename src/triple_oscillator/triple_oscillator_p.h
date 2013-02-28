@@ -1,6 +1,11 @@
 #ifndef TRIPLE_OSCILLATOR_P_H__
 #define TRIPLE_OSCILLATOR_P_H__
 
+#include "lmms_lv2.h"
+#include "envelope.h"
+#include "lfo.h"
+#include "oscillator.h"
+
 // max length of each envelope-segment (e.g. attack)
 #define SECS_PER_ENV_SEGMENT 5.0f
 // max length of LFO period
@@ -15,7 +20,6 @@
 
 #define PITCH_BEND_LAG   (0.5)
 #define PITCH_BEND_RANGE (1.0) // One octave
-
 
 // PORTS
 enum {

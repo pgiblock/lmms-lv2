@@ -19,7 +19,7 @@
 #define ARRAY_SIZE(x) (sizeof(x) / sizeof((x)[0]))
 
 #define BEGIN_CONNECT_PORTS(port) switch (port) {
-#define CONNECT_PORT(val, buf, type) case val: plugin->buf = (type*)data; break;
+#define CONNECT_PORT(val, buf, type) case val: plugin->buf = (type *)data; break;
 #define END_CONNECT_PORTS() default: break; }
 
 typedef float       sample_t;  // standard sample type

@@ -9,62 +9,16 @@
 #include "uris.h"
 #include "envelope.h"
 #include "envelope_generator.h"
-
-#define SECS_PER_ENV_SEGMENT (5.0f)
-
-// PORTS
-enum {
-	ENVGEN_DEL       = 0,
-	ENVGEN_ATT       = 1,
-	ENVGEN_HOLD      = 2,
-	ENVGEN_DEC       = 3,
-	ENVGEN_SUS       = 4,
-	ENVGEN_REL       = 5,
-	ENVGEN_MOD       = 6,
-	ENVGEN_GATE_IN   = 7,
-	ENVGEN_TRIGGER   = 8,
-	ENVGEN_GATE_OUT  = 9,
-	ENVGEN_ENV_OUT   = 10
-};
-
-
-typedef struct {
-	/* Features */
-	LV2_URID_Map *map;
-
-	/* Ports */
-	float *gate_in_port;
-	float *trigger_port;
-	float *gate_out_port;
-	float *env_out_port;
-
-	/* Direct parameter ports */
-	EnvelopeParams params;
-
-	/* URIs TODO: Global*/
-	struct {
-		LV2_URID midi_event;
-		LV2_URID atom_message;
-	} uris;
-
-	/* Playback state */
-	double    srate;
-	float     lasto;
-
-	Envelope *env;
-
-} EnvelopeGenerator;
-
+#include "envelope_generator_p.h"
 
 static uint32_t envgen_map_uri (EnvelopeGenerator *plugin, const char *uri);
 
-
 static void
-envgen_connect_port(LV2_Handle instance,
-                    uint32_t   port,
-                    void*      data)
+envgen_connect_port (LV2_Handle instance,
+                     uint32_t   port,
+                     void      *data)
 {
-	EnvelopeGenerator* plugin = (EnvelopeGenerator*)instance;
+	EnvelopeGenerator *plugin = (EnvelopeGenerator *)instance;
 
 	BEGIN_CONNECT_PORTS(port);
 	CONNECT_PORT(ENVGEN_DEL, params.del, float);
@@ -83,22 +37,22 @@ envgen_connect_port(LV2_Handle instance,
 
 
 static void
-envgen_cleanup(LV2_Handle instance)
+envgen_cleanup (LV2_Handle instance)
 {
-	EnvelopeGenerator* plugin = (EnvelopeGenerator*)instance;
+	EnvelopeGenerator *plugin = (EnvelopeGenerator *)instance;
 	envelope_destroy(plugin->env);
 	free(plugin);
 }
 
 
 static LV2_Handle
-envgen_instantiate(const LV2_Descriptor*     descriptor,
-                   double                    rate,
-                   const char*               path,
-                   const LV2_Feature* const* features)
+envgen_instantiate(const LV2_Descriptor      *descriptor,
+                   double                     rate,
+                   const char                *path,
+                   const LV2_Feature * const *features)
 {
 	/* Malloc and initialize new Synth */
-	EnvelopeGenerator* plugin = (EnvelopeGenerator*)malloc(sizeof(EnvelopeGenerator));
+	EnvelopeGenerator *plugin = malloc(sizeof(EnvelopeGenerator));
 	if (!plugin) {
 		fprintf(stderr, "Could not allocate Envelope Generator.\n");
 		return NULL;
@@ -138,10 +92,10 @@ fail:
 
 
 static void
-envgen_run(LV2_Handle instance,
-           uint32_t   sample_count)
+envgen_run (LV2_Handle instance,
+            uint32_t   sample_count)
 {
-	EnvelopeGenerator* eg = (EnvelopeGenerator*)instance;
+	EnvelopeGenerator *eg = (EnvelopeGenerator *)instance;
 
 	int i;
 	for (i=0; i<sample_count; ++i) {
@@ -163,18 +117,18 @@ envgen_run(LV2_Handle instance,
 
 
 static uint32_t
-envgen_map_uri(EnvelopeGenerator* plugin, const char* uri)
+envgen_map_uri (EnvelopeGenerator *plugin, const char *uri)
 {
 	return plugin->map->map(plugin->map->handle, uri);
 }
 
 
 static LV2_State_Status
-envgen_save(LV2_Handle        instance,
-		LV2_State_Store_Function  store,
-		LV2_State_Handle          handle,
-		uint32_t                  flags,
-		const LV2_Feature* const* features)
+envgen_save (LV2_Handle                 instance,
+             LV2_State_Store_Function   store,
+	     LV2_State_Handle           handle,
+	     uint32_t                   flags,
+	     const LV2_Feature * const *features)
 {
 	printf("Envelope Generator save stub.\n");
 	return LV2_STATE_SUCCESS;
@@ -182,11 +136,11 @@ envgen_save(LV2_Handle        instance,
 
 
 static LV2_State_Status
-envgen_restore(LV2_Handle       instance,
-		LV2_State_Retrieve_Function retrieve,
-		LV2_State_Handle            handle,
-		uint32_t                    flags,
-		const LV2_Feature* const*   features)
+envgen_restore (LV2_Handle       instance,
+                LV2_State_Retrieve_Function retrieve,
+                LV2_State_Handle            handle,
+                uint32_t                    flags,
+                const LV2_Feature * const  *features)
 {
 	printf("Envelope Generator restore stub.\n");
 	return LV2_STATE_SUCCESS;
@@ -194,7 +148,7 @@ envgen_restore(LV2_Handle       instance,
 
 
 const void*
-envgen_extension_data(const char* uri)
+envgen_extension_data(const char *uri)
 {
 	static const LV2_State_Interface state = { envgen_save, envgen_restore };
 	if (!strcmp(uri, LV2_STATE_URI)) {

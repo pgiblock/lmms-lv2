@@ -2,7 +2,7 @@
  * basic_filters.c - simple but powerful filters
  *
  * Copyright (c) 2004-2009 Tobias Doerffel <tobydox/at/users.sourceforge.net>
- * Copyright (c) 2012      Paul Giblock    <p/at/pgiblock.net>
+ * Copyright (c) 2012-2013 Paul Giblock    <p/at/pgiblock.net>
  *
  * This file is part of Linux MultiMedia Studio - http://lmms.sourceforge.net
  *
@@ -33,11 +33,12 @@
 #define MIN_FREQ (0.01f)
 #define MIN_Q    (0.01f)
 
-static void filter_clear_history(Filter* f);
+static void filter_clear_history (Filter *f);
 
 
-Filter*
-filter_create(float sample_rate) {
+Filter *
+filter_create (float sample_rate)
+{
 	Filter *f = malloc(sizeof(Filter));
 	filter_reset(f, sample_rate);
 	if (!f) {
@@ -49,7 +50,8 @@ filter_create(float sample_rate) {
 
 
 void
-filter_reset(Filter *f, float sample_rate) {
+filter_reset (Filter *f, float sample_rate)
+{
 	// These coeff assignments are probably unneccessary
 	f->b0a0 = 0.0f;
 	f->b1a0 = 0.0f;
@@ -65,8 +67,9 @@ filter_reset(Filter *f, float sample_rate) {
 
 
 static void
-filter_clear_history(Filter* f) {
-	int c;
+filter_clear_history (Filter *f)
+{
+	int c, i;
 
 	// reset in/out history
 	for (c = 0; c < CHANNELS; ++c) {
@@ -83,7 +86,7 @@ filter_clear_history(Filter* f) {
 		f->rclp0[c] = f->rcbp0[c] = f->rchp0[c] = f->rclast0[c] = 0.0f;
 		f->rclp1[c] = f->rcbp1[c] = f->rchp1[c] = f->rclast1[c] = 0.0f;
 
-		for(int i=0; i<6; i++) {
+		for (i=0; i<6; i++) {
 			f->vflp[i][c] = f->vfbp[i][c] = f->vfhp[i][c] = f->vflast[i][c] = 0.0f;
 		}
 	}
@@ -91,7 +94,8 @@ filter_clear_history(Filter* f) {
 
 
 static inline sample_t
-filter_get_sample_moog(Filter* f , sample_t in, int chnl) {
+filter_get_sample_moog (Filter *f , sample_t in, int chnl)
+{
 	sample_t x = in - f->r * f->y4[chnl];
 
 	// four cascaded onepole filters
@@ -127,13 +131,13 @@ filter_get_sample_moog(Filter* f , sample_t in, int chnl) {
 // can be driven up to self-oscillation (BTW: do not remove the limits!!!).
 // (C) 1998 ... 2009 S.Fendt. Released under the GPL v2.0  or any later version.
 static inline void
-filter_get_sample_rc12(Filter* f , sample_t in0, int chnl) {
-	sample_t lp, hp, bp;
-
-	sample_t in;
+filter_get_sample_rc12 (Filter *f , sample_t in0, int chnl)
+{
+	sample_t lp, hp, bp, in;
+	int n;
 
 	// 4-times oversampled... (even the moog-filter would benefit from this)
-	for (int n = 4; n != 0; --n) {
+	for (n = 4; n != 0; --n) {
 		in = in0 + f->rcbp0[chnl] * f->rcq;
 		in = (in > +1.f) ? +1.f : in;
 		in = (in < -1.f) ? -1.f : in;
@@ -159,12 +163,12 @@ filter_get_sample_rc12(Filter* f , sample_t in0, int chnl) {
 
 
 static inline void
-filter_get_sample_rc24(Filter* f, sample_t in0, int chnl) {
-	sample_t lp, hp, bp;
+filter_get_sample_rc24 (Filter *f, sample_t in0, int chnl)
+{
+	sample_t lp, hp, bp, in;
+	int n;
 
-	sample_t in;
-
-	for(int n = 4; n != 0; --n)
+	for (n = 4; n != 0; --n)
 	{
 		// first stage is as for the 12dB case...
 		in = in0 + f->rcbp0[chnl] * f->rcq;
@@ -220,12 +224,13 @@ filter_get_sample_rc24(Filter* f, sample_t in0, int chnl) {
 }
 
 static inline sample_t
-filter_get_sample_formant(Filter* f, sample_t in0, int chnl) {
+filter_get_sample_formant (Filter *f, sample_t in0, int chnl)
+{
 	sample_t lp, hp, bp, in, out;
 	int o;
 
 	out = 0.f;
-	for(o=0; o<4; o++) {
+	for (o=0; o<4; o++) {
 		// first formant
 		in = in0 + f->vfbp[0][chnl] * f->vfq;
 		in = (in > +1.f) ? +1.f : in;
@@ -364,58 +369,59 @@ filter_get_sample_formant(Filter* f, sample_t in0, int chnl) {
 
 
 sample_t
-filter_get_sample(Filter* f, sample_t in, int chnl) {
+filter_get_sample (Filter *f, sample_t in, int chnl)
+{
 	sample_t out;
 	switch( f->type ) {
-		case FILTER_MOOG:
-			out = filter_get_sample_moog(f, in, chnl);
-			break;
+	case FILTER_MOOG:
+		out = filter_get_sample_moog(f, in, chnl);
+		break;
 
-		case FILTER_LOWPASS_RC12:
-			filter_get_sample_rc12(f, in, chnl);
-			return f->rclp0[chnl];
+	case FILTER_LOWPASS_RC12:
+		filter_get_sample_rc12(f, in, chnl);
+		return f->rclp0[chnl];
 
-		case FILTER_BANDPASS_RC12:
-			filter_get_sample_rc12(f, in, chnl);
-			return f->rcbp0[chnl];
+	case FILTER_BANDPASS_RC12:
+		filter_get_sample_rc12(f, in, chnl);
+		return f->rcbp0[chnl];
 
-		case FILTER_HIGHPASS_RC12:
-			filter_get_sample_rc12(f, in, chnl);
-			return f->rchp0[chnl];
+	case FILTER_HIGHPASS_RC12:
+		filter_get_sample_rc12(f, in, chnl);
+		return f->rchp0[chnl];
 
-		case FILTER_LOWPASS_RC24:
-			filter_get_sample_rc24(f, in, chnl);
-			return f->rclp1[chnl];
+	case FILTER_LOWPASS_RC24:
+		filter_get_sample_rc24(f, in, chnl);
+		return f->rclp1[chnl];
 
-		case FILTER_BANDPASS_RC24:
-			filter_get_sample_rc24(f, in, chnl);
-			return f->rcbp1[chnl];
+	case FILTER_BANDPASS_RC24:
+		filter_get_sample_rc24(f, in, chnl);
+		return f->rcbp1[chnl];
 
-		case FILTER_HIGHPASS_RC24:
-			filter_get_sample_rc24(f, in, chnl);
-			return f->rchp1[chnl];
+	case FILTER_HIGHPASS_RC24:
+		filter_get_sample_rc24(f, in, chnl);
+		return f->rchp1[chnl];
 
-		case FILTER_FORMANTFILTER:
-			return filter_get_sample_formant(f, in, chnl);
+	case FILTER_FORMANTFILTER:
+		return filter_get_sample_formant(f, in, chnl);
 
-		default:
-			// filter
-			//printf("%d %f %f %f %f %f %f %f %f %f %f\n", chnl, in,
-			//		f->b0a0, f->b1a0, f->b2a0, f->a1a0, f->a2a0,
-			//		f->in1[chnl], f->in2[chnl], f->ou1[chnl], f->ou2[chnl]);
-			out = f->b0a0*in +
-				f->b1a0*f->in1[chnl] +
-				f->b2a0*f->in2[chnl] -
-				f->a1a0*f->ou1[chnl] -
-				f->a2a0*f->ou2[chnl];
+	default:
+		// filter
+		//printf("%d %f %f %f %f %f %f %f %f %f %f\n", chnl, in,
+		//		f->b0a0, f->b1a0, f->b2a0, f->a1a0, f->a2a0,
+		//		f->in1[chnl], f->in2[chnl], f->ou1[chnl], f->ou2[chnl]);
+		out = f->b0a0*in +
+			f->b1a0*f->in1[chnl] +
+			f->b2a0*f->in2[chnl] -
+			f->a1a0*f->ou1[chnl] -
+			f->a2a0*f->ou2[chnl];
 
-			// push in/out buffers
-			f->in2[chnl] = f->in1[chnl];
-			f->in1[chnl] = in;
-			f->ou2[chnl] = f->ou1[chnl];
+		// push in/out buffers
+		f->in2[chnl] = f->in1[chnl];
+		f->in1[chnl] = in;
+		f->ou2[chnl] = f->ou1[chnl];
 
-			f->ou1[chnl] = out;
-			break;
+		f->ou1[chnl] = out;
+		break;
 	}
 
 	/* TODO:
@@ -429,89 +435,90 @@ filter_get_sample(Filter* f, sample_t in, int chnl) {
 
 
 void
-filter_calc_coeffs(Filter* f, float freq, float q) {
+filter_calc_coeffs (Filter *f, float freq, float q)
+{
 	// temp coef vars
 	// limit freq and q for not getting bad noise out of the filter...
 	freq = qMax(freq, MIN_FREQ);
 	q    = qMax(q, MIN_Q);
 
 	switch (f->type) {
-		case FILTER_LOWPASS_RC12:
-		case FILTER_BANDPASS_RC12:
-		case FILTER_HIGHPASS_RC12:
-		case FILTER_LOWPASS_RC24:
-		case FILTER_BANDPASS_RC24:
-		case FILTER_HIGHPASS_RC24:
-		{
-			if (freq < 50.f) {
-				freq = 50.f;
-			}
-
-			f->rca = 1.0f - (1.0f/(f->sample_rate*4)) / ( (1.0f/(freq*2.0f*M_PI)) + (1.0f/(f->sample_rate*4)) );
-			f->rcb = 1.0f - f->rca;
-			f->rcc = (1.0f/(freq*2.0f*M_PI)) / ( (1.0f/(freq*2.0f*M_PI)) + (1.0f/(f->sample_rate*4)) );
-
-			// Stretch Q/resonance, as self-oscillation reliably starts at a q of ~2.5 - ~2.6
-			f->rcq = q/4.f;
-			return;
+	case FILTER_LOWPASS_RC12:
+	case FILTER_BANDPASS_RC12:
+	case FILTER_HIGHPASS_RC12:
+	case FILTER_LOWPASS_RC24:
+	case FILTER_BANDPASS_RC24:
+	case FILTER_HIGHPASS_RC24:
+	{
+		if (freq < 50.f) {
+			freq = 50.f;
 		}
-		case FILTER_FORMANTFILTER:
-		{
-			// formats for a, e, i, o, u, a
-			const float formants[5][2] = {
-				{ 1000, 1400 },
-				{ 500, 2300 },
-				{ 320, 3200 },
-				{ 500, 1000 },
-				{ 320, 800 }
-			};
 
-			// Stretch Q/resonance
-			f->vfq = q/4.f;
+		f->rca = 1.0f - (1.0f/(f->sample_rate*4)) / ( (1.0f/(freq*2.0f*M_PI)) + (1.0f/(f->sample_rate*4)) );
+		f->rcb = 1.0f - f->rca;
+		f->rcc = (1.0f/(freq*2.0f*M_PI)) / ( (1.0f/(freq*2.0f*M_PI)) + (1.0f/(f->sample_rate*4)) );
 
-			// frequency in lmms ranges from 1Hz to 14000Hz
-			const int   vowel = (int)( floor( freq/14000.f * 4.f ) );
-			const float fract = ( freq/14000.f * 4.f ) - (float)vowel;
+		// Stretch Q/resonance, as self-oscillation reliably starts at a q of ~2.5 - ~2.6
+		f->rcq = q/4.f;
+		return;
+	}
+	case FILTER_FORMANTFILTER:
+	{
+		// formats for a, e, i, o, u, a
+		const float formants[5][2] = {
+			{ 1000, 1400 },
+			{ 500, 2300 },
+			{ 320, 3200 },
+			{ 500, 1000 },
+			{ 320, 800 }
+		};
 
-			// interpolate between formant frequencies
-			const float f0 = formants[vowel+0][0] * (1.0f - fract) + 
-			                 formants[vowel+1][0] * (fract);
+		// Stretch Q/resonance
+		f->vfq = q/4.f;
 
-			const float f1 = formants[vowel+0][1] * (1.0f - fract) +
-			                 formants[vowel+1][1] * (fract);
+		// frequency in lmms ranges from 1Hz to 14000Hz
+		const int   vowel = (int)( floor( freq/14000.f * 4.f ) );
+		const float fract = ( freq/14000.f * 4.f ) - (float)vowel;
 
-			f->vfa[0] = 1.0f - (1.0f/(f->sample_rate*4)) /
-			            ( (1.0f/(f0*2.0f*M_PI)) + (1.0f/(f->sample_rate*4)) );
-			f->vfb[0] = 1.0f - f->vfa[0];
-			f->vfc[0] = (1.0f/(f0*2.0f*M_PI)) /
-			            ( (1.0f/(f0*2.0f*M_PI)) + (1.0f/(f->sample_rate*4)) );
+		// interpolate between formant frequencies
+		const float f0 = formants[vowel+0][0] * (1.0f - fract) + 
+				 formants[vowel+1][0] * (fract);
 
-			f->vfa[1] = 1.0f - (1.0f/(f->sample_rate*4)) /
-			            ( (1.0f/(f1*2.0f*M_PI)) + (1.0f/(f->sample_rate*4)) );
-			f->vfb[1] = 1.0f - f->vfa[1];
-			f->vfc[1] = (1.0f/(f1*2.0f*M_PI)) /
-			            ( (1.0f/(f1*2.0f*M_PI)) + (1.0f/(f->sample_rate*4)) );
-			return;
-		}
-		case FILTER_MOOG:
-		{
-			// [ 0 - 0.5 ]
-			const float fr = freq / f->sample_rate;
-			// (Empirical tuning)
-			f->p = (3.6f - 3.2f * fr) * fr;
-			f->k = 2.0f * f->p - 1;
-			f->r = q * powf( M_E, (1 - f->p) * 1.386249f );
+		const float f1 = formants[vowel+0][1] * (1.0f - fract) +
+				 formants[vowel+1][1] * (fract);
 
-			/* TODO
-			if( f->doubleFilter ) {
-				f->subFilter->f->r = f->r;
-				f->subFilter->f->p = f->p;
-				f->subFilter->f->k = f->k;
-			} */
-			return;
-		}
-		default:
-			break;
+		f->vfa[0] = 1.0f - (1.0f/(f->sample_rate*4)) /
+			    ( (1.0f/(f0*2.0f*M_PI)) + (1.0f/(f->sample_rate*4)) );
+		f->vfb[0] = 1.0f - f->vfa[0];
+		f->vfc[0] = (1.0f/(f0*2.0f*M_PI)) /
+			    ( (1.0f/(f0*2.0f*M_PI)) + (1.0f/(f->sample_rate*4)) );
+
+		f->vfa[1] = 1.0f - (1.0f/(f->sample_rate*4)) /
+			    ( (1.0f/(f1*2.0f*M_PI)) + (1.0f/(f->sample_rate*4)) );
+		f->vfb[1] = 1.0f - f->vfa[1];
+		f->vfc[1] = (1.0f/(f1*2.0f*M_PI)) /
+			    ( (1.0f/(f1*2.0f*M_PI)) + (1.0f/(f->sample_rate*4)) );
+		return;
+	}
+	case FILTER_MOOG:
+	{
+		// [ 0 - 0.5 ]
+		const float fr = freq / f->sample_rate;
+		// (Empirical tuning)
+		f->p = (3.6f - 3.2f * fr) * fr;
+		f->k = 2.0f * f->p - 1;
+		f->r = q * powf( M_E, (1 - f->p) * 1.386249f );
+
+		/* TODO
+		if( f->doubleFilter ) {
+			f->subFilter->f->r = f->r;
+			f->subFilter->f->p = f->p;
+			f->subFilter->f->k = f->k;
+		} */
+		return;
+	}
+	default:
+		break;
 	}
 
 	// other filters
@@ -534,40 +541,39 @@ filter_calc_coeffs(Filter* f, float freq, float q) {
 	f->a1a0 = -2.0f * tcos * a0;
 	f->a2a0 = ( 1.0f - alpha ) * a0;
 
-	switch( f->type )
-	{
-		case FILTER_LOWPASS:
-			f->b1a0 = ( 1.0f - tcos ) * a0;
-			f->b0a0 = f->b1a0 * 0.5f;
-			f->b2a0 = f->b0a0;//((1.0f-tcos)/2.0f)*a0;
-			break;
-		case FILTER_HIPASS:
-			f->b1a0 = ( -1.0f - tcos ) * a0;
-			f->b0a0 = f->b1a0 * -0.5f;
-			f->b2a0 = f->b0a0;//((1.0f+tcos)/2.0f)*a0;
-			break;
-		case FILTER_BANDPASS_CSG:
-			f->b1a0 = 0.0f;
-			f->b0a0 = tsin * 0.5f * a0;
-			f->b2a0 = -f->b0a0;
-			break;
-		case FILTER_BANDPASS_CZPG:
-			f->b1a0 = 0.0f;
-			f->b0a0 = alpha * a0;
-			f->b2a0 = -f->b0a0;
-			break;
-		case FILTER_NOTCH:
-			f->b1a0 = f->a1a0;
-			f->b0a0 = a0;
-			f->b2a0 = a0;
-			break;
-		case FILTER_ALLPASS:
-			f->b1a0 = f->a1a0;
-			f->b0a0 = f->a2a0;
-			f->b2a0 = 1.0f;//(1.0f+alpha)*a0;
-			break;
-		default:
-			break;
+	switch( f->type ) {
+	case FILTER_LOWPASS:
+		f->b1a0 = ( 1.0f - tcos ) * a0;
+		f->b0a0 = f->b1a0 * 0.5f;
+		f->b2a0 = f->b0a0;//((1.0f-tcos)/2.0f)*a0;
+		break;
+	case FILTER_HIPASS:
+		f->b1a0 = ( -1.0f - tcos ) * a0;
+		f->b0a0 = f->b1a0 * -0.5f;
+		f->b2a0 = f->b0a0;//((1.0f+tcos)/2.0f)*a0;
+		break;
+	case FILTER_BANDPASS_CSG:
+		f->b1a0 = 0.0f;
+		f->b0a0 = tsin * 0.5f * a0;
+		f->b2a0 = -f->b0a0;
+		break;
+	case FILTER_BANDPASS_CZPG:
+		f->b1a0 = 0.0f;
+		f->b0a0 = alpha * a0;
+		f->b2a0 = -f->b0a0;
+		break;
+	case FILTER_NOTCH:
+		f->b1a0 = f->a1a0;
+		f->b0a0 = a0;
+		f->b2a0 = a0;
+		break;
+	case FILTER_ALLPASS:
+		f->b1a0 = f->a1a0;
+		f->b0a0 = f->a2a0;
+		f->b2a0 = 1.0f;//(1.0f+alpha)*a0;
+		break;
+	default:
+		break;
 	}
 
 	/* TODO:

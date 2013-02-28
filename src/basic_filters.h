@@ -90,10 +90,10 @@ typedef struct Filter_st Filter;
 
 // Public interface
 
-Filter*  filter_create(float sample_rate);
-void     filter_reset(Filter* osc, float sample_rate);
-void     filter_calc_coeffs(Filter* f, float freq, float q);
-sample_t filter_get_sample(Filter* f, sample_t in, int chnl);
-void     filter_destroy(Filter* f);
+Filter  *filter_create (float sample_rate);
+void     filter_reset (Filter *f, float sample_rate);
+void     filter_calc_coeffs (Filter *f, float freq, float q);
+sample_t filter_get_sample (Filter *f, sample_t in, int chnl);
+void     filter_destroy (Filter *f);
 
 #endif

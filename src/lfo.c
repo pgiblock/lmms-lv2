@@ -17,17 +17,17 @@ sample_t
 lfo_get_osc_sample (float wave_shape, float sample)
 {
 	switch ((int)(wave_shape)) {
-		case LFO_WAVE_SINE:
-			return osc_sample_sin(sample);
-		case LFO_WAVE_TRIANGLE:
-			return osc_sample_triangle(fraction(sample));
-		case LFO_WAVE_SAW:
-			return osc_sample_saw(fraction(sample));
-		case LFO_WAVE_SQUARE:
-			return osc_sample_square(fraction(sample));
-		default:
-			fprintf(stderr, "Oscillator: Invalid wave shape\n");
-			return 0;
+	case LFO_WAVE_SINE:
+		return osc_sample_sin(sample);
+	case LFO_WAVE_TRIANGLE:
+		return osc_sample_triangle(fraction(sample));
+	case LFO_WAVE_SAW:
+		return osc_sample_saw(fraction(sample));
+	case LFO_WAVE_SQUARE:
+		return osc_sample_square(fraction(sample));
+	default:
+		fprintf(stderr, "Oscillator: Invalid wave shape\n");
+		return 0;
 	}
 }
 
@@ -38,27 +38,27 @@ advance_state (LfoParams *p, LfoState *st)
 {
 	// TODO: Bring back expKnobVal
 	switch (st->q) {
-		case LFO_OFF:
-			if (*p->del > 0.0f) {
-				st->q       = LFO_DEL;
-				st->nframes = p->time_base * /*expKnobVal*/(*p->del);
-				st->frame   = 0;
-				return;
-			}
-			// Fall-through
-		case LFO_DEL:
-			if (*p->att > 0.0f) {
-				st->q       = LFO_ATT;
-				st->nframes = p->time_base * /*expKnobVal*/(*p->att);
-				st->frame   = 0;
-				return;
-			}
-			// Fall-through
-		case LFO_ATT:
-			st->q       = LFO_SUS;
-			st->nframes = 0;
+	case LFO_OFF:
+		if (*p->del > 0.0f) {
+			st->q       = LFO_DEL;
+			st->nframes = p->time_base * /*expKnobVal*/(*p->del);
 			st->frame   = 0;
 			return;
+		}
+		// Fall-through
+	case LFO_DEL:
+		if (*p->att > 0.0f) {
+			st->q       = LFO_ATT;
+			st->nframes = p->time_base * /*expKnobVal*/(*p->att);
+			st->frame   = 0;
+			return;
+		}
+		// Fall-through
+	case LFO_ATT:
+		st->q       = LFO_SUS;
+		st->nframes = 0;
+		st->frame   = 0;
+		return;
 	}
 }
 
