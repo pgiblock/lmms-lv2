@@ -4,12 +4,16 @@
 
 This is the beginning of a port of LMMS plugins to LV2.
 
-Initially there will be some effort required for scaffolding, mainly handling
-multiple voices etc..  Once this is done, other plugins will come along a
-little bit quicker.
+NOTE: The output of the plugins is VERY LOUD and WILL DISTORT.
+This is known to be an issue in LMMS, and is generally resolved by lowering the
+volume on the LMMS mixer.  You should run the output through an JACK amplifier
+before hitting the soundcard.  I'm currently using JACK Rack with "Simple
+amplifier" (amp_1181.so)
 
-There are a number of plugins that will require some extension to LV2 in order
-for them to work in a ``Nice'' way.
+To use the Triple Oscillator plugin, use your favorite LV2 host with MIDI
+support. Or, just use the command below:
+ 
+  jalv.gtk http://pgiblock.net/plugins/triple-oscillator
 
 Key [W]=Working on, [C]=Complete, [X]=Not planned
 
