@@ -1,0 +1,150 @@
+
+@prefix lv2: <http://lv2plug.in/ns/lv2core#>.
+@prefix mypresets: <http://pgiblock.net/presets/triple-oscillator#>.
+@prefix pgplug: <http://pgiblock.net/plugins/>.
+@prefix pset: <http://lv2plug.in/ns/ext/presets#>.
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>.
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#>.
+@prefix xml: <http://www.w3.org/XML/1998/namespace>.
+
+ mypresets:Fat a pset:Preset;
+     rdfs:label "Fat";
+     lv2:appliesTo pgplug:triple-oscillator;
+     lv2:port [ pset:value "2.0"^^<http://www.w3.org/2001/XMLSchema#float>;
+             lv2:symbol "osc1_osc2_mod"],
+         [ pset:value "3.0"^^<http://www.w3.org/2001/XMLSchema#float>;
+             lv2:symbol "osc2_osc3_mod"],
+         [ pset:value "0.0"^^<http://www.w3.org/2001/XMLSchema#float>;
+             lv2:symbol "osc1_detune_fine_l"],
+         [ pset:value "0.0"^^<http://www.w3.org/2001/XMLSchema#float>;
+             lv2:symbol "osc1_detune_coarse"],
+         [ pset:value "0.0"^^<http://www.w3.org/2001/XMLSchema#float>;
+             lv2:symbol "osc1_phase_detune"],
+         [ pset:value "0.0"^^<http://www.w3.org/2001/XMLSchema#float>;
+             lv2:symbol "osc1_phase_offset"],
+         [ pset:value "49.0"^^<http://www.w3.org/2001/XMLSchema#float>;
+             lv2:symbol "osc1_vol"],
+         [ pset:value "2.0"^^<http://www.w3.org/2001/XMLSchema#float>;
+             lv2:symbol "osc1_wave_shape"],
+         [ pset:value "0.0"^^<http://www.w3.org/2001/XMLSchema#float>;
+             lv2:symbol "osc1_pan"],
+         [ pset:value "0.0"^^<http://www.w3.org/2001/XMLSchema#float>;
+             lv2:symbol "osc1_detune_fine_r"],
+         [ pset:value "0.0"^^<http://www.w3.org/2001/XMLSchema#float>;
+             lv2:symbol "osc2_detune_fine_l"],
+         [ pset:value "0.0"^^<http://www.w3.org/2001/XMLSchema#float>;
+             lv2:symbol "osc2_detune_coarse"],
+         [ pset:value "109.0"^^<http://www.w3.org/2001/XMLSchema#float>;
+             lv2:symbol "osc2_phase_detune"],
+         [ pset:value "271.0"^^<http://www.w3.org/2001/XMLSchema#float>;
+             lv2:symbol "osc2_phase_offset"],
+         [ pset:value "56.0"^^<http://www.w3.org/2001/XMLSchema#float>;
+             lv2:symbol "osc2_vol"],
+         [ pset:value "2.0"^^<http://www.w3.org/2001/XMLSchema#float>;
+             lv2:symbol "osc2_wave_shape"],
+         [ pset:value "0.0"^^<http://www.w3.org/2001/XMLSchema#float>;
+             lv2:symbol "osc2_pan"],
+         [ pset:value "0.0"^^<http://www.w3.org/2001/XMLSchema#float>;
+             lv2:symbol "osc2_detune_fine_r"],
+         [ pset:value "-14.0"^^<http://www.w3.org/2001/XMLSchema#float>;
+             lv2:symbol "osc3_detune_fine_l"],
+         [ pset:value "0.0"^^<http://www.w3.org/2001/XMLSchema#float>;
+             lv2:symbol "osc3_detune_coarse"],
+         [ pset:value "50.0"^^<http://www.w3.org/2001/XMLSchema#float>;
+             lv2:symbol "osc3_phase_detune"],
+         [ pset:value "0.0"^^<http://www.w3.org/2001/XMLSchema#float>;
+             lv2:symbol "osc3_phase_offset"],
+         [ pset:value "100.0"^^<http://www.w3.org/2001/XMLSchema#float>;
+             lv2:symbol "osc3_vol"],
+         [ pset:value "2.0"^^<http://www.w3.org/2001/XMLSchema#float>;
+             lv2:symbol "osc3_wave_shape"],
+         [ pset:value "0.0"^^<http://www.w3.org/2001/XMLSchema#float>;
+             lv2:symbol "osc3_pan"],
+         [ pset:value "13.0"^^<http://www.w3.org/2001/XMLSchema#float>;
+             lv2:symbol "osc3_detune_fine_r"],
+         [ pset:value "0.88"^^<http://www.w3.org/2001/XMLSchema#float>;
+             lv2:symbol "filter_res"],
+         [ pset:value "686.0"^^<http://www.w3.org/2001/XMLSchema#float>;
+             lv2:symbol "filter_cut"],
+         [ pset:value "6.0"^^<http://www.w3.org/2001/XMLSchema#float>;
+             lv2:symbol "filter_type"],
+         [ pset:value "0.0"^^<http://www.w3.org/2001/XMLSchema#float>;
+             lv2:symbol "filter_enabled"],
+         [ pset:value "0.0"^^<http://www.w3.org/2001/XMLSchema#float>;
+             lv2:symbol "env_vol_del"],
+         [ pset:value "0.0"^^<http://www.w3.org/2001/XMLSchema#float>;
+             lv2:symbol "env_vol_att"],
+         [ pset:value "0.0"^^<http://www.w3.org/2001/XMLSchema#float>;
+             lv2:symbol "env_vol_sus"],
+         [ pset:value "0.199"^^<http://www.w3.org/2001/XMLSchema#float>;
+             lv2:symbol "env_vol_rel"],
+         [ pset:value "0.0"^^<http://www.w3.org/2001/XMLSchema#float>;
+             lv2:symbol "env_vol_hold"],
+         [ pset:value "0.297"^^<http://www.w3.org/2001/XMLSchema#float>;
+             lv2:symbol "env_vol_dec"],
+         [ pset:value "1.0"^^<http://www.w3.org/2001/XMLSchema#float>;
+             lv2:symbol "env_vol_mod"],
+         [ pset:value "0.0"^^<http://www.w3.org/2001/XMLSchema#float>;
+             lv2:symbol "lfo_vol_att"],
+         [ pset:value "0.0"^^<http://www.w3.org/2001/XMLSchema#float>;
+             lv2:symbol "lfo_vol_del"],
+         [ pset:value "0.0"^^<http://www.w3.org/2001/XMLSchema#float>;
+             lv2:symbol "lfo_vol_shape"],
+         [ pset:value "0.0"^^<http://www.w3.org/2001/XMLSchema#float>;
+             lv2:symbol "lfo_vol_mod"],
+         [ pset:value "0.0"^^<http://www.w3.org/2001/XMLSchema#float>;
+             lv2:symbol "lfo_vol_op"],
+         [ pset:value "0.0917"^^<http://www.w3.org/2001/XMLSchema#float>;
+             lv2:symbol "lfo_vol_spd"],
+         [ pset:value "0.0"^^<http://www.w3.org/2001/XMLSchema#float>;
+             lv2:symbol "env_cut_del"],
+         [ pset:value "0.0"^^<http://www.w3.org/2001/XMLSchema#float>;
+             lv2:symbol "env_cut_att"],
+         [ pset:value "0.999"^^<http://www.w3.org/2001/XMLSchema#float>;
+             lv2:symbol "env_cut_sus"],
+         [ pset:value "0.0"^^<http://www.w3.org/2001/XMLSchema#float>;
+             lv2:symbol "env_cut_rel"],
+         [ pset:value "0.0"^^<http://www.w3.org/2001/XMLSchema#float>;
+             lv2:symbol "env_cut_hold"],
+         [ pset:value "0.223"^^<http://www.w3.org/2001/XMLSchema#float>;
+             lv2:symbol "env_cut_dec"],
+         [ pset:value "0.33"^^<http://www.w3.org/2001/XMLSchema#float>;
+             lv2:symbol "env_cut_mod"],
+         [ pset:value "0.0"^^<http://www.w3.org/2001/XMLSchema#float>;
+             lv2:symbol "lfo_cut_att"],
+         [ pset:value "0.0"^^<http://www.w3.org/2001/XMLSchema#float>;
+             lv2:symbol "lfo_cut_del"],
+         [ pset:value "1.0"^^<http://www.w3.org/2001/XMLSchema#float>;
+             lv2:symbol "lfo_cut_shape"],
+         [ pset:value "0.47"^^<http://www.w3.org/2001/XMLSchema#float>;
+             lv2:symbol "lfo_cut_mod"],
+         [ pset:value "0.0"^^<http://www.w3.org/2001/XMLSchema#float>;
+             lv2:symbol "lfo_cut_op"],
+         [ pset:value "0.767"^^<http://www.w3.org/2001/XMLSchema#float>;
+             lv2:symbol "lfo_cut_spd"],
+         [ pset:value "0.0"^^<http://www.w3.org/2001/XMLSchema#float>;
+             lv2:symbol "env_res_del"],
+         [ pset:value "0.0"^^<http://www.w3.org/2001/XMLSchema#float>;
+             lv2:symbol "env_res_att"],
+         [ pset:value "0.5"^^<http://www.w3.org/2001/XMLSchema#float>;
+             lv2:symbol "env_res_sus"],
+         [ pset:value "0.1"^^<http://www.w3.org/2001/XMLSchema#float>;
+             lv2:symbol "env_res_rel"],
+         [ pset:value "0.0"^^<http://www.w3.org/2001/XMLSchema#float>;
+             lv2:symbol "env_res_hold"],
+         [ pset:value "0.5"^^<http://www.w3.org/2001/XMLSchema#float>;
+             lv2:symbol "env_res_dec"],
+         [ pset:value "0.0"^^<http://www.w3.org/2001/XMLSchema#float>;
+             lv2:symbol "env_res_mod"],
+         [ pset:value "0.0"^^<http://www.w3.org/2001/XMLSchema#float>;
+             lv2:symbol "lfo_res_att"],
+         [ pset:value "0.0"^^<http://www.w3.org/2001/XMLSchema#float>;
+             lv2:symbol "lfo_res_del"],
+         [ pset:value "1.0"^^<http://www.w3.org/2001/XMLSchema#float>;
+             lv2:symbol "lfo_res_shape"],
+         [ pset:value "-0.00599995"^^<http://www.w3.org/2001/XMLSchema#float>;
+             lv2:symbol "lfo_res_mod"],
+         [ pset:value "0.0"^^<http://www.w3.org/2001/XMLSchema#float>;
+             lv2:symbol "lfo_res_op"],
+         [ pset:value "0.01"^^<http://www.w3.org/2001/XMLSchema#float>;
+             lv2:symbol "lfo_res_spd"]. 

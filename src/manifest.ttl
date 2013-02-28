@@ -1,17 +1,297 @@
-@prefix lv2: <http://lv2plug.in/ns/lv2core#> .
-@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix lv2: <http://lv2plug.in/ns/lv2core#>.
+@prefix pgplug: <http://pgiblock.net/plugins/>.
+@prefix pset: <http://lv2plug.in/ns/ext/presets#>.
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>.
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#>.
+@prefix xml: <http://www.w3.org/XML/1998/namespace>.
 
-<http://pgiblock.net/plugins/lb303-synth>
-	a lv2:Plugin ;
-	lv2:binary <lmms.so> ;
-	rdfs:seeAlso <lb303.ttl> .
+ pgplug:lb303-synth
+     a lv2:Plugin ;
+     lv2:binary <lmms.so> ;
+     rdfs:seeAlso <lb303.ttl> .
 
-<http://pgiblock.net/plugins/triple-oscillator>
-	a lv2:Plugin ;
-	lv2:binary <lmms.so> ;
-	rdfs:seeAlso <triple_oscillator.ttl> .
+ pgplug:triple-oscillator
+     a lv2:Plugin ;
+     lv2:binary <lmms.so> ;
+     rdfs:seeAlso <triple_oscillator.ttl> .
 
-<http://pgiblock.net/plugins/envelope-generator>
-	a lv2:Plugin ;
-	lv2:binary <lmms.so> ;
-	rdfs:seeAlso <envelope_generator.ttl> .
+ pgplug:envelope-generator
+     a lv2:Plugin ;
+     lv2:binary <lmms.so> ;
+     rdfs:seeAlso <envelope_generator.ttl> .
+
+ <http://pgiblock.net/presets/triple-oscillator#AmazingBubbles> a pset:Preset;
+     lv2:appliesTo pgplug:triple-oscillator;
+     rdfs:seeAlso <presets/triple-oscillator/AmazingBubbles.ttl>. 
+
+ <http://pgiblock.net/presets/triple-oscillator#AnalogDreamz> a pset:Preset;
+     lv2:appliesTo pgplug:triple-oscillator;
+     rdfs:seeAlso <presets/triple-oscillator/AnalogDreamz.ttl>. 
+
+ <http://pgiblock.net/presets/triple-oscillator#AnalogTimes> a pset:Preset;
+     lv2:appliesTo pgplug:triple-oscillator;
+     rdfs:seeAlso <presets/triple-oscillator/AnalogTimes.ttl>. 
+
+ <http://pgiblock.net/presets/triple-oscillator#AnalogTimes2> a pset:Preset;
+     lv2:appliesTo pgplug:triple-oscillator;
+     rdfs:seeAlso <presets/triple-oscillator/AnalogTimes2.ttl>. 
+
+ <http://pgiblock.net/presets/triple-oscillator#Analogous> a pset:Preset;
+     lv2:appliesTo pgplug:triple-oscillator;
+     rdfs:seeAlso <presets/triple-oscillator/Analogous.ttl>. 
+
+ <http://pgiblock.net/presets/triple-oscillator#ArpKing> a pset:Preset;
+     lv2:appliesTo pgplug:triple-oscillator;
+     rdfs:seeAlso <presets/triple-oscillator/ArpKing.ttl>. 
+
+ <http://pgiblock.net/presets/triple-oscillator#Arpeggio_1> a pset:Preset;
+     lv2:appliesTo pgplug:triple-oscillator;
+     rdfs:seeAlso <presets/triple-oscillator/Arpeggio_1.ttl>. 
+
+ <http://pgiblock.net/presets/triple-oscillator#Arpeggio_2> a pset:Preset;
+     lv2:appliesTo pgplug:triple-oscillator;
+     rdfs:seeAlso <presets/triple-oscillator/Arpeggio_2.ttl>. 
+
+ <http://pgiblock.net/presets/triple-oscillator#Bell> a pset:Preset;
+     lv2:appliesTo pgplug:triple-oscillator;
+     rdfs:seeAlso <presets/triple-oscillator/Bell.ttl>. 
+
+ <http://pgiblock.net/presets/triple-oscillator#Bell_2> a pset:Preset;
+     lv2:appliesTo pgplug:triple-oscillator;
+     rdfs:seeAlso <presets/triple-oscillator/Bell_2.ttl>. 
+
+ <http://pgiblock.net/presets/triple-oscillator#ChurchOrgan> a pset:Preset;
+     lv2:appliesTo pgplug:triple-oscillator;
+     rdfs:seeAlso <presets/triple-oscillator/ChurchOrgan.ttl>. 
+
+ <http://pgiblock.net/presets/triple-oscillator#DeathBass> a pset:Preset;
+     lv2:appliesTo pgplug:triple-oscillator;
+     rdfs:seeAlso <presets/triple-oscillator/DeathBass.ttl>. 
+
+ <http://pgiblock.net/presets/triple-oscillator#Distorted-FM-Bass> a pset:Preset;
+     lv2:appliesTo pgplug:triple-oscillator;
+     rdfs:seeAlso <presets/triple-oscillator/Distorted-FM-Bass.ttl>. 
+
+ <http://pgiblock.net/presets/triple-oscillator#Dull-Bell-Arp> a pset:Preset;
+     lv2:appliesTo pgplug:triple-oscillator;
+     rdfs:seeAlso <presets/triple-oscillator/Dull-Bell-Arp.ttl>. 
+
+ <http://pgiblock.net/presets/triple-oscillator#E-Organ> a pset:Preset;
+     lv2:appliesTo pgplug:triple-oscillator;
+     rdfs:seeAlso <presets/triple-oscillator/E-Organ.ttl>. 
+
+ <http://pgiblock.net/presets/triple-oscillator#E-Organ2> a pset:Preset;
+     lv2:appliesTo pgplug:triple-oscillator;
+     rdfs:seeAlso <presets/triple-oscillator/E-Organ2.ttl>. 
+
+ <http://pgiblock.net/presets/triple-oscillator#Erazzor> a pset:Preset;
+     lv2:appliesTo pgplug:triple-oscillator;
+     rdfs:seeAlso <presets/triple-oscillator/Erazzor.ttl>. 
+
+ <http://pgiblock.net/presets/triple-oscillator#Fat> a pset:Preset;
+     lv2:appliesTo pgplug:triple-oscillator;
+     rdfs:seeAlso <presets/triple-oscillator/Fat.ttl>. 
+
+ <http://pgiblock.net/presets/triple-oscillator#Fat-FMish-Bells> a pset:Preset;
+     lv2:appliesTo pgplug:triple-oscillator;
+     rdfs:seeAlso <presets/triple-oscillator/Fat-FMish-Bells.ttl>. 
+
+ <http://pgiblock.net/presets/triple-oscillator#Fat-TB303-Arp> a pset:Preset;
+     lv2:appliesTo pgplug:triple-oscillator;
+     rdfs:seeAlso <presets/triple-oscillator/Fat-TB303-Arp.ttl>. 
+
+ <http://pgiblock.net/presets/triple-oscillator#FatCheese> a pset:Preset;
+     lv2:appliesTo pgplug:triple-oscillator;
+     rdfs:seeAlso <presets/triple-oscillator/FatCheese.ttl>. 
+
+ <http://pgiblock.net/presets/triple-oscillator#Freaky-Bass> a pset:Preset;
+     lv2:appliesTo pgplug:triple-oscillator;
+     rdfs:seeAlso <presets/triple-oscillator/Freaky-Bass.ttl>. 
+
+ <http://pgiblock.net/presets/triple-oscillator#FutureBass> a pset:Preset;
+     lv2:appliesTo pgplug:triple-oscillator;
+     rdfs:seeAlso <presets/triple-oscillator/FutureBass.ttl>. 
+
+ <http://pgiblock.net/presets/triple-oscillator#Gong> a pset:Preset;
+     lv2:appliesTo pgplug:triple-oscillator;
+     rdfs:seeAlso <presets/triple-oscillator/Gong.ttl>. 
+
+ <http://pgiblock.net/presets/triple-oscillator#Harmonium> a pset:Preset;
+     lv2:appliesTo pgplug:triple-oscillator;
+     rdfs:seeAlso <presets/triple-oscillator/Harmonium.ttl>. 
+
+ <http://pgiblock.net/presets/triple-oscillator#Harp-of-a-Fairy> a pset:Preset;
+     lv2:appliesTo pgplug:triple-oscillator;
+     rdfs:seeAlso <presets/triple-oscillator/Harp-of-a-Fairy.ttl>. 
+
+ <http://pgiblock.net/presets/triple-oscillator#Harpsichord> a pset:Preset;
+     lv2:appliesTo pgplug:triple-oscillator;
+     rdfs:seeAlso <presets/triple-oscillator/Harpsichord.ttl>. 
+
+ <http://pgiblock.net/presets/triple-oscillator#HiPad> a pset:Preset;
+     lv2:appliesTo pgplug:triple-oscillator;
+     rdfs:seeAlso <presets/triple-oscillator/HiPad.ttl>. 
+
+ <http://pgiblock.net/presets/triple-oscillator#Jupiter> a pset:Preset;
+     lv2:appliesTo pgplug:triple-oscillator;
+     rdfs:seeAlso <presets/triple-oscillator/Jupiter.ttl>. 
+
+ <http://pgiblock.net/presets/triple-oscillator#Kick> a pset:Preset;
+     lv2:appliesTo pgplug:triple-oscillator;
+     rdfs:seeAlso <presets/triple-oscillator/Kick.ttl>. 
+
+ <http://pgiblock.net/presets/triple-oscillator#Kick2> a pset:Preset;
+     lv2:appliesTo pgplug:triple-oscillator;
+     rdfs:seeAlso <presets/triple-oscillator/Kick2.ttl>. 
+
+ <http://pgiblock.net/presets/triple-oscillator#LFO-party> a pset:Preset;
+     lv2:appliesTo pgplug:triple-oscillator;
+     rdfs:seeAlso <presets/triple-oscillator/LFO-party.ttl>. 
+
+ <http://pgiblock.net/presets/triple-oscillator#LovelyDream> a pset:Preset;
+     lv2:appliesTo pgplug:triple-oscillator;
+     rdfs:seeAlso <presets/triple-oscillator/LovelyDream.ttl>. 
+
+ <http://pgiblock.net/presets/triple-oscillator#MoogArpeggio> a pset:Preset;
+     lv2:appliesTo pgplug:triple-oscillator;
+     rdfs:seeAlso <presets/triple-oscillator/MoogArpeggio.ttl>. 
+
+ <http://pgiblock.net/presets/triple-oscillator#MoveYourBody> a pset:Preset;
+     lv2:appliesTo pgplug:triple-oscillator;
+     rdfs:seeAlso <presets/triple-oscillator/MoveYourBody.ttl>. 
+
+ <http://pgiblock.net/presets/triple-oscillator#OldComputerGames> a pset:Preset;
+     lv2:appliesTo pgplug:triple-oscillator;
+     rdfs:seeAlso <presets/triple-oscillator/OldComputerGames.ttl>. 
+
+ <http://pgiblock.net/presets/triple-oscillator#Play-some-rock> a pset:Preset;
+     lv2:appliesTo pgplug:triple-oscillator;
+     rdfs:seeAlso <presets/triple-oscillator/Play-some-rock.ttl>. 
+
+ <http://pgiblock.net/presets/triple-oscillator#PluckArpeggio> a pset:Preset;
+     lv2:appliesTo pgplug:triple-oscillator;
+     rdfs:seeAlso <presets/triple-oscillator/PluckArpeggio.ttl>. 
+
+ <http://pgiblock.net/presets/triple-oscillator#Plucked> a pset:Preset;
+     lv2:appliesTo pgplug:triple-oscillator;
+     rdfs:seeAlso <presets/triple-oscillator/Plucked.ttl>. 
+
+ <http://pgiblock.net/presets/triple-oscillator#PowerStrings> a pset:Preset;
+     lv2:appliesTo pgplug:triple-oscillator;
+     rdfs:seeAlso <presets/triple-oscillator/PowerStrings.ttl>. 
+
+ <http://pgiblock.net/presets/triple-oscillator#RaveBass> a pset:Preset;
+     lv2:appliesTo pgplug:triple-oscillator;
+     rdfs:seeAlso <presets/triple-oscillator/RaveBass.ttl>. 
+
+ <http://pgiblock.net/presets/triple-oscillator#Ravemania> a pset:Preset;
+     lv2:appliesTo pgplug:triple-oscillator;
+     rdfs:seeAlso <presets/triple-oscillator/Ravemania.ttl>. 
+
+ <http://pgiblock.net/presets/triple-oscillator#ResoBass> a pset:Preset;
+     lv2:appliesTo pgplug:triple-oscillator;
+     rdfs:seeAlso <presets/triple-oscillator/ResoBass.ttl>. 
+
+ <http://pgiblock.net/presets/triple-oscillator#ResonantPad> a pset:Preset;
+     lv2:appliesTo pgplug:triple-oscillator;
+     rdfs:seeAlso <presets/triple-oscillator/ResonantPad.ttl>. 
+
+ <http://pgiblock.net/presets/triple-oscillator#RockOrgan> a pset:Preset;
+     lv2:appliesTo pgplug:triple-oscillator;
+     rdfs:seeAlso <presets/triple-oscillator/RockOrgan.ttl>. 
+
+ <http://pgiblock.net/presets/triple-oscillator#Rough!> a pset:Preset;
+     lv2:appliesTo pgplug:triple-oscillator;
+     rdfs:seeAlso <presets/triple-oscillator/Rough!.ttl>.
+
+ <http://pgiblock.net/presets/triple-oscillator#SBass> a pset:Preset;
+     lv2:appliesTo pgplug:triple-oscillator;
+     rdfs:seeAlso <presets/triple-oscillator/SBass.ttl>. 
+
+ <http://pgiblock.net/presets/triple-oscillator#SBass2> a pset:Preset;
+     lv2:appliesTo pgplug:triple-oscillator;
+     rdfs:seeAlso <presets/triple-oscillator/SBass2.ttl>. 
+
+ <http://pgiblock.net/presets/triple-oscillator#SEGuitar> a pset:Preset;
+     lv2:appliesTo pgplug:triple-oscillator;
+     rdfs:seeAlso <presets/triple-oscillator/SEGuitar.ttl>. 
+
+ <http://pgiblock.net/presets/triple-oscillator#SawLead> a pset:Preset;
+     lv2:appliesTo pgplug:triple-oscillator;
+     rdfs:seeAlso <presets/triple-oscillator/SawLead.ttl>. 
+
+ <http://pgiblock.net/presets/triple-oscillator#SawReso> a pset:Preset;
+     lv2:appliesTo pgplug:triple-oscillator;
+     rdfs:seeAlso <presets/triple-oscillator/SawReso.ttl>. 
+
+ <http://pgiblock.net/presets/triple-oscillator#Short1> a pset:Preset;
+     lv2:appliesTo pgplug:triple-oscillator;
+     rdfs:seeAlso <presets/triple-oscillator/Short1.ttl>. 
+
+ <http://pgiblock.net/presets/triple-oscillator#Short2> a pset:Preset;
+     lv2:appliesTo pgplug:triple-oscillator;
+     rdfs:seeAlso <presets/triple-oscillator/Short2.ttl>. 
+
+ <http://pgiblock.net/presets/triple-oscillator#Short3> a pset:Preset;
+     lv2:appliesTo pgplug:triple-oscillator;
+     rdfs:seeAlso <presets/triple-oscillator/Short3.ttl>. 
+
+ <http://pgiblock.net/presets/triple-oscillator#Short4> a pset:Preset;
+     lv2:appliesTo pgplug:triple-oscillator;
+     rdfs:seeAlso <presets/triple-oscillator/Short4.ttl>. 
+
+ <http://pgiblock.net/presets/triple-oscillator#Snare> a pset:Preset;
+     lv2:appliesTo pgplug:triple-oscillator;
+     rdfs:seeAlso <presets/triple-oscillator/Snare.ttl>. 
+
+ <http://pgiblock.net/presets/triple-oscillator#SoftBass> a pset:Preset;
+     lv2:appliesTo pgplug:triple-oscillator;
+     rdfs:seeAlso <presets/triple-oscillator/SoftBass.ttl>. 
+
+ <http://pgiblock.net/presets/triple-oscillator#SoftStrings> a pset:Preset;
+     lv2:appliesTo pgplug:triple-oscillator;
+     rdfs:seeAlso <presets/triple-oscillator/SoftStrings.ttl>. 
+
+ <http://pgiblock.net/presets/triple-oscillator#SpaceBass> a pset:Preset;
+     lv2:appliesTo pgplug:triple-oscillator;
+     rdfs:seeAlso <presets/triple-oscillator/SpaceBass.ttl>. 
+
+ <http://pgiblock.net/presets/triple-oscillator#Square> a pset:Preset;
+     lv2:appliesTo pgplug:triple-oscillator;
+     rdfs:seeAlso <presets/triple-oscillator/Square.ttl>. 
+
+ <http://pgiblock.net/presets/triple-oscillator#Supernova> a pset:Preset;
+     lv2:appliesTo pgplug:triple-oscillator;
+     rdfs:seeAlso <presets/triple-oscillator/Supernova.ttl>. 
+
+ <http://pgiblock.net/presets/triple-oscillator#TB303> a pset:Preset;
+     lv2:appliesTo pgplug:triple-oscillator;
+     rdfs:seeAlso <presets/triple-oscillator/TB303.ttl>. 
+
+ <http://pgiblock.net/presets/triple-oscillator#TB303-Arpeggio> a pset:Preset;
+     lv2:appliesTo pgplug:triple-oscillator;
+     rdfs:seeAlso <presets/triple-oscillator/TB303-Arpeggio.ttl>. 
+
+ <http://pgiblock.net/presets/triple-oscillator#TheFirstOne> a pset:Preset;
+     lv2:appliesTo pgplug:triple-oscillator;
+     rdfs:seeAlso <presets/triple-oscillator/TheFirstOne.ttl>. 
+
+ <http://pgiblock.net/presets/triple-oscillator#TheMaster> a pset:Preset;
+     lv2:appliesTo pgplug:triple-oscillator;
+     rdfs:seeAlso <presets/triple-oscillator/TheMaster.ttl>. 
+
+ <http://pgiblock.net/presets/triple-oscillator#TranceLead> a pset:Preset;
+     lv2:appliesTo pgplug:triple-oscillator;
+     rdfs:seeAlso <presets/triple-oscillator/TranceLead.ttl>. 
+
+ <http://pgiblock.net/presets/triple-oscillator#WarmStack> a pset:Preset;
+     lv2:appliesTo pgplug:triple-oscillator;
+     rdfs:seeAlso <presets/triple-oscillator/WarmStack.ttl>. 
+
+ <http://pgiblock.net/presets/triple-oscillator#Whistle> a pset:Preset;
+     lv2:appliesTo pgplug:triple-oscillator;
+     rdfs:seeAlso <presets/triple-oscillator/Whistle.ttl>. 
+
+ <http://pgiblock.net/presets/triple-oscillator#Xylophon> a pset:Preset;
+     lv2:appliesTo pgplug:triple-oscillator;
+     rdfs:seeAlso <presets/triple-oscillator/Xylophon.ttl>. 

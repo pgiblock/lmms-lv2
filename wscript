@@ -55,6 +55,15 @@ def configure(conf):
 
 
 def build(bld):
+    # TODO Remove this redundant installdir calculation
+    bundle     = 'lmms.lv2'
+    installdir = os.path.join(bld.env.LV2DIR, bundle)
+
     bld.recurse('src tests')
+
+    bld.install_files(installdir, bld.path.ant_glob('presets/**/*.ttl'),
+                      relative_trick=True)
+
+    #inst.recurse('presets')
 
 # vim: ts=8:sts=4:sw=4:et
