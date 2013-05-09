@@ -1,4 +1,3 @@
-
 #include <assert.h>
 #include <math.h>
 #include <stdbool.h>
@@ -47,9 +46,7 @@ trip_osc_voice_steal (TripleOscillator *triposc, Voice *v, uint8_t velocity)
 			vol_l = ( *u->vol_port * (PAN_MAX - *u->pan_port) ) /
 			        ( PAN_MAX * VOL_MAX );
 			vol_r = *u->vol_port / VOL_MAX;
-		}
-		else
-		{
+		} else {
 			vol_l = *u->vol_port / VOL_MAX;
 			vol_r = ( *u->vol_port * (PAN_MAX + *u->pan_port) ) /
 			        ( PAN_MAX * VOL_MAX);
@@ -127,9 +124,9 @@ voice_release (TripleOscillator *triposc, uint8_t midi_note)
 
 
 static void
-triposc_connect_port (LV2_Handle instance,
-                      uint32_t   port,
-                      void*      data)
+triposc_connect_port (LV2_Handle  instance,
+                      uint32_t    port,
+                      void       *data)
 {
 	TripleOscillator *plugin = (TripleOscillator *)instance;
 	int oscidx, oscport;
@@ -230,7 +227,7 @@ triposc_instantiate (const LV2_Descriptor     *descriptor,
 	int i;
 	
 	/* Malloc and initialize new Synth */
-	TripleOscillator *plugin = (TripleOscillator*)malloc(sizeof(TripleOscillator));
+	TripleOscillator *plugin = (TripleOscillator *)malloc(sizeof(TripleOscillator));
 	if (!plugin) {
 		fprintf(stderr, "Could not allocate TripleOscillator.\n");
 		return NULL;
@@ -386,7 +383,7 @@ triposc_run (LV2_Handle instance,
 					// Filter enabled
 					for (int f=0; f<outlen; ++f) {
 						// TODO: only recalc when needed
-						const float cut = expKnobVal(envbuf_cut[f]) * CUT_FREQ_MULTIPLIER
+						const float cut = exp_knob_val(envbuf_cut[f]) * CUT_FREQ_MULTIPLIER
 						                  + *plugin->filter_cut_port;
 						const float res = envbuf_res[f] * RES_MULTIPLIER
 						                  + *plugin->filter_res_port;
@@ -430,7 +427,7 @@ triposc_run (LV2_Handle instance,
 		if (ev) {
 			if (ev->body.type == plugin->uris.midi_event) {
 				uint8_t * const data = (uint8_t * const)(ev + 1);
-			  ev = lv2_atom_sequence_next(ev);
+				ev = lv2_atom_sequence_next(ev);
 				uint8_t const  cmd  = data[0];
 				//fprintf(stderr, "  cmd=%d data1=%d data2=%d\n", cmd, data[1], data[2]);
 				if (cmd == 0x90) {

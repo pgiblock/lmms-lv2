@@ -3,7 +3,7 @@
 
 #include <stdint.h>
 
-typedef struct {
+typedef struct envelope_state {
 	int q;                  // State
 	uint32_t frame;         // Frame of current state
 	uint32_t nframes;       // Num frames to run current state
@@ -12,7 +12,7 @@ typedef struct {
 } EnvelopeState;
 
 
-typedef struct {
+typedef struct envelope_params {
 	float  time_base;       // [0,1.0] in params below are based by this
 	float *del;             // predelay time
 	float *att;             // attack time
@@ -24,7 +24,7 @@ typedef struct {
 } EnvelopeParams;
 
 
-typedef struct {
+typedef struct envelope {
 	EnvelopeParams *p;      // TODO: Consider copying the Params
 	EnvelopeState   st;     // Internal state of this envelope
 } Envelope;

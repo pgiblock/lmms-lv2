@@ -1,9 +1,9 @@
 #ifndef BLEP_H__
 #define BLEP_H__
 
-typedef struct BlepState_st {
-	int   ptr;	// Increments from 0..8 (BLEPSIZE/BLEPLEN?) 8: Done!
-  float vol;	
+typedef struct blep_state {
+	int   ptr;      // Increments from 0..8 (BLEPSIZE/BLEPLEN?) 8: Done!
+	float vol;
 	float phs;
 	int   typ;
 } BlepState;

@@ -18,7 +18,7 @@ typedef struct {
 } LfoState;
 
 typedef struct {
-	float time_base;
+	float  time_base;
 	float *del;     // predelay time
 	float *att;     // attack time
 	float *spd;     // speed

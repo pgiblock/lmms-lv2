@@ -22,7 +22,7 @@
 #define PITCH_BEND_RANGE (1.0) // One octave
 
 // PORTS
-enum {
+enum triposc_ports {
 	// Instrument
 	TRIPOSC_CONTROL = 0,
 	TRIPOSC_OUT_L = 1,
@@ -105,7 +105,7 @@ enum {
 
 
 // Per-oscillator ports and calculated coefficients
-typedef struct {
+typedef struct oscillator_unit {
 	// Ports
 	float *vol_port;
 	float *pan_port;
@@ -131,14 +131,14 @@ typedef struct {
 
 
 // Plugin voice state
-typedef struct {
+typedef struct triposc_generator {
 	Oscillator osc_l[3];
 	Oscillator osc_r[3];
 } TripOscGenerator;
 
 
 // The entire instrument
-typedef struct {
+typedef struct triple_oscillator {
 	/* Features */
 	LV2_URID_Map *map;
 

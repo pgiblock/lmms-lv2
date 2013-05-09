@@ -32,6 +32,7 @@ X   Exp
   Double-check for working SYNC mod in both AA and non-AA code
   Revisit float vs float[] ports
   "Un-map" controls like "LFO speed". [20ms, 20000ms] instead of [0.001,1.0]
+    sustain level is "backwards", should be equal to the level, not 1-n.
   Port-groups, parameters
   Address all TODOs and FIXMEs
   Figure out pulse-modulation versus frequency-modulation fiasco (Stefan F)

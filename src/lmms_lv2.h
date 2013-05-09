@@ -1,7 +1,7 @@
 #ifndef LMMS_LV2_H__
 #define LMMS_LV2_H__
 
-// "Standard" Headers
+// Pollute our namespace with some "Standard" Headers
 
 #include "config.h"
 

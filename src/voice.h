@@ -5,7 +5,7 @@
 #include "envelope.h"
 #include "lfo.h"
 
-typedef struct {
+typedef struct voice {
 	// Standard voice state
 	uint8_t    midi_note;
 	uint32_t   frame;
@@ -29,4 +29,4 @@ typedef struct {
 	
 } Voice;
 
-#endif 
+#endif

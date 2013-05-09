@@ -46,10 +46,10 @@ envgen_cleanup (LV2_Handle instance)
 
 
 static LV2_Handle
-envgen_instantiate(const LV2_Descriptor      *descriptor,
-                   double                     rate,
-                   const char                *path,
-                   const LV2_Feature * const *features)
+envgen_instantiate (const LV2_Descriptor      *descriptor,
+                    double                     rate,
+                    const char                *path,
+                    const LV2_Feature * const *features)
 {
 	/* Malloc and initialize new Synth */
 	EnvelopeGenerator *plugin = malloc(sizeof(EnvelopeGenerator));
@@ -126,9 +126,9 @@ envgen_map_uri (EnvelopeGenerator *plugin, const char *uri)
 static LV2_State_Status
 envgen_save (LV2_Handle                 instance,
              LV2_State_Store_Function   store,
-	     LV2_State_Handle           handle,
-	     uint32_t                   flags,
-	     const LV2_Feature * const *features)
+             LV2_State_Handle           handle,
+             uint32_t                   flags,
+             const LV2_Feature * const *features)
 {
 	printf("Envelope Generator save stub.\n");
 	return LV2_STATE_SUCCESS;
@@ -148,7 +148,7 @@ envgen_restore (LV2_Handle       instance,
 
 
 const void*
-envgen_extension_data(const char *uri)
+envgen_extension_data (const char *uri)
 {
 	static const LV2_State_Interface state = { envgen_save, envgen_restore };
 	if (!strcmp(uri, LV2_STATE_URI)) {

@@ -34,7 +34,7 @@
 #define CHANNELS (2)
 typedef sample_t frame[CHANNELS];
 
-enum FilterTypes {
+typedef enum filter_types {
 	FILTER_LOWPASS,
 	FILTER_HIPASS,
 	FILTER_BANDPASS_CSG,
@@ -50,10 +50,10 @@ enum FilterTypes {
 	FILTER_BANDPASS_RC24,
 	FILTER_HIGHPASS_RC24,
 	FILTER_FORMANTFILTER
-};
+} FilterTypes;
 
 
-struct Filter_st {
+typedef struct filter {
 	// TODO: Collapse all these coeffs into a union or something
 	
 	// filter coeffs
@@ -81,11 +81,10 @@ struct Filter_st {
 	// in/out history for Formant-filters
 	frame vfbp[6], vflp[6], vfhp[6], vflast[6];
 	
-	enum FilterTypes type;
+	FilterTypes type;
 
 	float sample_rate;
-};
-typedef struct Filter_st Filter;
+} Filter;
 
 
 // Public interface

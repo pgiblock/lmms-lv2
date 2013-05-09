@@ -8,7 +8,8 @@
 #include "triple_oscillator/triple_oscillator.h"
 #include "envelope_generator/envelope_generator.h"
 
-const LV2_Descriptor* lv2_descriptor(uint32_t index)
+const LV2_Descriptor *
+lv2_descriptor (uint32_t index)
 {
 	switch (index) {
 	case 0:

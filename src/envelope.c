@@ -28,7 +28,7 @@ advance_state (EnvelopeParams *p, EnvelopeState *st)
 	case ENV_OFF:
 		if (*p->del > 0.0f) {
 			st->q       = ENV_DEL;
-			st->nframes = p->time_base * expKnobVal(*p->del);
+			st->nframes = p->time_base * exp_knob_val(*p->del);
 			st->frame   = 0;
 			return;
 		}
@@ -36,7 +36,7 @@ advance_state (EnvelopeParams *p, EnvelopeState *st)
 	case ENV_DEL:
 		if (*p->att > 0.0f) {
 			st->q       = ENV_ATT;
-			st->nframes = p->time_base * expKnobVal(*p->att);
+			st->nframes = p->time_base * exp_knob_val(*p->att);
 			st->frame   = 0;
 			return;
 		}
@@ -44,7 +44,7 @@ advance_state (EnvelopeParams *p, EnvelopeState *st)
 	case ENV_ATT:
 		if (*p->hold > 0.0f) {
 			st->q       = ENV_HOLD;
-			st->nframes = p->time_base * expKnobVal(*p->hold);
+			st->nframes = p->time_base * exp_knob_val(*p->hold);
 			st->frame   = 0;
 			return;
 		}
@@ -52,7 +52,7 @@ advance_state (EnvelopeParams *p, EnvelopeState *st)
 	case ENV_HOLD:
 		if (*p->dec > 0.0f && *p->sus > 0.0f) {
 			st->q       = ENV_DEC;
-			st->nframes = p->time_base * expKnobVal((*p->dec)*(*p->sus));
+			st->nframes = p->time_base * exp_knob_val((*p->dec)*(*p->sus));
 			st->frame   = 0;
 			return;
 		}
@@ -115,7 +115,7 @@ envelope_release (Envelope *e)
 		// Only do release if release has any length
 		if (*e->p->rel > 0.0f) {
 			e->st.q        = ENV_REL;
-			e->st.nframes  = e->p->time_base * expKnobVal(*e->p->rel);
+			e->st.nframes  = e->p->time_base * exp_knob_val(*e->p->rel);
 			e->st.frame    = 0;
 			e->st.rel_base = e->st.last_sample;
 		} else {

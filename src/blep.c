@@ -6,10 +6,11 @@
 static inline double
 sinc (double x)
 {
+	double t;
 	if (x == 0.0) {
 		return 1.0;
 	} else {
-	 	double t = M_PI * x;
+		t = M_PI * x;
 		return sin(t) / t;
 	}
 }
@@ -20,7 +21,7 @@ blep_init (float *blep, float *blamp, int n)
 {
 	int i;
 	double s, t, x;
-  double sum, scale;
+	double sum, scale;
  
 	sum = 0.0;
 	for (i = 0; i < n; ++i) {

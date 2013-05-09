@@ -12,7 +12,7 @@
 #define LB_24_IGNORE_ENVELOPE   
 #define LB_FILTERED 
 //#define LB_DECAY
-//#define LB_24_RES_TRICK         
+//#define LB_24_RES_TRICK
 
 #define LB_DIST_RATIO    4.0
 #define LB_24_VOL_ADJUST 3.0
@@ -55,7 +55,7 @@ typedef struct {
 
 	float a,            // IIR2 Coefficients for mixing dry and delay.
 	      b,            //   Mixing coefficients for the final sound.  
-	      c;            //  
+	      c;            //
 
 	// 3-Filter
 	float kfcn, 
@@ -118,7 +118,7 @@ typedef struct {
 
 	int   vca_mode;         // 0: attack, 1: decay, 2: idle, 3: never played
 
-	LB303FilterState vcf;		// State of Vcf
+	LB303FilterState vcf;   // State of Vcf
 
 } LB303Synth;
 

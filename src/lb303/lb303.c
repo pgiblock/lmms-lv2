@@ -158,8 +158,8 @@ static void
 lb303_run (LV2_Handle instance,
            uint32_t   sample_count)
 {
-	LB303Synth *plugin      = (LB303Synth*)instance;
-	float      *output      = plugin->output_port;
+	LB303Synth *plugin = (LB303Synth *)instance;
+	float      *output = plugin->output_port;
 
 	uint32_t    pos;
 	uint32_t    ev_frames;

@@ -35,7 +35,7 @@
 #define BLEPLEN  (BLEPSIZE/8)
 #define NROFBLEPS 8
 
-enum WaveShapes {
+typedef enum wave_shapes {
 	OSC_WAVE_SINE,
 	OSC_WAVE_TRIANGLE,
 	OSC_WAVE_SAW,
@@ -43,19 +43,19 @@ enum WaveShapes {
 	OSC_WAVE_MOOG,
 	OSC_WAVE_EXPONENTIAL,
 	OSC_WAVE_NOISE
-} ;
+} WaveShapes;
 
 
-enum ModulationAlgos {
+typedef enum modulation_algos {
 	OSC_MOD_PM,
 	OSC_MOD_AM,
 	OSC_MOD_MIX,
 	OSC_MOD_SYNC,
 	OSC_MOD_FM
-};
+} ModulationAlgos;
 
 
-struct Oscillator_st {
+typedef struct oscillator {
 	//// PARAMS:
 
 	// Shared by all oscillators of the group
@@ -66,7 +66,7 @@ struct Oscillator_st {
 	float volume;
 	float ext_phase_offset;
 
-	struct Oscillator_st *sub_osc;
+	struct oscillator *sub_osc;
 
 	//// STATE
 
@@ -83,38 +83,37 @@ struct Oscillator_st {
 
 	// TODO: const sampleBuffer * m_userWave;
 	float sample_rate;
-};
-typedef struct Oscillator_st Oscillator;
+} Oscillator;
 
 
 // Public interface
 
-Oscillator* osc_create();
+Oscillator *osc_create();
 
-void osc_reset(Oscillator *osc,
-		float wave_shape, float modulation_algo,
-		float freq, float volume,
-		Oscillator *sub_osc, float phase_offset,
-		float sample_rate);
+void osc_reset (Oscillator *osc,
+                float wave_shape, float modulation_algo,
+                float freq, float volume,
+                Oscillator *sub_osc, float phase_offset,
+                float sample_rate);
 
-void osc_destroy(Oscillator *o);
+void osc_destroy (Oscillator *o);
 
 // Original synthesis functions
-void osc_update(Oscillator *o, sample_t *buff, sample_t *bend, fpp_t len);
-sample_t osc_get_sample(Oscillator *o, float sample);
+void osc_update (Oscillator *o, sample_t *buff, sample_t *bend, fpp_t len);
+sample_t osc_get_sample (Oscillator *o, float sample);
 
 // Antialiased synthesis functions
-void osc_aa_update(Oscillator *o, sample_t *buff, sample_t *bend, fpp_t len);
-sample_t osc_get_aa_sample(Oscillator *o, float increment, float sync_offset);
+void osc_aa_update (Oscillator *o, sample_t *buff, sample_t *bend, fpp_t len);
+sample_t osc_get_aa_sample (Oscillator *o, float increment, float sync_offset);
 
-void osc_print(Oscillator *o);
+void osc_print (Oscillator *o);
 
 // Waveform sample routines
 
 static inline sample_t
 osc_sample_sin (const float sample)
 {
-	return sinf(sample * M_PI * 2.0f);
+	return sinf(sample * M_2PI);
 }
 
 static inline sample_t

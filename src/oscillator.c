@@ -39,10 +39,10 @@ sample_t osc_get_aa_sample_exp (Oscillator *o, float increment, float sync_offse
 
 ////
 
-Oscillator*
+Oscillator *
 osc_create ()
 {
-	Oscillator* o = (Oscillator*)malloc(sizeof(Oscillator));
+	Oscillator *o = (Oscillator *)malloc(sizeof(Oscillator));
 	osc_reset(o, 0.f, 0.f, 440.f, 1.f, NULL, 0.f, 0.f);
 	if (!o) {
 		fprintf(stderr, "Could not allocate Oscillator.\n");
@@ -97,7 +97,7 @@ osc_destroy (Oscillator *o)
 
 
 void
-osc_print(Oscillator *o)
+osc_print (Oscillator *o)
 {
 	fprintf(stderr, "{wave_shape=%f\n modulation_algo=%f\n freq=%f\n "
 	        "volume=%f\n ext_phase_offset=%f\n sub_osc=%p\n "
@@ -140,7 +140,8 @@ osc_update_no_sub (Oscillator *o, sample_t *buff, sample_t *bend, fpp_t len)
 
 // do PM by using sub-osc as modulator
 static void
-osc_update_pm (Oscillator *o, sample_t *buff, sample_t *bend, fpp_t len) {
+osc_update_pm (Oscillator *o, sample_t *buff, sample_t *bend, fpp_t len)
+{
 	osc_update(o->sub_osc, buff, bend, len);
 	osc_recalc_phase(o);
 
@@ -170,7 +171,8 @@ osc_update_fm (Oscillator *o, sample_t *buff, sample_t *bend, fpp_t len)
 
 // do AM by using sub-osc as modulator
 static void
-osc_update_am (Oscillator *o, sample_t *buff, sample_t *bend, fpp_t len) {
+osc_update_am (Oscillator *o, sample_t *buff, sample_t *bend, fpp_t len)
+{
 	osc_update(o->sub_osc, buff, bend, len);
 	osc_recalc_phase(o);
 
@@ -183,7 +185,8 @@ osc_update_am (Oscillator *o, sample_t *buff, sample_t *bend, fpp_t len) {
 
 // do mixing by using sub-osc as mix-sample
 static void
-osc_update_mix (Oscillator *o, sample_t *buff, sample_t *bend, fpp_t len) {
+osc_update_mix (Oscillator *o, sample_t *buff, sample_t *bend, fpp_t len)
+{
 	osc_update(o->sub_osc, buff, bend, len);
 	osc_recalc_phase(o);
 
@@ -195,30 +198,32 @@ osc_update_mix (Oscillator *o, sample_t *buff, sample_t *bend, fpp_t len) {
 
 
 static inline bool
-osc_sync_ok (Oscillator *o, float osc_coeff) {
+osc_sync_ok (Oscillator *o, float osc_coeff)
+{
 	const float v1 = o->phase;
 	o->phase += osc_coeff;
 
 	// check whether m_phase is in next period
-	return floorf( o->phase ) > floorf( v1 );
+	return floorf(o->phase) > floorf(v1);
 }
 
 
 static float
-osc_sync_init (Oscillator *o, sample_t *buff, sample_t *bend, const fpp_t len) {
+osc_sync_init (Oscillator *o, sample_t *buff, sample_t *bend, const fpp_t len)
+{
 	if (o->sub_osc != NULL) {
 		osc_update(o->sub_osc, buff, bend, len);
 	}
 	osc_recalc_phase(o);
 
 	// FIXME: Do we need to multiply by bend somehow?
-	return( o->freq );
+	return o->freq;
 }
 
 
 // sync with sub-osc (every time sub-osc starts new period, we also start new
 // period)
-static void 
+static void
 osc_update_sync (Oscillator *o, sample_t *buff, sample_t *bend, fpp_t len)
 {
 	// FIXME: sub_osc_coeff is not correct.  Fix for bend!
@@ -467,7 +472,7 @@ osc_get_aa_sample_triangle (Oscillator *o, float increment, float sync_offset)
 		last_value = osc_sample_triangle(o->last_phase);
 		value      = osc_sample_triangle(o->phase);
 		corr_phs   = o->phase / inc;
-		corr_amp   = last_value - value;      
+		corr_amp   = last_value - value;
 		corr_typ   = false; // this needs a blep
 	}
 
@@ -508,7 +513,7 @@ osc_get_aa_sample_saw (Oscillator *o, float increment, float sync_offset)
 	// limit increment to C9 (higher does not make any musical sense and just
 	// causes us a lot of trouble to correct this...)
 	float inc_limit = 8372.018089619f / o->sample_rate;
-	float inc = ( increment > inc_limit )? inc_limit:increment;
+	float inc = (increment > inc_limit) ? inc_limit : increment;
 
 	// initialize current result with 0.0
 	float value      = 0.0f;
@@ -539,7 +544,7 @@ osc_get_aa_sample_saw (Oscillator *o, float increment, float sync_offset)
 
 		value = osc_sample_saw(o->phase);
 	} else {
-		// Syncing, 
+		// Syncing,
 		o->last_phase = o->phase + inc*(1.0f - sync_offset);
 		o->phase      = sync_offset;
 
@@ -627,7 +632,7 @@ osc_get_aa_sample_square (Oscillator *o, float increment, float sync_offset)
 		value      = osc_sample_square(o->phase);
 		// New values for correction
 		corr_phs   = o->phase / inc;
-		corr_amp   = last_value - value;      
+		corr_amp   = last_value - value;
 	}
 
 	if (fabsf(corr_amp) > 0.00001f) { // need to correct this samples?
@@ -640,7 +645,7 @@ osc_get_aa_sample_square (Oscillator *o, float increment, float sync_offset)
 	// now go through all pipelines, check if active and process if so...
 	for (i = 0; i < NROFBLEPS; ++i) {
 		if (o->bleps[i].ptr >= 0 && o->bleps[i].ptr < 8) {
-			const int offset = ( o->bleps[i].ptr + o->bleps[i].phs ) * BLEPLEN;    
+			const int offset = ( o->bleps[i].ptr + o->bleps[i].phs ) * BLEPLEN;
 			value += o->bleps[i].vol * blep_table[ offset % BLEPSIZE ];
 			o->bleps[i].ptr++;
 		}
@@ -768,7 +773,7 @@ osc_get_aa_sample_exp (Oscillator *o, float increment, float sync_offset)
 		last_value = osc_sample_exp(o->last_phase);
 		value      = osc_sample_exp(o->phase);
 		corr_phs   = o->phase / inc;
-		corr_amp   = last_value - value;      
+		corr_amp   = last_value - value;
 		corr_typ   = false; // this needs a blep
 	}
 
@@ -786,7 +791,7 @@ osc_get_aa_sample_exp (Oscillator *o, float increment, float sync_offset)
 		// FIXME: When is ptr < 0?
 		// TODO: Could start at blep_idx and search until we find an expired one
 		if (o->bleps[i].ptr >= 0 && o->bleps[i].ptr < 8) {
-			const int offset = ( o->bleps[i].ptr + o->bleps[i].phs ) * BLEPLEN;
+			const int offset = (o->bleps[i].ptr + o->bleps[i].phs) * BLEPLEN;
 			// FIXME: EASY to remove this if
 			if (o->bleps[i].typ) {
 				value += o->bleps[i].vol * blamp_table[ offset % BLEPSIZE ];

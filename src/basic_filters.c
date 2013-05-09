@@ -100,19 +100,19 @@ filter_get_sample_moog (Filter *f , sample_t in, int chnl)
 
 	// four cascaded onepole filters
 	// (bilinear transform)
-	f->y1[chnl] = tLimit(
+	f->y1[chnl] = t_limit(
 			( x + f->oldx[chnl] ) * f->p
 			- f->k * f->y1[chnl],
 			-10.0f, 10.0f );
-	f->y2[chnl] = tLimit(
+	f->y2[chnl] = t_limit(
 			( f->y1[chnl] + f->oldy1[chnl] ) * f->p
 			- f->k * f->y2[chnl],
 			-10.0f, 10.0f );
-	f->y3[chnl] = tLimit(
+	f->y3[chnl] = t_limit(
 			( f->y2[chnl] + f->oldy2[chnl] ) * f->p
 			- f->k * f->y3[chnl],
 			-10.0f, 10.0f );
-	f->y4[chnl] = tLimit(
+	f->y4[chnl] = t_limit(
 			( f->y3[chnl] + f->oldy3[chnl] ) * f->p
 			- f->k * f->y4[chnl],
 			-10.0f, 10.0f );
@@ -372,7 +372,7 @@ sample_t
 filter_get_sample (Filter *f, sample_t in, int chnl)
 {
 	sample_t out;
-	switch( f->type ) {
+	switch (f->type) {
 	case FILTER_MOOG:
 		out = filter_get_sample_moog(f, in, chnl);
 		break;
@@ -410,10 +410,10 @@ filter_get_sample (Filter *f, sample_t in, int chnl)
 		//		f->b0a0, f->b1a0, f->b2a0, f->a1a0, f->a2a0,
 		//		f->in1[chnl], f->in2[chnl], f->ou1[chnl], f->ou2[chnl]);
 		out = f->b0a0*in +
-			f->b1a0*f->in1[chnl] +
-			f->b2a0*f->in2[chnl] -
-			f->a1a0*f->ou1[chnl] -
-			f->a2a0*f->ou2[chnl];
+		      f->b1a0*f->in1[chnl] +
+		      f->b2a0*f->in2[chnl] -
+		      f->a1a0*f->ou1[chnl] -
+		      f->a2a0*f->ou2[chnl];
 
 		// push in/out buffers
 		f->in2[chnl] = f->in1[chnl];
@@ -439,8 +439,8 @@ filter_calc_coeffs (Filter *f, float freq, float q)
 {
 	// temp coef vars
 	// limit freq and q for not getting bad noise out of the filter...
-	freq = qMax(freq, MIN_FREQ);
-	q    = qMax(q, MIN_Q);
+	freq = q_max(freq, MIN_FREQ);
+	q    = q_max(q, MIN_Q);
 
 	switch (f->type) {
 	case FILTER_LOWPASS_RC12:
@@ -454,9 +454,9 @@ filter_calc_coeffs (Filter *f, float freq, float q)
 			freq = 50.f;
 		}
 
-		f->rca = 1.0f - (1.0f/(f->sample_rate*4)) / ( (1.0f/(freq*2.0f*M_PI)) + (1.0f/(f->sample_rate*4)) );
+		f->rca = 1.0f - (1.0f/(f->sample_rate*4)) / ( (1.0f/(freq*M_2PI)) + (1.0f/(f->sample_rate*4)) );
 		f->rcb = 1.0f - f->rca;
-		f->rcc = (1.0f/(freq*2.0f*M_PI)) / ( (1.0f/(freq*2.0f*M_PI)) + (1.0f/(f->sample_rate*4)) );
+		f->rcc = (1.0f/(freq*M_2PI)) / ( (1.0f/(freq*2.0f*M_PI)) + (1.0f/(f->sample_rate*4)) );
 
 		// Stretch Q/resonance, as self-oscillation reliably starts at a q of ~2.5 - ~2.6
 		f->rcq = q/4.f;
@@ -478,7 +478,7 @@ filter_calc_coeffs (Filter *f, float freq, float q)
 
 		// frequency in lmms ranges from 1Hz to 14000Hz
 		const int   vowel = (int)( floor( freq/14000.f * 4.f ) );
-		const float fract = ( freq/14000.f * 4.f ) - (float)vowel;
+		const float fract = (freq/14000.f * 4.f) - (float)vowel;
 
 		// interpolate between formant frequencies
 		const float f0 = formants[vowel+0][0] * (1.0f - fract) + 
@@ -488,16 +488,16 @@ filter_calc_coeffs (Filter *f, float freq, float q)
 				 formants[vowel+1][1] * (fract);
 
 		f->vfa[0] = 1.0f - (1.0f/(f->sample_rate*4)) /
-			    ( (1.0f/(f0*2.0f*M_PI)) + (1.0f/(f->sample_rate*4)) );
+			    ( (1.0f/(f0*M_2PI)) + (1.0f/(f->sample_rate*4)) );
 		f->vfb[0] = 1.0f - f->vfa[0];
-		f->vfc[0] = (1.0f/(f0*2.0f*M_PI)) /
-			    ( (1.0f/(f0*2.0f*M_PI)) + (1.0f/(f->sample_rate*4)) );
+		f->vfc[0] = (1.0f/(f0*M_2PI)) /
+			    ( (1.0f/(f0*M_2PI)) + (1.0f/(f->sample_rate*4)) );
 
 		f->vfa[1] = 1.0f - (1.0f/(f->sample_rate*4)) /
-			    ( (1.0f/(f1*2.0f*M_PI)) + (1.0f/(f->sample_rate*4)) );
+			    ( (1.0f/(f1*M_2PI)) + (1.0f/(f->sample_rate*4)) );
 		f->vfb[1] = 1.0f - f->vfa[1];
-		f->vfc[1] = (1.0f/(f1*2.0f*M_PI)) /
-			    ( (1.0f/(f1*2.0f*M_PI)) + (1.0f/(f->sample_rate*4)) );
+		f->vfc[1] = (1.0f/(f1*M_2PI)) /
+			    ( (1.0f/(f1*M_2PI)) + (1.0f/(f->sample_rate*4)) );
 		return;
 	}
 	case FILTER_MOOG:
@@ -522,7 +522,7 @@ filter_calc_coeffs (Filter *f, float freq, float q)
 	}
 
 	// other filters
-	const float omega = 2.0f*M_PI * freq / f->sample_rate;
+	const float omega = M_2PI * freq / f->sample_rate;
 	const float tsin = sinf(omega);
 	const float tcos = cosf(omega);
 	//float alpha;
@@ -539,7 +539,7 @@ filter_calc_coeffs (Filter *f, float freq, float q)
 	//       omega, tsin, tcos, alpha, a0);
 
 	f->a1a0 = -2.0f * tcos * a0;
-	f->a2a0 = ( 1.0f - alpha ) * a0;
+	f->a2a0 = (1.0f - alpha) * a0;
 
 	switch( f->type ) {
 	case FILTER_LOWPASS:
