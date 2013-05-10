@@ -20,7 +20,7 @@ X   Smooth input (one-pole filter)
 X   Rework Oscillator
     Sounds wrong with detune. (base+detune)*bend => (base*bend)+detune
     Fix value 127 = 1 octave
-    2-byte MIDI values
+X   2-byte MIDI values
   Improve voice with proper oscillator code. (Antialiasing)
     Sine
 X   Triangle
@@ -34,13 +34,13 @@ X   Exp
   "Un-map" controls like "LFO speed". [20ms, 20000ms] instead of [0.001,1.0]
     sustain level is "backwards", should be equal to the level, not 1-n.
   Port-groups, parameters
-  Address all TODOs and FIXMEs
   Figure out pulse-modulation versus frequency-modulation fiasco (Stefan F)
-  Add lagged inputs wherever else it is needed
   Tempo-sync knobs?
   Split out instrument code
   Create standalone triposc voice plugin
+  Add lagged inputs wherever else it is needed
   Optimize (Profile!)
+  Address all TODOs and FIXMEs
 
 BUGS:
   Add default short voice envelope (currently "popping" with min envelope)

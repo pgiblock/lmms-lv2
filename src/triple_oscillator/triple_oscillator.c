@@ -33,12 +33,11 @@ trip_osc_voice_steal (TripleOscillator *triposc, Voice *v, uint8_t velocity)
 	// Reset oscillators backwards, wee...
 	for (int i=2; i>=0; --i) {
 		OscillatorUnit *u = &triposc->units[i];
-		// FIXME: This check won't be needed if we fix oscillator to just hold float* members bound straight to ports
 		float mod = (i==2)? 0 : *u->modulation_port;
-		// FIXME: Detuning needs to happen occationally even after note-on
+		// FIXME: Detuning needs to happen occasionally even after note-on
 		float detune_l = powf( 2.0f, (*u->detune_coarse_port * 100.0f + *u->detune_fine_l_port) / 1200.0f);
 		float detune_r = powf( 2.0f, (*u->detune_coarse_port * 100.0f + *u->detune_fine_r_port) / 1200.0f);
-		// FIXME: Volume/panning changes also need to happen occationally after note-on
+		// FIXME: Volume/panning changes also need to happen occasionally after note-on
 		float vol_l, vol_r;
 		
 		// Combine volume and panning
@@ -58,7 +57,7 @@ trip_osc_voice_steal (TripleOscillator *triposc, Voice *v, uint8_t velocity)
 		vol_l *= ((float)velocity) / 127.0;
 		vol_r *= ((float)velocity) / 127.0;
 
-		// FIXME: Yet another thing that *should* change during playback?
+		// FIXME: Yet another thing that *should* changed during playback?
 		float po_l = (*u->phase_offset_port + *u->phase_detune_port) / 360.0f;
 		// FIXME: Double check this code.  Form is different than line above
 		float po_r = *u->phase_offset_port / 360.0f;
@@ -85,6 +84,7 @@ trip_osc_voice_release (TripleOscillator *triposc, Voice *v)
 Voice*
 voice_steal (TripleOscillator *triposc, uint8_t midi_note, uint8_t velocity)
 {
+	Voice *v;
 	int victim_q, victim_f, victim_idx, q, i;
 	uint32_t f;
 
@@ -106,11 +106,8 @@ voice_steal (TripleOscillator *triposc, uint8_t midi_note, uint8_t velocity)
 		}
 	}
 
-	// We are just going round-robin for now
-	// TODO: Prioritize on vol-envelope state
-	Voice *v = &triposc->voices[victim_idx];
-
 	// Stealing
+	v = &triposc->voices[victim_idx];
 	v->midi_note = midi_note;
 	// Would be func-pointer or voice_steal would be called by tovs()
 	trip_osc_voice_steal(triposc, v, velocity);
@@ -121,8 +118,10 @@ voice_steal (TripleOscillator *triposc, uint8_t midi_note, uint8_t velocity)
 	envelope_trigger(v->env_res);
 
 	// Trigger LFOs
+	// COMPATABILITY: We trigger a per-voice LFO while LMMS has one LFO
+	// per-instrument.
+	// TODO: Add option to toggle between both modes.
 	lfo_trigger(v->lfo_vol);
-	// FIXME: Do LFOs _always_ retrigger?
 	lfo_trigger(v->lfo_cut);
 	lfo_trigger(v->lfo_res);
 
@@ -235,8 +234,10 @@ static void
 triposc_cleanup (LV2_Handle instance)
 {
 	TripleOscillator *plugin = (TripleOscillator *)instance;
+
+	free(plugin->voices[0].generator);
 	free(plugin->voices);
-	free(instance);
+	free(plugin);
 }
 
 
@@ -248,33 +249,30 @@ triposc_instantiate (const LV2_Descriptor     *descriptor,
 {
 	int i;
 	
-	/* Malloc and initialize new Synth */
+	// Malloc and initialize new Synth
 	TripleOscillator *plugin = (TripleOscillator *)malloc(sizeof(TripleOscillator));
 	if (!plugin) {
 		fprintf(stderr, "Could not allocate TripleOscillator.\n");
 		return NULL;
 	}
 
-	// FIXME: Hardcoding envelope for now. Yuck
 	plugin->env_vol_params.time_base =
 	plugin->env_cut_params.time_base =
 	plugin->env_res_params.time_base = rate * SECS_PER_ENV_SEGMENT;
 
-	// FIXME: What to use for time_base?? 
 	plugin->lfo_vol_params.time_base =
 	plugin->lfo_cut_params.time_base =
 	plugin->lfo_res_params.time_base = rate * SECS_PER_LFO_PERIOD;
 
 	plugin->pitch_bend = plugin->pitch_bend_lagged = 1.0f;
 
-	// FIXME: Leak!
 	TripOscGenerator *generators = malloc(sizeof(TripOscGenerator) * NUM_VOICES);
 
 	// Malloc voices
 	plugin->voices = malloc(sizeof(Voice) * NUM_VOICES);
 	if (!plugin->voices || !generators) {
 		fprintf(stderr, "Could not allocate TripleOscillator voices.\n");
-		return NULL;
+		goto fail;
 	}
 	for (i=0; i<NUM_VOICES; ++i) {
 		plugin->voices[i].midi_note = 0xFF;
@@ -287,23 +285,17 @@ triposc_instantiate (const LV2_Descriptor     *descriptor,
 		plugin->voices[i].filter  = filter_create(rate);
 
 		plugin->voices[i].generator = generators + i;
-		// TODO: Another callback voice_alloc and voice_free??
+		// TODO: Split: Another callback voice_alloc and voice_free??
 
 	}
 
 	memset(&plugin->uris, 0, sizeof(plugin->uris));
 
-	// TODO: Initialize properly!!
+	// TODO: Split: part of general-instrument init!!
 	plugin->frame      = 0;
 	plugin->srate      = rate;
 
-	/*float wave_shape, float modulation_algo,
-		float freq, float detuning, float volume,
-		struct Oscillator_st* sub_osc, float phase_offset,
-		float sample_rate*/
-	//plugin->osc = osc_create(0.f, 0.f, 440.f, 1.f, 1.f, NULL, 0.f, plugin->srate);
-
-	/* Scan host features for URID map and map everything */
+	// Scan host features for URID map and map everything
 	for (i = 0; features[i]; ++i) {
 		if (!strcmp(features[i]->URI, LV2_URID__map)) {
 			plugin->map = (LV2_URID_Map*)features[i]->data;
@@ -403,23 +395,19 @@ triposc_run (LV2_Handle instance,
 				if (*plugin->filter_enabled_port > 0.5f) {
 					// Filter enabled
 					for (int f=0; f<outlen; ++f) {
-						// TODO: only recalc when needed
+						// TODO: only recalc when needed (when knob changed or LFO on)
 						const float cut = exp_knob_val(envbuf_cut[f]) * CUT_FREQ_MULTIPLIER
 						                  + *plugin->filter_cut_port;
 						const float res = envbuf_res[f] * RES_MULTIPLIER
 						                  + *plugin->filter_res_port;
+						filter_calc_coeffs(v->filter, cut, res);
 
 						// The actual volume for this sample (squared mix of envelope and 1.0f)
 						float out_mod_amt = envbuf_vol[f] + vol_amt_add;
 						out_mod_amt = out_mod_amt * out_mod_amt;
 
-						//printf("%f\t%f\t%f\t%f\n", cut, res, outbuf[0][f], outbuf[1][f]);
-						// FIXME: Is calc_coeffs supposed to run each frame? or is it based
-						// off of one of those arbitrary "every 32 frame" rules or whatever?
-						filter_calc_coeffs(v->filter, cut, res);
 						out_l[f] +=  filter_get_sample(v->filter, outbuf[0][f], 0) * out_mod_amt;
 						out_r[f] +=  filter_get_sample(v->filter, outbuf[1][f], 1) * out_mod_amt;
-						//printf("%f %f %f %f %f\n", cut, envbuf_cut[f], *plugin->filter_cut_port, out_l[f], outbuf[0][f] * out_mod_amt);
 					}
 				} else {
 					// No Filter
@@ -463,11 +451,11 @@ triposc_run (LV2_Handle instance,
 					}
 				} else if (cmd == 0x80) {
 					// Note Off
-					// TODO need envelope
 					voice_release(plugin, data[1]);
 				} else if (cmd == 0xe0) {
 					// Pitch Bend
-					plugin->pitch_bend = powf(2.0f, ((data[2]/64.0f) - 1.0f) * PITCH_BEND_RANGE);
+					uint16_t bend = data[1] | (data[2] << 7);
+					plugin->pitch_bend = powf(2.0f, (((float)bend)/8192.0f - 1.0f) * PITCH_BEND_RANGE);
 					//printf("PB 0x%x 0x%x 0x%x 0x%x    %f\n",cmd,data[1],data[2],data[3],plugin->pitch_bend);
 				} else {
 					//printf("   0x%x 0x%x 0x%x\n",cmd,data[1],data[2]);
@@ -480,7 +468,6 @@ triposc_run (LV2_Handle instance,
 
 	}
 
-	// TODO: Remove this stupid shadow?
 	plugin->frame = f;
 }
 
