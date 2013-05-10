@@ -85,19 +85,24 @@ trip_osc_voice_release (TripleOscillator *triposc, Voice *v)
 Voice*
 voice_steal (TripleOscillator *triposc, uint8_t midi_note, uint8_t velocity)
 {
-	int victim_q, victim_idx, q, i;
+	int victim_q, victim_f, victim_idx, q, i;
+	uint32_t f;
 
 	// Find the next voice to steal
 	for (i = 0, victim_q = 0; i < NUM_VOICES; ++i) {
 		q = triposc->voices[i].env_vol->st.q;
+		f = triposc->voices[i].env_vol->st.frame;
 		if (q == 0) {
 			// Favor a non-playing voice
 			victim_idx = i;
 			break;
-		} else if (q > victim_q) {
-			// Otherwise pick the oldest envelope state
+		} else if ((q > victim_q) ||
+		           (q == victim_q && f > victim_f)) {
+			// Pick oldest envelope state,
+			// or in case of tie, pick the one with most frames played
             victim_idx = i;
 			victim_q   = q;
+			victim_f   = f;
 		}
 	}
 
