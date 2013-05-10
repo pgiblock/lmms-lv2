@@ -22,7 +22,8 @@ def options(opt):
 
 def configure(conf):
     conf.load('compiler_c')
-    conf.env.append_value('CFLAGS', ['-Wall', '-ggdb', '-std=c99', '-fPIC'])
+    conf.env.append_value('CFLAGS',
+        ['-Wall', '-ggdb', '-std=c99', '-O3', '-ffast-math', '-fPIC'])
 
     # TODO: don't hardcode
     conf.env.LV2DIR = LV2DIR;
