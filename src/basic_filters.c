@@ -404,11 +404,22 @@ filter_get_sample (Filter *f, sample_t in, int chnl)
 	case FILTER_FORMANTFILTER:
 		return filter_get_sample_formant(f, in, chnl);
 
+	case FILTER_DOUBLELOWPASS:
+		out = f->b0a0*in +
+		      f->b1a0*f->din1[chnl] +
+		      f->b2a0*f->din2[chnl] -
+		      f->a1a0*f->in1[chnl] -
+		      f->a2a0*f->in2[chnl];
+
+		// push in/out buffers
+		f->din2[chnl] = f->din1[chnl];
+		f->din1[chnl] = in;
+
+		// Fall-thru with new input value
+		in = out;
+		
 	default:
 		// filter
-		//printf("%d %f %f %f %f %f %f %f %f %f %f\n", chnl, in,
-		//		f->b0a0, f->b1a0, f->b2a0, f->a1a0, f->a2a0,
-		//		f->in1[chnl], f->in2[chnl], f->ou1[chnl], f->ou2[chnl]);
 		out = f->b0a0*in +
 		      f->b1a0*f->in1[chnl] +
 		      f->b2a0*f->in2[chnl] -
@@ -424,10 +435,6 @@ filter_get_sample (Filter *f, sample_t in, int chnl)
 		break;
 	}
 
-	/* TODO:
-	if( f->doubleFilter ) {
-		return f->subFilter->update( out, chnl );
-	} */
 
 	// Clipper band limited sigmoid
 	return out;
@@ -543,6 +550,7 @@ filter_calc_coeffs (Filter *f, float freq, float q)
 
 	switch( f->type ) {
 	case FILTER_LOWPASS:
+	case FILTER_DOUBLELOWPASS:
 		f->b1a0 = ( 1.0f - tcos ) * a0;
 		f->b0a0 = f->b1a0 * 0.5f;
 		f->b2a0 = f->b0a0;//((1.0f-tcos)/2.0f)*a0;
@@ -576,14 +584,4 @@ filter_calc_coeffs (Filter *f, float freq, float q)
 		break;
 	}
 
-	/* TODO:
-	if( m_doubleFilter ) {
-		m_subFilter->m_b0a0 = m_b0a0;
-		m_subFilter->m_b1a0 = m_b1a0;
-		m_subFilter->m_b2a0 = m_b2a0;
-		m_subFilter->m_a1a0 = m_a1a0;
-		m_subFilter->m_a2a0 = m_a2a0;
-	} */
 }
-
-

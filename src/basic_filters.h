@@ -71,6 +71,9 @@ typedef struct filter {
 	// in/out history
 	frame ou1, ou2, in1, in2;
 
+	// in/out history (double)
+	frame din1, din2;
+
 	// in/out history for moog-filter
 	frame y1, y2, y3, y4, oldx, oldy1, oldy2, oldy3;
 	
