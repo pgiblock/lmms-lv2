@@ -162,7 +162,6 @@ typedef struct triple_oscillator {
 
 	/* Generic instrument stuff */
 	Voice *voices;
-	int    victim_idx;
 
 	float  pitch_bend;        // Pitchbend in-value
 	float  pitch_bend_lagged; // Pitchbend out-value

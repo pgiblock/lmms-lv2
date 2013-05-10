@@ -51,7 +51,10 @@ trip_osc_voice_steal (TripleOscillator *triposc, Voice *v, uint8_t velocity)
 			vol_r = ( *u->vol_port * (PAN_MAX + *u->pan_port) ) /
 			        ( PAN_MAX * VOL_MAX);
 		}
-		// Apply velocity (TODO: Make sure velocity is supposed to be pre-filter)
+		// Apply velocity
+		// COMPATIBILITY: We apply velocity pre-filter, I believe LMMS wraps
+		// velocity into the same volume adjustment used by the envelope.  I
+		// prefer our method.
 		vol_l *= ((float)velocity) / 127.0;
 		vol_r *= ((float)velocity) / 127.0;
 
@@ -82,9 +85,25 @@ trip_osc_voice_release (TripleOscillator *triposc, Voice *v)
 Voice*
 voice_steal (TripleOscillator *triposc, uint8_t midi_note, uint8_t velocity)
 {
+	int victim_q, victim_idx, q, i;
+
+	// Find the next voice to steal
+	for (i = 0, victim_q = 0; i < NUM_VOICES; ++i) {
+		q = triposc->voices[i].env_vol->st.q;
+		if (q == 0) {
+			// Favor a non-playing voice
+			victim_idx = i;
+			break;
+		} else if (q > victim_q) {
+			// Otherwise pick the oldest envelope state
+            victim_idx = i;
+			victim_q   = q;
+		}
+	}
+
 	// We are just going round-robin for now
 	// TODO: Prioritize on vol-envelope state
-	Voice *v = &triposc->voices[triposc->victim_idx];
+	Voice *v = &triposc->voices[victim_idx];
 
 	// Stealing
 	v->midi_note = midi_note;
@@ -102,8 +121,6 @@ voice_steal (TripleOscillator *triposc, uint8_t midi_note, uint8_t velocity)
 	lfo_trigger(v->lfo_cut);
 	lfo_trigger(v->lfo_res);
 
-	// Pick next victim
-	triposc->victim_idx = (triposc->victim_idx+1) % NUM_VOICES;
 	return v;
 }
 	
@@ -268,7 +285,6 @@ triposc_instantiate (const LV2_Descriptor     *descriptor,
 		// TODO: Another callback voice_alloc and voice_free??
 
 	}
-	plugin->victim_idx = 0;
 
 	memset(&plugin->uris, 0, sizeof(plugin->uris));
 
