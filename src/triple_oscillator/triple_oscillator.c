@@ -292,7 +292,6 @@ triposc_instantiate (const LV2_Descriptor     *descriptor,
 	memset(&plugin->uris, 0, sizeof(plugin->uris));
 
 	// TODO: Split: part of general-instrument init!!
-	plugin->frame      = 0;
 	plugin->srate      = rate;
 
 	// Scan host features for URID map and map everything
@@ -326,7 +325,7 @@ triposc_run (LV2_Handle instance,
 
 	uint32_t    pos;
 	uint32_t    ev_frames;
-	uint32_t    f = plugin->frame;
+	uint32_t    f;
 
 	// TODO: Reuse buffers when possible (bendbuf+cut, vol+res)
 	float outbuf[2][sample_count];
@@ -467,8 +466,6 @@ triposc_run (LV2_Handle instance,
 		}
 
 	}
-
-	plugin->frame = f;
 }
 
 

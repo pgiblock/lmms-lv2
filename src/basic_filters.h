@@ -52,38 +52,70 @@ typedef enum filter_types {
 	FILTER_FORMANTFILTER
 } FilterTypes;
 
+// Struct soup: define structs for each filter type to reduce memory usage
+
+// coefficients for basic filters
+struct filter_basic_coeffs {
+	float b0a0, b1a0, b2a0, a1a0, a2a0;
+};
+
+// coefficients for moog-filter
+struct filter_moog_coeffs {
+	float r, p, k;
+};
+
+// coefficents for RC-type-filters
+struct filter_rc_coeffs {
+	float a, b, c, q;
+};
+
+// coefficients for formant-filters
+struct filter_formant_coeffs {
+	float a[4], b[4], c[4], q;
+};
+
+// in/out history
+struct filter_basic_state {
+	frame ou1, ou2, in1, in2;
+	// extra state for double-mode
+	frame din1, din2;
+};
+
+// in/out history for moog-filter
+struct filter_moog_state {
+	frame y1, y2, y3, y4;
+    frame oldx, oldy1, oldy2, oldy3;
+};
+
+// in/out history for RC-type-filters
+struct filter_rc_state {
+	frame bp0, lp0, hp0, last0;
+	frame bp1, lp1, hp1, last1;
+};
+
+// in/out history for Formant-filters
+struct filter_formant_state {
+	frame bp[6], lp[6], hp[6], last[6];
+};
 
 typedef struct filter {
-	// TODO: Collapse all these coeffs into a union or something
+	// All coefficients
+	union {
+		struct filter_basic_coeffs b;
+		struct filter_moog_coeffs m;
+		struct filter_rc_coeffs r;
+		struct filter_formant_coeffs f;
+	} c;
+
+	// All state
+	union {
+		struct filter_basic_state b;
+		struct filter_moog_state m;
+		struct filter_rc_state r;
+		struct filter_formant_state f;
+	} st;
 	
-	// filter coeffs
-	float b0a0, b1a0, b2a0, a1a0, a2a0;
-
-	// coeffs for moog-filter
-	float r, p, k;
-
-	// coeffs for RC-type-filters
-	float rca, rcb, rcc, rcq;
-
-	// coeffs for formant-filters
-	float vfa[4], vfb[4], vfc[4], vfq;
-	
-	// in/out history
-	frame ou1, ou2, in1, in2;
-
-	// in/out history (double)
-	frame din1, din2;
-
-	// in/out history for moog-filter
-	frame y1, y2, y3, y4, oldx, oldy1, oldy2, oldy3;
-	
-	// in/out history for RC-type-filters
-	frame rcbp0, rclp0, rchp0, rclast0;
-	frame rcbp1, rclp1, rchp1, rclast1;
-
-	// in/out history for Formant-filters
-	frame vfbp[6], vflp[6], vfhp[6], vflast[6];
-	
+	// What type of filter are we?
 	FilterTypes type;
 
 	float sample_rate;
