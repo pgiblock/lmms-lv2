@@ -203,12 +203,12 @@ envelope_run (Envelope *e, float *samples, uint32_t nsamples)
 		}
 
 		float mod = *e->p->mod;
-		if (mod >= 0.0f) {
+		//if (mod >= 0.0f) {
 			samples[i] = o * mod;
-		}
-		else {
+		//}
+		//else {
 			// TODO: Negative mod
-		}
+		//}
 	}
 	e->st.last_sample = o;
 

@@ -59,7 +59,7 @@ fraction (float x) {
 #define t_limit(x, x1, x2) ( q_max((x1), q_min((x), (x2))) )
 
 static inline float exp_knob_val (float val) {
-	return (val < 0 ? -val : val) * val;
+	return fabsf(val) * val;
 }
 
 #define FAST_RAND_MAX 32767

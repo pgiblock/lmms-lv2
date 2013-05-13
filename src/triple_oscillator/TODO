@@ -13,7 +13,7 @@ X RES Envelope
 X LFOs
 X Presets
 X Velocity
-    Double check order of amplifiers. (pre or post filter?)
+X   Double check order of amplifiers. (pre or post filter?)
   Pitch bend
 X   Aquire pitch bend
 X   Smooth input (one-pole filter)
@@ -29,11 +29,11 @@ X   Square
 X   Moog
 X   Exp
     Noise
-  Double-check for working SYNC mod in both AA and non-AA code
-  Revisit float vs float[] ports
   "Un-map" controls like "LFO speed". [20ms, 20000ms] instead of [0.001,1.0]
     sustain level is "backwards", should be equal to the level, not 1-n.
   Port-groups, parameters
+  Double-check for working SYNC mod in both AA and non-AA code
+  Revisit float vs float[] ports
   Figure out pulse-modulation versus frequency-modulation fiasco (Stefan F)
   Tempo-sync knobs?
   Split out instrument code
