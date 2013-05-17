@@ -8,16 +8,36 @@ from rdflib import Literal, URIRef, BNode, Namespace
 from rdflib import RDF, RDFS
 from xml.etree import ElementTree
 
+SECS_PER_ENV_SEGMENT = 5.0
+SECS_PER_LFO_SEGMENT = 20.0
+
 def bind(g, prefix, uri):
     g.bind(prefix, uri)
     return Namespace(uri)
 
+# Standard LMMS exponential mapping
+def exp_knob_val(f):
+    return abs(f) * f
+
+# Parse as float
 def flt(s):
     try:
         return float(s)
     except ValueError:
         sys.stderr.write('Warning: Could not parse value "%s" as float.\n' % s)
         return 0
+
+# Parse float, mapping envelope duration to seconds
+def flt_env_sec(s):
+    return exp_knob_val(flt(s)) * SECS_PER_ENV_SEGMENT
+
+# Parse float, mapping LFO duration to seconds
+def flt_env_sec(s):
+    return exp_knob_val(flt(s)) * SECS_PER_LFO_SEGMENT
+
+# Parse float, inverting value between [0..1]
+def flt_inv_one(s):
+    return 1.0 - flt(s)
 
 # Adds a port to preset 
 def add_port(preset, symbol, value):
@@ -28,16 +48,18 @@ def add_port(preset, symbol, value):
 
 # Add ports for envelope parameters found in element el
 def parse_env(preset, el, env_name):
-    tx = {  'pdel': 'del',
-            'att' : 'att',
-            'hold': 'hold',
-            'dec' : 'dec',
-            'sus' : 'sus',
-            'rel' : 'rel',
-            'amt' : 'mod' }
+    tx = {  'pdel': ('del',  flt_env_sec),
+            'att' : ('att',  flt_env_sec),
+            'hold': ('hold', flt_env_sec),
+            'dec' : ('dec',  flt_env_sec),
+            'sus' : ('sus',  flt_inv_one),
+            'rel' : ('rel',  flt_env_sec),
+            'amt' : ('mod',  flt)
+         }
 
-    for o,n in tx.iteritems():
-        add_port(preset, '%s_%s' % (env_name, n), flt(el.attrib[o]))
+    for o,t in tx.iteritems():
+        n, fn = t
+        add_port(preset, '%s_%s' % (env_name, n), fn(el.attrib[o]))
 
 # Add ports for LFO parameters found in element el
 def parse_lfo(preset, el, lfo_name):

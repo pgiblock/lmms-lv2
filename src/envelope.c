@@ -28,7 +28,7 @@ advance_state (EnvelopeParams *p, EnvelopeState *st)
 	case ENV_OFF:
 		if (*p->del > 0.0f) {
 			st->q       = ENV_DEL;
-			st->nframes = p->time_base * exp_knob_val(*p->del);
+			st->nframes = p->time_base * (*p->del);
 			st->frame   = 0;
 			return;
 		}
@@ -36,7 +36,7 @@ advance_state (EnvelopeParams *p, EnvelopeState *st)
 	case ENV_DEL:
 		if (*p->att > 0.0f) {
 			st->q       = ENV_ATT;
-			st->nframes = p->time_base * exp_knob_val(*p->att);
+			st->nframes = p->time_base * (*p->att);
 			st->frame   = 0;
 			return;
 		}
@@ -44,15 +44,15 @@ advance_state (EnvelopeParams *p, EnvelopeState *st)
 	case ENV_ATT:
 		if (*p->hold > 0.0f) {
 			st->q       = ENV_HOLD;
-			st->nframes = p->time_base * exp_knob_val(*p->hold);
+			st->nframes = p->time_base * (*p->hold);
 			st->frame   = 0;
 			return;
 		}
 		// Fall-through
 	case ENV_HOLD:
-		if (*p->dec > 0.0f && *p->sus > 0.0f) {
+		if (*p->dec > 0.0f && *p->sus < 1.0f) {
 			st->q       = ENV_DEC;
-			st->nframes = p->time_base * exp_knob_val((*p->dec)*(*p->sus));
+			st->nframes = p->time_base * (*p->dec)*(1.0f - *p->sus);
 			st->frame   = 0;
 			return;
 		}
@@ -115,7 +115,7 @@ envelope_release (Envelope *e)
 		// Only do release if release has any length
 		if (*e->p->rel > 0.0f) {
 			e->st.q        = ENV_REL;
-			e->st.nframes  = e->p->time_base * exp_knob_val(*e->p->rel);
+			e->st.nframes  = e->p->time_base * (*e->p->rel);
 			e->st.frame    = 0;
 			e->st.rel_base = e->st.last_sample;
 		} else {
@@ -175,7 +175,7 @@ envelope_run (Envelope *e, float *samples, uint32_t nsamples)
 
 		case ENV_DEC:
 			// Process
-			o = amsum + e->st.frame * ((1.0f / e->st.nframes)*((1.0f-(*e->p->sus))-1.0f)*amount);
+			o = amsum + e->st.frame * ((1.0f / e->st.nframes)*((*e->p->sus)-1.0f)*amount);
 			//o = 1.0f - (1.0f - (*eg->sus_port)) * ((float)e->st.frame / e->st.nframes);
 			//State
 			e->st.frame++;
@@ -185,7 +185,7 @@ envelope_run (Envelope *e, float *samples, uint32_t nsamples)
 			break;
 
 		case ENV_SUS:
-			o = 1.0f - (*e->p->sus); // Sustain Level;
+			o = *e->p->sus; // Sustain Level;
 			break;
 
 		case ENV_REL:

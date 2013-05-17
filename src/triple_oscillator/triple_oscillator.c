@@ -258,7 +258,7 @@ triposc_instantiate (const LV2_Descriptor     *descriptor,
 
 	plugin->env_vol_params.time_base =
 	plugin->env_cut_params.time_base =
-	plugin->env_res_params.time_base = rate * SECS_PER_ENV_SEGMENT;
+	plugin->env_res_params.time_base = rate;
 
 	plugin->lfo_vol_params.time_base =
 	plugin->lfo_cut_params.time_base =
