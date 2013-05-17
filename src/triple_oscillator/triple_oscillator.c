@@ -252,7 +252,7 @@ triposc_instantiate (const LV2_Descriptor     *descriptor,
 	// Malloc and initialize new Synth
 	TripleOscillator *plugin = (TripleOscillator *)malloc(sizeof(TripleOscillator));
 	if (!plugin) {
-		fprintf(stderr, "Could not allocate TripleOscillator.\n");
+		fprintf(stderr, "lmms-lv2: Could not allocate TripleOscillator.\n");
 		return NULL;
 	}
 
@@ -271,7 +271,7 @@ triposc_instantiate (const LV2_Descriptor     *descriptor,
 	// Malloc voices
 	plugin->voices = malloc(sizeof(Voice) * NUM_VOICES);
 	if (!plugin->voices || !generators) {
-		fprintf(stderr, "Could not allocate TripleOscillator voices.\n");
+		fprintf(stderr, "lmms-lv2: Could not allocate TripleOscillator voices.\n");
 		goto fail;
 	}
 	for (i=0; i<NUM_VOICES; ++i) {
@@ -302,7 +302,7 @@ triposc_instantiate (const LV2_Descriptor     *descriptor,
 	}
 
 	if (!plugin->map) {
-		fprintf(stderr, "Host does not support urid:map.\n");
+		fprintf(stderr, "lmms-lv2: Host does not support urid:map.\n");
 		goto fail;
 	}
 
@@ -433,9 +433,10 @@ triposc_run (LV2_Handle instance,
 		// Process event
 		if (ev) {
 			if (ev->body.type == plugin->uris.midi_event) {
-				uint8_t * const data = (uint8_t * const)(ev + 1);
-				ev = lv2_atom_sequence_next(ev);
-				uint8_t const  cmd  = data[0];
+				const uint8_t *data =
+						(const uint8_t *)LV2_ATOM_BODY(&ev->body);
+				const uint8_t cmd  = data[0];
+
 				//fprintf(stderr, "  cmd=%d data1=%d data2=%d\n", cmd, data[1], data[2]);
 				if (cmd == 0x90) {
 					// Note On (probably)
@@ -460,8 +461,9 @@ triposc_run (LV2_Handle instance,
 				}
 
 			} else {
-				fprintf(stderr, "Unknown event type %d\n", ev->body.type);
+				fprintf(stderr, "lmms-lv2: Unknown event type: %d\n", ev->body.type);
 			}
+			ev = lv2_atom_sequence_next(ev);
 		}
 
 	}
