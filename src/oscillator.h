@@ -31,6 +31,14 @@
 #include "lmms_lv2.h"
 #include "lmms_math.h"
 
+// Wave-table lookup configuration
+#define WAVE_BITS  10
+#define WAVE_LEN   ((1 << WAVE_BITS) + 1)
+#define FRAC_BITS  (32 - WAVE_BITS)
+#define FRAC_MASK  ((1 << FRAC_BITS) - 1)
+#define FRAC_SCALE (1.0 / (1 << FRAC_BITS))
+
+// BLEP-table lookup configuration
 #define BLEPSIZE 8192
 #define BLEPLEN  (BLEPSIZE/8)
 #define NROFBLEPS 8
@@ -111,9 +119,16 @@ void osc_print (Oscillator *o);
 // Waveform sample routines
 
 static inline sample_t
-osc_sample_sin (const float sample)
+osc_sample_sine (const float ph)
 {
-	return sinf(sample * M_2PI);
+	extern float sine_table[WAVE_LEN];
+	uint32_t phase = ph * 4294967296.0;
+	int idx = phase >> FRAC_BITS;
+
+	// Linearly interpolate the two nearest samples
+	float samp0 = sine_table[idx];
+	float samp1 = sine_table[idx+1];
+	return samp0 + (phase & FRAC_MASK) * FRAC_SCALE * (samp1-samp0); 
 }
 
 static inline sample_t

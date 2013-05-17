@@ -29,15 +29,19 @@
 
 float blep_table[BLEPSIZE];
 float blamp_table[BLEPSIZE];
+float sine_table[WAVE_LEN];
+
+void sine_init (float *tbl, int len);
+
 
 // FIXME: refactor
+sample_t osc_get_aa_sample_sine (Oscillator *o, float increment, float sync_offset);
 sample_t osc_get_aa_sample_triangle (Oscillator *o, float increment, float sync_offset);
 sample_t osc_get_aa_sample_saw (Oscillator *o, float increment, float sync_offset);
 sample_t osc_get_aa_sample_square (Oscillator *o, float increment, float sync_offset);
 sample_t osc_get_aa_sample_moog_saw (Oscillator *o, float increment, float sync_offset);
 sample_t osc_get_aa_sample_exp (Oscillator *o, float increment, float sync_offset);
 
-////
 
 Oscillator *
 osc_create ()
@@ -72,10 +76,14 @@ osc_reset (Oscillator *o, float wave_shape, float modulation_algo,
 	o->phase = phase_offset;
 	o->sample_rate = sample_rate;
 
-	// TODO: Singleton construction of BLEP/BLAMP tables
+	// Singleton construction of BLEP/BLAMP tables
 	if (!blep_table[0] && !blamp_table[0]) {
-		fprintf(stderr, "Creating MINBLEP tables.\n");
 		blep_init(blep_table, blamp_table, BLEPSIZE);
+	}
+
+	// Single construction of Sine table
+	if (!sine_table[0]) {
+		sine_init(sine_table, WAVE_LEN);
 	}
 
 	// Init bleps for this oscillator
@@ -278,7 +286,7 @@ osc_get_sample (Oscillator *o, float sample)
 {
 	switch ((int)(o->wave_shape)) {
 	case OSC_WAVE_SINE:
-		return osc_sample_sin(sample);
+		return osc_sample_sine(fraction(sample));
 	case OSC_WAVE_TRIANGLE:
 		return osc_sample_triangle(fraction(sample));
 	case OSC_WAVE_SAW:
@@ -424,6 +432,68 @@ osc_aa_update (Oscillator *o, sample_t *buff, sample_t *bend, fpp_t len)
 	} else {
 		osc_aa_update_no_sub(o, buff, bend, len);
 	}
+}
+
+
+sample_t
+osc_get_aa_sample_sine (Oscillator *o, float increment, float sync_offset)
+{
+	// limit increment to C9 (higher does not make any musical sense and just
+	// causes us a lot of trouble to correct this...)
+	float inc_limit = 8372.018089619f / o->sample_rate;
+	float inc = (increment > inc_limit) ? inc_limit : increment;
+
+	// initialize current result with 0.0
+	float value      = 0.0f;
+	float last_value = 0.0f;
+	float corr_amp   = 0.0f;
+	float corr_phs   = 0.0f;
+
+	int i;
+
+	// update phase
+	if (sync_offset < 0.0f) {
+		// Normal case, just increment phase
+		o->last_phase = o->phase;
+		o->phase      = o->phase + inc + o->phase_mod;
+		o->phase      = fraction(o->phase);
+
+		value = osc_sample_sine(o->phase);
+	} else {
+		// Syncing,
+		o->last_phase = o->phase + inc*(1.0f - sync_offset);
+		o->phase      = sync_offset;
+
+		last_value = osc_sample_sine(o->last_phase);
+		value      = osc_sample_sine(o->phase);
+		// Get new values for correction.
+		corr_phs   = o->phase / inc;
+		corr_amp   = last_value - value;
+	}
+
+
+	if (fabsf(corr_amp) > 0.00001f) { // need to correct this samples?
+		// Round-robin assignment of BLEP pipelines
+		o->bleps[o->blep_idx].ptr = 0;  // reset table-pointer to activate it
+		o->bleps[o->blep_idx].vol = corr_amp;
+		o->bleps[o->blep_idx].phs = corr_phs;
+		o->bleps[o->blep_idx].typ = 0;  // NOTE: This was missing in the original
+		o->blep_idx = (o->blep_idx+1) % NROFBLEPS;
+	}
+
+	// now go through all pipelines, check if active and process if so...
+	for (i = 0; i < NROFBLEPS; ++i) {
+		// FIXME: When is ptr < 0?
+		// TODO: Could start at blep_idx and search until we find an expired one
+		if (o->bleps[i].ptr >= 0 && o->bleps[i].ptr < 8) {
+			const int offset = ( o->bleps[i].ptr + o->bleps[i].phs ) * BLEPLEN;
+			value += o->bleps[i].vol * blep_table[ offset % BLEPSIZE ];
+			o->bleps[i].ptr++;
+		}
+	}
+
+	// puuhh... finished here... ;-)
+	return value;
 }
 
 
@@ -813,7 +883,7 @@ osc_get_aa_sample (Oscillator *o, float increment, float sync_offset)
 {
 	switch ((int)(o->wave_shape)) {
 	case OSC_WAVE_SINE:
-		return 0.0f;
+		return osc_get_aa_sample_sine(o, increment, sync_offset);
 	case OSC_WAVE_TRIANGLE:
 		return osc_get_aa_sample_triangle(o, increment, sync_offset);
 	case OSC_WAVE_SAW:
@@ -832,4 +902,16 @@ osc_get_aa_sample (Oscillator *o, float increment, float sync_offset)
 	}
 }
 
+
+
+void
+sine_init (float *tbl, int len)
+{
+	int i;
+	// We want an extra sample at the end for interpolation
+	float scale = 1.0f / (len - 1);
+	for (i=0; i<len; ++i) {
+		tbl[i] = sinf(M_2PI * scale * i);
+	}
+}
 

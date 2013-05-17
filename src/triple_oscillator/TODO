@@ -22,7 +22,7 @@ X   Rework Oscillator
     Fix value 127 = 1 octave
 X   2-byte MIDI values
   Improve voice with proper oscillator code. (Antialiasing)
-    Sine
+X   Sine
 X   Triangle
 X   Saw
 X   Square

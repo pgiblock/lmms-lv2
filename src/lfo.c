@@ -18,7 +18,7 @@ lfo_get_osc_sample (float wave_shape, float sample)
 {
 	switch ((int)(wave_shape)) {
 	case LFO_WAVE_SINE:
-		return osc_sample_sin(sample);
+		return osc_sample_sine(sample);
 	case LFO_WAVE_TRIANGLE:
 		return osc_sample_triangle(fraction(sample));
 	case LFO_WAVE_SAW:
