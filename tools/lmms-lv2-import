@@ -31,13 +31,17 @@ def flt(s):
 def flt_env_sec(s):
     return exp_knob_val(flt(s)) * SECS_PER_ENV_SEGMENT
 
-# Parse float, mapping LFO duration to seconds
-def flt_env_sec(s):
-    return exp_knob_val(flt(s)) * SECS_PER_LFO_SEGMENT
-
 # Parse float, inverting value between [0..1]
 def flt_inv_one(s):
     return 1.0 - flt(s)
+
+# Parse float, mapping LFO duration to seconds
+def flt_lfo_sec(s):
+    return flt(s) * SECS_PER_LFO_SEGMENT
+
+# Parse float, mapping LFO speed to Hz (unused)
+def flt_lfo_spd(s):
+    return 1.0 / (flt(s) * SECS_PER_LFO_SEGMENT)
 
 # Adds a port to preset 
 def add_port(preset, symbol, value):
@@ -63,16 +67,17 @@ def parse_env(preset, el, env_name):
 
 # Add ports for LFO parameters found in element el
 def parse_lfo(preset, el, lfo_name):
-    tx = {  'lpdel': 'del',
-            'latt' : 'att',
-            'lspd' : 'spd',
-            'lamt' : 'mod',
-            'lshp' : 'shape',
-            'ctlenvamt' : 'op' }
+    tx = {  'lpdel':   ('del',   flt_lfo_sec),
+            'latt' :   ('att',   flt_lfo_sec),
+            'lspd' :   ('spd',   flt_lfo_sec),
+            'lamt' :   ('mod',   flt),
+            'lshp' :   ('shape', flt),
+            'ctlenvamt' : ('op', flt) }
 
-    for o,n in tx.iteritems():
+    for o,t in tx.iteritems():
+        n, fn = t
         try:
-            add_port(preset, '%s_%s' % (lfo_name, n), flt(el.attrib[o]))
+            add_port(preset, '%s_%s' % (lfo_name, n), fn(el.attrib[o]))
         except:
             sys.stderr.write('Warning: could not read attribute "%s"\n' % o)
 

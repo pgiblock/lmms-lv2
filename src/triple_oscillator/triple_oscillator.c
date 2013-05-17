@@ -262,7 +262,7 @@ triposc_instantiate (const LV2_Descriptor     *descriptor,
 
 	plugin->lfo_vol_params.time_base =
 	plugin->lfo_cut_params.time_base =
-	plugin->lfo_res_params.time_base = rate * SECS_PER_LFO_PERIOD;
+	plugin->lfo_res_params.time_base = rate;
 
 	plugin->pitch_bend = plugin->pitch_bend_lagged = 1.0f;
 

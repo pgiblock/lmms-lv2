@@ -143,7 +143,7 @@ lfo_run (Lfo *lfo, float *samples, uint32_t nsamples)
 		o *= *lfo->p->mod * 0.5f;
 		// Update phase
 		// TODO: See if we can yank the divide out (into timebase?)
-		lfo->st.phase += 1.0f/(lfo->p->time_base * *lfo->p->spd);
+		lfo->st.phase += 1.0f/(lfo->p->time_base * (*lfo->p->spd));
 
 		// Operation (modulate vs mix)
 		if (*lfo->p->op > 0.5) {
