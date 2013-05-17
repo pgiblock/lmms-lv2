@@ -715,7 +715,7 @@
 		lv2:symbol "lfo_vol_spd" ;
 		lv2:name "Volume LFO Speed" ;
 		lv2:default 2.0;
-		lv2:minimum 0.02;
+		lv2:minimum 0.01;
 		lv2:maximum 20;
 		lv2:designation param:frequency ;
 		pg:group <http://pgiblock.net/plugins/triple-oscillator#lfo_vol>
@@ -978,7 +978,7 @@
 		lv2:symbol "lfo_cut_spd" ;
 		lv2:name "Cutoff LFO Speed" ;
 		lv2:default 2.0;
-		lv2:minimum 0.02;
+		lv2:minimum 0.01;
 		lv2:maximum 20;
 		lv2:designation param:frequency ;
 		pg:group <http://pgiblock.net/plugins/triple-oscillator#lfo_cut>
@@ -1150,7 +1150,7 @@
 		lv2:symbol "lfo_res_spd" ;
 		lv2:name "Resonance LFO Speed" ;
 		lv2:default 2.0;
-		lv2:minimum 0.02;
+		lv2:minimum 0.01;
 		lv2:maximum 20;
 		lv2:designation param:frequency ;
 		pg:group <http://pgiblock.net/plugins/triple-oscillator#lfo_res>

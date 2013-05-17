@@ -39,9 +39,9 @@ def flt_inv_one(s):
 def flt_lfo_sec(s):
     return flt(s) * SECS_PER_LFO_SEGMENT
 
-# Parse float, mapping LFO speed to Hz (unused)
-def flt_lfo_spd(s):
-    return 1.0 / (flt(s) * SECS_PER_LFO_SEGMENT)
+# Parse float, mapping LFO duration to 100 seconds
+def flt_lfo_sec_x100(s):
+    return flt_lfo_sec(s) * 0.01
 
 # Adds a port to preset 
 def add_port(preset, symbol, value):
@@ -67,9 +67,13 @@ def parse_env(preset, el, env_name):
 
 # Add ports for LFO parameters found in element el
 def parse_lfo(preset, el, lfo_name):
+    # Read x100 setting first, to determine scale for spd
+    x100 = flt(el.attrib['x100'])
+    spd_fn = flt_lfo_sec if x100 == 0.0 else flt_lfo_sec_x100
+
     tx = {  'lpdel':   ('del',   flt_lfo_sec),
             'latt' :   ('att',   flt_lfo_sec),
-            'lspd' :   ('spd',   flt_lfo_sec),
+            'lspd' :   ('spd',   spd_fn),
             'lamt' :   ('mod',   flt),
             'lshp' :   ('shape', flt),
             'ctlenvamt' : ('op', flt) }
@@ -80,8 +84,6 @@ def parse_lfo(preset, el, lfo_name):
             add_port(preset, '%s_%s' % (lfo_name, n), fn(el.attrib[o]))
         except:
             sys.stderr.write('Warning: could not read attribute "%s"\n' % o)
-
-    # TODO: 'x100'
 
 # Add ports for ENV+LFO given the shared suffix
 def parse_envlfo(preset, eldata, suffix):
