@@ -27,9 +27,9 @@
 
 #include "oscillator.h"
 
-float blep_table[BLEPSIZE];
-float blamp_table[BLEPSIZE];
-float sine_table[WAVE_LEN];
+float blep_table[OSC_BLEP_SIZE];
+float blamp_table[OSC_BLEP_SIZE];
+float sine_table[OSC_WAVE_LEN];
 
 void sine_init (float *tbl, int len);
 
@@ -78,16 +78,16 @@ osc_reset (Oscillator *o, float wave_shape, float modulation_algo,
 
 	// Singleton construction of BLEP/BLAMP tables
 	if (!blep_table[0] && !blamp_table[0]) {
-		blep_init(blep_table, blamp_table, BLEPSIZE);
+		blep_init(blep_table, blamp_table, OSC_BLEP_SIZE);
 	}
 
 	// Single construction of Sine table
 	if (!sine_table[0]) {
-		sine_init(sine_table, WAVE_LEN);
+		sine_init(sine_table, OSC_WAVE_LEN);
 	}
 
 	// Init bleps for this oscillator
-	for (i = 0; i < NROFBLEPS; ++i) {
+	for (i = 0; i < OSC_NBLEPS; ++i) {
 		blep_state_init(o->bleps + i);
 	}
 	// Blep "phase tracking"
@@ -478,16 +478,16 @@ osc_get_aa_sample_sine (Oscillator *o, float increment, float sync_offset)
 		o->bleps[o->blep_idx].vol = corr_amp;
 		o->bleps[o->blep_idx].phs = corr_phs;
 		o->bleps[o->blep_idx].typ = 0;  // NOTE: This was missing in the original
-		o->blep_idx = (o->blep_idx+1) % NROFBLEPS;
+		o->blep_idx = (o->blep_idx+1) % OSC_NBLEPS;
 	}
 
 	// now go through all pipelines, check if active and process if so...
-	for (i = 0; i < NROFBLEPS; ++i) {
+	for (i = 0; i < OSC_NBLEPS; ++i) {
 		// FIXME: When is ptr < 0?
 		// TODO: Could start at blep_idx and search until we find an expired one
 		if (o->bleps[i].ptr >= 0 && o->bleps[i].ptr < 8) {
-			const int offset = ( o->bleps[i].ptr + o->bleps[i].phs ) * BLEPLEN;
-			value += o->bleps[i].vol * blep_table[ offset % BLEPSIZE ];
+			const int offset = ( o->bleps[i].ptr + o->bleps[i].phs ) * OSC_BLEP_LEN;
+			value += o->bleps[i].vol * blep_table[ offset % OSC_BLEP_SIZE ];
 			o->bleps[i].ptr++;
 		}
 	}
@@ -552,20 +552,20 @@ osc_get_aa_sample_triangle (Oscillator *o, float increment, float sync_offset)
 		o->bleps[o->blep_idx].vol = corr_amp;
 		o->bleps[o->blep_idx].phs = corr_phs;
 		o->bleps[o->blep_idx].typ = corr_typ;
-		o->blep_idx = (o->blep_idx+1) % NROFBLEPS;
+		o->blep_idx = (o->blep_idx+1) % OSC_NBLEPS;
 	}
 
 	// now go through all pipelines, check if active and process if so...
-	for (i = 0; i < NROFBLEPS; ++i) {
+	for (i = 0; i < OSC_NBLEPS; ++i) {
 		// FIXME: When is ptr < 0?
 		// TODO: Could start at blep_idx and search until we find an expired one
 		if (o->bleps[i].ptr >= 0 && o->bleps[i].ptr < 8) {
-			const int offset = ( o->bleps[i].ptr + o->bleps[i].phs ) * BLEPLEN;
+			const int offset = ( o->bleps[i].ptr + o->bleps[i].phs ) * OSC_BLEP_LEN;
 			// FIXME: EASY to remove this if
 			if (o->bleps[i].typ) {
-				value += o->bleps[i].vol * blamp_table[ offset % BLEPSIZE ];
+				value += o->bleps[i].vol * blamp_table[ offset % OSC_BLEP_SIZE ];
 			} else {
-				value += o->bleps[i].vol * blep_table[ offset % BLEPSIZE ];
+				value += o->bleps[i].vol * blep_table[ offset % OSC_BLEP_SIZE ];
 			}
 			o->bleps[i].ptr++;
 		}
@@ -633,16 +633,16 @@ osc_get_aa_sample_saw (Oscillator *o, float increment, float sync_offset)
 		o->bleps[o->blep_idx].vol = corr_amp;
 		o->bleps[o->blep_idx].phs = corr_phs;
 		o->bleps[o->blep_idx].typ = 0;  // NOTE: This was missing in the original
-		o->blep_idx = (o->blep_idx+1) % NROFBLEPS;
+		o->blep_idx = (o->blep_idx+1) % OSC_NBLEPS;
 	}
 
 	// now go through all pipelines, check if active and process if so...
-	for (i = 0; i < NROFBLEPS; ++i) {
+	for (i = 0; i < OSC_NBLEPS; ++i) {
 		// FIXME: When is ptr < 0?
 		// TODO: Could start at blep_idx and search until we find an expired one
 		if (o->bleps[i].ptr >= 0 && o->bleps[i].ptr < 8) {
-			const int offset = ( o->bleps[i].ptr + o->bleps[i].phs ) * BLEPLEN;
-			value += o->bleps[i].vol * blep_table[ offset % BLEPSIZE ];
+			const int offset = ( o->bleps[i].ptr + o->bleps[i].phs ) * OSC_BLEP_LEN;
+			value += o->bleps[i].vol * blep_table[ offset % OSC_BLEP_SIZE ];
 			o->bleps[i].ptr++;
 		}
 	}
@@ -713,10 +713,10 @@ osc_get_aa_sample_square (Oscillator *o, float increment, float sync_offset)
 	}
 
 	// now go through all pipelines, check if active and process if so...
-	for (i = 0; i < NROFBLEPS; ++i) {
+	for (i = 0; i < OSC_NBLEPS; ++i) {
 		if (o->bleps[i].ptr >= 0 && o->bleps[i].ptr < 8) {
-			const int offset = ( o->bleps[i].ptr + o->bleps[i].phs ) * BLEPLEN;
-			value += o->bleps[i].vol * blep_table[ offset % BLEPSIZE ];
+			const int offset = ( o->bleps[i].ptr + o->bleps[i].phs ) * OSC_BLEP_LEN;
+			value += o->bleps[i].vol * blep_table[ offset % OSC_BLEP_SIZE ];
 			o->bleps[i].ptr++;
 		}
 	}
@@ -787,16 +787,16 @@ osc_get_aa_sample_moog_saw (Oscillator *o, float increment, float sync_offset)
 		o->bleps[o->blep_idx].vol = corr_amp;
 		o->bleps[o->blep_idx].phs = corr_phs;
 		o->bleps[o->blep_idx].typ = 0;  // NOTE: This was missing in the original
-		o->blep_idx = (o->blep_idx+1) % NROFBLEPS;
+		o->blep_idx = (o->blep_idx+1) % OSC_NBLEPS;
 	}
 
 	// now go through all pipelines, check if active and process if so...
-	for (i = 0; i < NROFBLEPS; ++i) {
+	for (i = 0; i < OSC_NBLEPS; ++i) {
 		// FIXME: When is ptr < 0?
 		// TODO: Could start at blep_idx and search until we find an expired one
 		if (o->bleps[i].ptr >= 0 && o->bleps[i].ptr < 8) {
-			const int offset = ( o->bleps[i].ptr + o->bleps[i].phs ) * BLEPLEN;
-			value += o->bleps[i].vol * blep_table[ offset % BLEPSIZE ];
+			const int offset = ( o->bleps[i].ptr + o->bleps[i].phs ) * OSC_BLEP_LEN;
+			value += o->bleps[i].vol * blep_table[ offset % OSC_BLEP_SIZE ];
 			o->bleps[i].ptr++;
 		}
 	}
@@ -853,20 +853,20 @@ osc_get_aa_sample_exp (Oscillator *o, float increment, float sync_offset)
 		o->bleps[o->blep_idx].vol = corr_amp;
 		o->bleps[o->blep_idx].phs = corr_phs;
 		o->bleps[o->blep_idx].typ = corr_typ;
-		o->blep_idx = (o->blep_idx+1) % NROFBLEPS;
+		o->blep_idx = (o->blep_idx+1) % OSC_NBLEPS;
 	}
 
 	// now go through all pipelines, check if active and process if so...
-	for (i = 0; i < NROFBLEPS; ++i) {
+	for (i = 0; i < OSC_NBLEPS; ++i) {
 		// FIXME: When is ptr < 0?
 		// TODO: Could start at blep_idx and search until we find an expired one
 		if (o->bleps[i].ptr >= 0 && o->bleps[i].ptr < 8) {
-			const int offset = (o->bleps[i].ptr + o->bleps[i].phs) * BLEPLEN;
+			const int offset = (o->bleps[i].ptr + o->bleps[i].phs) * OSC_BLEP_LEN;
 			// FIXME: EASY to remove this if
 			if (o->bleps[i].typ) {
-				value += o->bleps[i].vol * blamp_table[ offset % BLEPSIZE ];
+				value += o->bleps[i].vol * blamp_table[ offset % OSC_BLEP_SIZE ];
 			} else {
-				value += o->bleps[i].vol * blep_table[ offset % BLEPSIZE ];
+				value += o->bleps[i].vol * blep_table[ offset % OSC_BLEP_SIZE ];
 			}
 			o->bleps[i].ptr++;
 		}

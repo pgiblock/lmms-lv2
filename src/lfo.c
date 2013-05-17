@@ -107,10 +107,6 @@ lfo_run (Lfo *lfo, float *samples, uint32_t nsamples)
 	for (i=0; i<nsamples; ++i) {
 		// Stupid way
 		switch (lfo->st.q) {
-		case LFO_OFF:
-			o = 0.0f;
-			break;
-
 		case LFO_DEL:
 			// Process
 			o = 0.0f;
@@ -135,7 +131,9 @@ lfo_run (Lfo *lfo, float *samples, uint32_t nsamples)
 			o = 1.0f; // Sustain Level;
 			break;
 
+		case LFO_OFF:
 		default:
+			o = 0.0f;
 			break;
 		}
 

@@ -71,9 +71,9 @@ filter_reset (Filter *f, float sample_rate)
 static void
 filter_clear_history (Filter *f)
 {
+/*
 	int c, i;
 
-/*
 	// reset in/out history
 	for (c = 0; c < CHANNELS; ++c) {
 		// reset in/out history for simple filters

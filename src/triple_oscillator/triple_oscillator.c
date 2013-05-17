@@ -89,7 +89,7 @@ voice_steal (TripleOscillator *triposc, uint8_t midi_note, uint8_t velocity)
 	uint32_t f;
 
 	// Find the next voice to steal
-	for (i = 0, victim_q = 0; i < NUM_VOICES; ++i) {
+	for (i = 0, victim_q = 0, victim_f = 0; i < NUM_VOICES; ++i) {
 		q = triposc->voices[i].env_vol->st.q;
 		f = triposc->voices[i].env_vol->st.frame;
 		if (q == 0) {
@@ -100,7 +100,7 @@ voice_steal (TripleOscillator *triposc, uint8_t midi_note, uint8_t velocity)
 		           (q == victim_q && f > victim_f)) {
 			// Pick oldest envelope state,
 			// or in case of tie, pick the one with most frames played
-            victim_idx = i;
+			victim_idx = i;
 			victim_q   = q;
 			victim_f   = f;
 		}
@@ -325,7 +325,6 @@ triposc_run (LV2_Handle instance,
 
 	uint32_t    pos;
 	uint32_t    ev_frames;
-	uint32_t    f;
 
 	// TODO: Reuse buffers when possible (bendbuf+cut, vol+res)
 	float outbuf[2][sample_count];

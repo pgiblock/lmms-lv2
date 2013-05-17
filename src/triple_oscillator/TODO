@@ -35,12 +35,13 @@ X   Exp
   Double-check for working SYNC mod in both AA and non-AA code
   Revisit float vs float[] ports
   Figure out pulse-modulation versus frequency-modulation fiasco (Stefan F)
-  Tempo-sync knobs?
   Split out instrument code
   Create standalone triposc voice plugin
   Add lagged inputs wherever else it is needed
+  Filters may get in an odd state when switching - need to reset on switch
   Optimize (Profile!)
   Address all TODOs and FIXMEs
+  Tempo-sync knobs?
 
 BUGS:
   Add default short voice envelope (currently "popping" with min envelope)

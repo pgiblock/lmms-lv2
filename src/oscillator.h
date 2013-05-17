@@ -32,16 +32,16 @@
 #include "lmms_math.h"
 
 // Wave-table lookup configuration
-#define WAVE_BITS  10
-#define WAVE_LEN   ((1 << WAVE_BITS) + 1)
-#define FRAC_BITS  (32 - WAVE_BITS)
-#define FRAC_MASK  ((1 << FRAC_BITS) - 1)
-#define FRAC_SCALE (1.0 / (1 << FRAC_BITS))
+#define OSC_WAVE_BITS  10
+#define OSC_WAVE_LEN   ((1 << OSC_WAVE_BITS) + 1)
+#define OSC_FRAC_BITS  (32 - OSC_WAVE_BITS)
+#define OSC_FRAC_MASK  ((1 << OSC_FRAC_BITS) - 1)
+#define OSC_FRAC_SCALE (1.0 / (1 << OSC_FRAC_BITS))
 
 // BLEP-table lookup configuration
-#define BLEPSIZE 8192
-#define BLEPLEN  (BLEPSIZE/8)
-#define NROFBLEPS 8
+#define OSC_BLEP_SIZE 8192
+#define OSC_BLEP_LEN  (OSC_BLEP_SIZE/8)
+#define OSC_NBLEPS 8
 
 typedef enum wave_shapes {
 	OSC_WAVE_SINE,
@@ -82,7 +82,7 @@ typedef struct oscillator {
 	float phase;
 
 	// Experimental MINBLEP stuff
-	BlepState bleps[NROFBLEPS];
+	BlepState bleps[OSC_NBLEPS];
 	int   blep_idx;
 	float phase_mod;
 	float last_phase;
@@ -121,14 +121,14 @@ void osc_print (Oscillator *o);
 static inline sample_t
 osc_sample_sine (const float ph)
 {
-	extern float sine_table[WAVE_LEN];
+	extern float sine_table[OSC_WAVE_LEN];
 	uint32_t phase = ph * 4294967296.0;
-	int idx = phase >> FRAC_BITS;
+	int idx = phase >> OSC_FRAC_BITS;
 
 	// Linearly interpolate the two nearest samples
 	float samp0 = sine_table[idx];
 	float samp1 = sine_table[idx+1];
-	return samp0 + (phase & FRAC_MASK) * FRAC_SCALE * (samp1-samp0); 
+	return samp0 + (phase & OSC_FRAC_MASK) * OSC_FRAC_SCALE * (samp1-samp0); 
 }
 
 static inline sample_t
