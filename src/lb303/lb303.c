@@ -247,7 +247,6 @@ lb303_run (LV2_Handle instance,
 		if (ev) {
 			if (ev->body.type == plugin->uris.midi_event) {
 				uint8_t * const data = (uint8_t * const)(ev + 1);
-				ev = lv2_atom_sequence_next(ev);
 				uint8_t const  cmd  = data[0] & 0xF0;
 				//fprintf(stderr, "  cmd=%d data1=%d data2=%d\n", cmd, data[1], data[2]);
 				if (cmd == 0x90) {
@@ -322,8 +321,9 @@ lb303_run (LV2_Handle instance,
 					}
 				}
 			} else {
-				fprintf(stderr, "Unknown event type %d\n", ev->body.type);
+				fprintf(stderr, "lmms-lv2: Unknown event type: %d\n", ev->body.type);
 			}
+			ev = lv2_atom_sequence_next(ev);
 		}
 
 	}
