@@ -836,7 +836,7 @@
 		], [
 			rdfs:label "Vocal Formant Filter" ;
 			rdf:value 14
-		]
+		] ;
 		pg:group <http://pgiblock.net/plugins/triple-oscillator#filter>
 	] ,	[
 		a lv2:InputPort ,
@@ -1002,7 +1002,7 @@
 		] ,	[
 			rdfs:label "Square" ;
 			rdf:value 3.0
-		]
+		] ;
 		lv2:designation param:waveform ;
 		pg:group <http://pgiblock.net/plugins/triple-oscillator#lfo_cut>
 	] ,	[
@@ -1029,7 +1029,7 @@
 		] ,	[
 			rdfs:label "Modulate ENV" ;
 			rdf:value 1.0
-		]
+		] ;
 		pg:group <http://pgiblock.net/plugins/triple-oscillator#lfo_cut>
 	] ;
 
