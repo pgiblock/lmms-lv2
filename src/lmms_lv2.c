@@ -6,6 +6,7 @@
 
 #include "lb303/lb303.h"
 #include "triple_oscillator/triple_oscillator.h"
+#include "sid/sid.h"
 #include "envelope_generator/envelope_generator.h"
 
 const LV2_Descriptor *
@@ -18,6 +19,8 @@ lv2_descriptor (uint32_t index)
 		return &triple_oscillator_descriptor;
 	case 2:
 		return &envelope_generator_descriptor;
+	case 3:
+		return &sid_descriptor;
 	default:
 		return NULL;
 	}

@@ -7,6 +7,7 @@
 // TODO: Maybe move our instruments out of here and into each plugin's *.h
 #define ENVELOPE_GENERATOR_URI "http://pgiblock.net/plugins/envelope-generator"
 #define LB303_SYNTH_URI        "http://pgiblock.net/plugins/lb303-synth"
+#define SID_URI                "http://pgiblock.net/plugins/sid"
 #define TRIPLE_OSCILLATOR_URI  "http://pgiblock.net/plugins/triple-oscillator"
 #define MIDI_EVENT_URI         "http://lv2plug.in/ns/ext/midi#MidiEvent"
 #define ATOM_MESSAGE_URI       "http://lv2plug.in/ns/ext/atom#Message"

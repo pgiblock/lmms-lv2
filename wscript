@@ -15,15 +15,17 @@ top = '.'
 out = 'build'
 
 def options(opt):
-    opt.load('compiler_c')
+    opt.load('compiler_c compiler_cxx')
 
     opt.add_option('--max-polyphony', dest='max_polyphony', type='int', default=8,
                    help='Maximum instrument polyphony (static parameter for now)')
 
 def configure(conf):
-    conf.load('compiler_c')
+    conf.load('compiler_c compiler_cxx')
     conf.env.append_value('CFLAGS',
         ['-Wall', '-ggdb', '-std=c99', '-O3', '-ffast-math', '-fPIC'])
+    conf.env.append_value('CXXFLAGS',
+        ['-Wall', '-ggdb', '-O3', '-ffast-math', '-fPIC'])
 
     # TODO: don't hardcode
     conf.env.LV2DIR = LV2DIR;

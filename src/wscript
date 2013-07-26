@@ -12,7 +12,7 @@ def build(bld):
     penv                   = bld.env.derive()
     penv['cshlib_PATTERN'] = bld.env['pluginlib_PATTERN']
 
-    plugins = ['envelope_generator', 'lb303', 'triple_oscillator']
+    plugins = ['envelope_generator', 'lb303', 'triple_oscillator', 'sid']
     src     = ['basic_filters.c', 'blep.c', 'envelope.c', 'lfo.c', 'oscillator.c']
 
     for s in src:
