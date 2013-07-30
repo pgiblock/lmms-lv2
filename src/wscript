@@ -12,8 +12,11 @@ def build(bld):
     penv                   = bld.env.derive()
     penv['cshlib_PATTERN'] = bld.env['pluginlib_PATTERN']
 
-    plugins = ['envelope_generator', 'lb303', 'triple_oscillator', 'sid']
+    plugins = ['envelope_generator', 'lb303', 'triple_oscillator', 'sidemu']
     src     = ['basic_filters.c', 'blep.c', 'envelope.c', 'lfo.c', 'oscillator.c']
+    libs    = ['resid']
+
+    objs    = plugins + libs
 
     for s in src:
         bld.objects(source=s, includes='.', target=re.sub('\.c$', '', s))
@@ -24,7 +27,7 @@ def build(bld):
     bld.shlib(source='lmms_lv2.c',
               target='%s/lmms' % bundle,
               includes='.',
-              use=plugins,
+              use=objs,
               install_path=installdir,
               env=penv)
 

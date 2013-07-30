@@ -1,5 +1,5 @@
-#ifndef LMMS_SID_H__
-#define LMMS_SID_H__
+#ifndef LMMS_SIDEMU_H__
+#define LMMS_SIDEMU_H__
 
 #include "lv2/lv2plug.in/ns/lv2core/lv2.h"
 
@@ -7,7 +7,7 @@
 extern "C" {
 #endif
 
-	extern const LV2_Descriptor sid_descriptor;
+	extern const LV2_Descriptor sidemu_descriptor;
 
 #ifdef __cplusplus
 }

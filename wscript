@@ -3,6 +3,7 @@ import os
 import shutil
 from waflib import Logs
 from waflib import Options
+from waflib.Configure import conf
 
 # Variables for 'waf dist'
 APPNAME = 'lmms.lv2'
@@ -14,17 +15,28 @@ LV2DIR  = '/usr/local/lib/lv2'
 top = '.'
 out = 'build'
 
+@conf
+def check_sizeof(ctx, t):
+    frag = '#include <cstdio> \n int main() { printf("%%zu", sizeof(%s)); }' 
+    ctx.start_msg('Checking size of %s' % t)
+    sz = ctx.check_cxx(fragment=frag % t, execute=True,
+                       define_ret=True, quote=False)
+    ctx.end_msg(sz)
+    return int(sz)
+
+
 def options(opt):
     opt.load('compiler_c compiler_cxx')
 
     opt.add_option('--max-polyphony', dest='max_polyphony', type='int', default=8,
                    help='Maximum instrument polyphony (static parameter for now)')
 
+
 def configure(conf):
     conf.load('compiler_c compiler_cxx')
-    conf.env.append_value('CFLAGS',
+    conf.env.append_unique('CFLAGS',
         ['-Wall', '-ggdb', '-std=c99', '-O3', '-ffast-math', '-fPIC'])
-    conf.env.append_value('CXXFLAGS',
+    conf.env.append_unique('CXXFLAGS',
         ['-Wall', '-ggdb', '-O3', '-ffast-math', '-fPIC'])
 
     # TODO: don't hardcode
@@ -45,6 +57,17 @@ def configure(conf):
             uselib_store='GTK2', args=['--cflags', '--libs'], 
             mandatory=False)
 
+    conf.find_program('perl', var='PERL')
+
+    # Check language features (Need to expand this)
+    conf.check_cxx(fragment='int main() { bool flag; }',
+                   define_name='HAVE_BOOL',
+                   msg='Checking for working bool')
+
+    sizeof_int = conf.check_sizeof('int')
+    if sizeof_int < 4:
+        conf.fatal('only 32 bit or better CPUs are supported')
+
     # Pre-calculate pattern for plugin *.so files
     pat = conf.env['cshlib_PATTERN']
     if pat.startswith('lib'):
@@ -56,17 +79,17 @@ def configure(conf):
 
     conf.write_config_header('src/config.h')
 
+    conf.recurse('3rdparty')
+
 
 def build(bld):
     # TODO Remove this redundant installdir calculation
     bundle     = 'lmms.lv2'
     installdir = os.path.join(bld.env.LV2DIR, bundle)
 
-    bld.recurse('src tests')
+    bld.recurse('3rdparty src tests')
 
     bld.install_files(installdir, bld.path.ant_glob('presets/**/*.ttl'),
                       relative_trick=True)
-
-    #inst.recurse('presets')
 
 # vim: ts=8:sts=4:sw=4:et

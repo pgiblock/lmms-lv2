@@ -1,19 +1,24 @@
 #include <iostream>
+#include <sid.h>
+
 #include "lmms_lv2.h"
 #include "uris.h"
-#include "sid_p.h"
-#include "sid.h"
+#include "sidemu_p.h"
+#include "sidemu.h"
 
-void SidInstrument::fun()
+// Function implementations...
+void
+process ()
 {
-	std::cout << "Hello World!" << std::endl;
-	*control_port1 = 1.0f;
+	// Just checking compilation and linking...
+	SID sid;
+	sid.clock();
 }
 
 // Fill in your call-back functions here
 // Probably want static member functions that take an instance as
 // the LV2_Handle
-const LV2_Descriptor sid_descriptor = {
+const LV2_Descriptor sidemu_descriptor = {
 	SID_URI,
 	NULL, // instantiate,
 	NULL, // connect_port,

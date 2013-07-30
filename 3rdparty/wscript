@@ -1,0 +1,67 @@
+#!/usr/bin/env python
+import os.path
+from waflib import TaskGen
+
+## Build script for 3rd party tools
+## (external to 3rd party code for easy drop-in upgrades)
+
+# Task for running source-to-source compilation on *.dat files
+def samp2src(task):
+    src = task.inputs[0].abspath()
+    name = os.path.basename(os.path.splitext(src)[0])
+    tgtnode = task.generator.bld.bldnode.make_node('3rdparty/resid/%s.cc'%name)
+    tgt = tgtnode.abspath()
+    task.outputs = [tgtnode]
+    cmd = '%s %s %s %s %s' % (task.env['PERL'], task.env['SAMP2SRC'], name, src, tgt)
+    return task.exec_command(cmd)
+
+
+# Task for creating reSID config file
+def fill_siddefs(task):
+    def replace_defs(defs, replacements):
+        for k, v in replacements.iteritems():
+            defs = defs.replace('@%s@' % k, v)
+        return defs 
+
+    path = task.generator.path
+    in_node = path.get_src().find_node('resid/siddefs.h.in')
+    out_node = path.get_bld().make_node('resid/siddefs.h')
+    out_node.parent.mkdir()
+
+    defs = replace_defs(in_node.read(), {
+        'RESID_HAVE_BOOL': '0' if task.env['HAVE_BOOL'] == None else '1',
+        'RESID_INLINING': '1',
+        'RESID_INLINE': 'inline'})
+    out_node.write(defs)
+
+
+def configure(conf):
+    ## Configure ReSID environment and build siddefs configuration file
+    conf.env.stash()
+    conf.setenv('resid', conf.env)
+
+    conf.env.append_value('DEFINES', 'VERSION="0.16"')
+    conf.env['SAMP2SRC'] = conf.path.find_node('resid/samp2src.pl').abspath()
+    conf.env['CXXFLAGS'] = ['-O3', '-funroll-loops', '-fomit-frame-pointer', '-fno-exceptions', '-fPIC']
+
+    conf.setenv('')
+    conf.env.revert()
+
+
+def build(bld):
+    resid = bld.all_envs['resid']
+
+    # Build config file
+    bld(name='siddefs', target='resid/siddefs.h', source='resid/siddefs.h.in',
+            rule=fill_siddefs, before='cxx')
+    # Generate wave tables
+    bld(source=bld.path.ant_glob('resid/wave*.dat'), env=resid)
+    # Build static library
+    bld.stlib(target='resid', source=bld.path.ant_glob('resid/*.cc'),
+            features='cxx', env=resid, includes='resid', export_includes='resid')
+
+
+TaskGen.declare_chain(name='samp2src', rule=samp2src, shell=False,
+        ext_in='.dat', ext_out='.cc', reentrant=False)
+    
+# vim: ts=8:sts=4:sw=4:et
