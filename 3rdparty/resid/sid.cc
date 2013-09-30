@@ -20,6 +20,16 @@
 #include "sid.h"
 #include <math.h>
 
+const int SID::FIR_N;
+const int SID::FIR_RES_INTERPOLATE;
+const int SID::FIR_RES_FAST;
+const int SID::FIR_SHIFT;
+const int SID::RINGSIZE;
+
+const int SID::FIXP_SHIFT;
+const int SID::FIXP_MASK;
+
+
 // ----------------------------------------------------------------------------
 // Constructor.
 // ----------------------------------------------------------------------------
