@@ -3,17 +3,19 @@ import os
 import shutil
 from waflib import Logs
 
+def configure(conf):
+    conf.env.append_value('PLUGINS', 'triple_oscillator')
 
 def build(bld):
     # TODO Remove this redundant installdir calculation
     bundle     = 'lmms.lv2'
     installdir = os.path.join(bld.env.LV2DIR, bundle)
 
-    bld.stlib(source='triple_oscillator.c', includes='..',
-            use=['basic_filters','blep','envelope', 'lfo', 'oscillator'],
+    bld.stlib(source='triple_oscillator.c triple_oscillator.ttl', includes='. ..',
+            use=['basic_filters','blep','envelope', 'lfo', 'oscillator','instrument'],
             target='triple_oscillator')
 
-    for f in ['triple_oscillator.ttl']:
-        bld(features='subst', source=f, target=os.path.join(bundle,f), install_path=installdir)
+#    for f in ['triple_oscillator.ttl']:
+#        bld(features='subst', source=f, target=os.path.join(bundle,f), install_path=installdir)
 
 # vim: ts=8:sts=4:sw=4:et

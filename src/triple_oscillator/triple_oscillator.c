@@ -13,6 +13,10 @@
 #include "voice.h"
 #include "triple_oscillator.h"
 #include "triple_oscillator_p.h"
+// We won't be including these manually after the refactor
+#include "instrument_ports.h"
+#include "std_instrument_ports.h"
+#include "triple_oscillator_ports.h"
 
 
 static uint32_t
@@ -153,80 +157,80 @@ triposc_connect_port (LV2_Handle  instance,
 	int oscidx, oscport;
 
 	// Handle Plugin-global ports
-	if (port < TRIPOSC_OSC1_VOL || port >= TRIPOSC_ENV_VOL_DEL) {
+	if (port < PORT_OSC1_VOL || port >= PORT_ENV_VOL_DEL) {
 		BEGIN_CONNECT_PORTS(port);
-		CONNECT_PORT(TRIPOSC_CONTROL, event_port, LV2_Atom_Sequence);
-		CONNECT_PORT(TRIPOSC_OUT_L, out_l_port, float);
-		CONNECT_PORT(TRIPOSC_OUT_R, out_r_port, float);
-		CONNECT_PORT(TRIPOSC_ENV_VOL_DEL, env_vol_params.del, float);
-		CONNECT_PORT(TRIPOSC_ENV_VOL_ATT, env_vol_params.att, float);
-		CONNECT_PORT(TRIPOSC_ENV_VOL_HOLD, env_vol_params.hold, float);
-		CONNECT_PORT(TRIPOSC_ENV_VOL_DEC, env_vol_params.dec, float);
-		CONNECT_PORT(TRIPOSC_ENV_VOL_SUS, env_vol_params.sus, float);
-		CONNECT_PORT(TRIPOSC_ENV_VOL_REL, env_vol_params.rel, float);
-		CONNECT_PORT(TRIPOSC_ENV_VOL_MOD, env_vol_params.mod, float);
-		CONNECT_PORT(TRIPOSC_LFO_VOL_DEL, lfo_vol_params.del, float);
-		CONNECT_PORT(TRIPOSC_LFO_VOL_ATT, lfo_vol_params.att, float);
-		CONNECT_PORT(TRIPOSC_LFO_VOL_SPD, lfo_vol_params.spd, float);
-		CONNECT_PORT(TRIPOSC_LFO_VOL_SHAPE, lfo_vol_params.shape, float);
-		CONNECT_PORT(TRIPOSC_LFO_VOL_MOD, lfo_vol_params.mod, float);
-		CONNECT_PORT(TRIPOSC_LFO_VOL_OP, lfo_vol_params.op, float);
-		CONNECT_PORT(TRIPOSC_FILTER_ENABLED, filter_enabled_port, float);
-		CONNECT_PORT(TRIPOSC_FILTER_TYPE, filter_type_port, float);
-		CONNECT_PORT(TRIPOSC_FILTER_CUT, filter_cut_port, float);
-		CONNECT_PORT(TRIPOSC_FILTER_RES, filter_res_port, float);
-		CONNECT_PORT(TRIPOSC_ENV_CUT_DEL, env_cut_params.del, float);
-		CONNECT_PORT(TRIPOSC_ENV_CUT_ATT, env_cut_params.att, float);
-		CONNECT_PORT(TRIPOSC_ENV_CUT_HOLD, env_cut_params.hold, float);
-		CONNECT_PORT(TRIPOSC_ENV_CUT_DEC, env_cut_params.dec, float);
-		CONNECT_PORT(TRIPOSC_ENV_CUT_SUS, env_cut_params.sus, float);
-		CONNECT_PORT(TRIPOSC_ENV_CUT_REL, env_cut_params.rel, float);
-		CONNECT_PORT(TRIPOSC_ENV_CUT_MOD, env_cut_params.mod, float);
-		CONNECT_PORT(TRIPOSC_LFO_CUT_DEL, lfo_cut_params.del, float);
-		CONNECT_PORT(TRIPOSC_LFO_CUT_ATT, lfo_cut_params.att, float);
-		CONNECT_PORT(TRIPOSC_LFO_CUT_SPD, lfo_cut_params.spd, float);
-		CONNECT_PORT(TRIPOSC_LFO_CUT_SHAPE, lfo_cut_params.shape, float);
-		CONNECT_PORT(TRIPOSC_LFO_CUT_MOD, lfo_cut_params.mod, float);
-		CONNECT_PORT(TRIPOSC_LFO_CUT_OP, lfo_cut_params.op, float);
-		CONNECT_PORT(TRIPOSC_ENV_RES_DEL, env_res_params.del, float);
-		CONNECT_PORT(TRIPOSC_ENV_RES_ATT, env_res_params.att, float);
-		CONNECT_PORT(TRIPOSC_ENV_RES_HOLD, env_res_params.hold, float);
-		CONNECT_PORT(TRIPOSC_ENV_RES_DEC, env_res_params.dec, float);
-		CONNECT_PORT(TRIPOSC_ENV_RES_SUS, env_res_params.sus, float);
-		CONNECT_PORT(TRIPOSC_ENV_RES_REL, env_res_params.rel, float);
-		CONNECT_PORT(TRIPOSC_ENV_RES_MOD, env_res_params.mod, float);
-		CONNECT_PORT(TRIPOSC_LFO_RES_DEL, lfo_res_params.del, float);
-		CONNECT_PORT(TRIPOSC_LFO_RES_ATT, lfo_res_params.att, float);
-		CONNECT_PORT(TRIPOSC_LFO_RES_SPD, lfo_res_params.spd, float);
-		CONNECT_PORT(TRIPOSC_LFO_RES_SHAPE, lfo_res_params.shape, float);
-		CONNECT_PORT(TRIPOSC_LFO_RES_MOD, lfo_res_params.mod, float);
-		CONNECT_PORT(TRIPOSC_LFO_RES_OP, lfo_res_params.op, float);
+		CONNECT_PORT(PORT_CONTROL, event_port, LV2_Atom_Sequence);
+		CONNECT_PORT(PORT_OUT_L, out_l_port, float);
+		CONNECT_PORT(PORT_OUT_R, out_r_port, float);
+		CONNECT_PORT(PORT_ENV_VOL_DEL, env_vol_params.del, float);
+		CONNECT_PORT(PORT_ENV_VOL_ATT, env_vol_params.att, float);
+		CONNECT_PORT(PORT_ENV_VOL_HOLD, env_vol_params.hold, float);
+		CONNECT_PORT(PORT_ENV_VOL_DEC, env_vol_params.dec, float);
+		CONNECT_PORT(PORT_ENV_VOL_SUS, env_vol_params.sus, float);
+		CONNECT_PORT(PORT_ENV_VOL_REL, env_vol_params.rel, float);
+		CONNECT_PORT(PORT_ENV_VOL_MOD, env_vol_params.mod, float);
+		CONNECT_PORT(PORT_LFO_VOL_DEL, lfo_vol_params.del, float);
+		CONNECT_PORT(PORT_LFO_VOL_ATT, lfo_vol_params.att, float);
+		CONNECT_PORT(PORT_LFO_VOL_SPD, lfo_vol_params.spd, float);
+		CONNECT_PORT(PORT_LFO_VOL_SHAPE, lfo_vol_params.shape, float);
+		CONNECT_PORT(PORT_LFO_VOL_MOD, lfo_vol_params.mod, float);
+		CONNECT_PORT(PORT_LFO_VOL_OP, lfo_vol_params.op, float);
+		CONNECT_PORT(PORT_FILTER_ENABLED, filter_enabled_port, float);
+		CONNECT_PORT(PORT_FILTER_TYPE, filter_type_port, float);
+		CONNECT_PORT(PORT_FILTER_CUT, filter_cut_port, float);
+		CONNECT_PORT(PORT_FILTER_RES, filter_res_port, float);
+		CONNECT_PORT(PORT_ENV_CUT_DEL, env_cut_params.del, float);
+		CONNECT_PORT(PORT_ENV_CUT_ATT, env_cut_params.att, float);
+		CONNECT_PORT(PORT_ENV_CUT_HOLD, env_cut_params.hold, float);
+		CONNECT_PORT(PORT_ENV_CUT_DEC, env_cut_params.dec, float);
+		CONNECT_PORT(PORT_ENV_CUT_SUS, env_cut_params.sus, float);
+		CONNECT_PORT(PORT_ENV_CUT_REL, env_cut_params.rel, float);
+		CONNECT_PORT(PORT_ENV_CUT_MOD, env_cut_params.mod, float);
+		CONNECT_PORT(PORT_LFO_CUT_DEL, lfo_cut_params.del, float);
+		CONNECT_PORT(PORT_LFO_CUT_ATT, lfo_cut_params.att, float);
+		CONNECT_PORT(PORT_LFO_CUT_SPD, lfo_cut_params.spd, float);
+		CONNECT_PORT(PORT_LFO_CUT_SHAPE, lfo_cut_params.shape, float);
+		CONNECT_PORT(PORT_LFO_CUT_MOD, lfo_cut_params.mod, float);
+		CONNECT_PORT(PORT_LFO_CUT_OP, lfo_cut_params.op, float);
+		CONNECT_PORT(PORT_ENV_RES_DEL, env_res_params.del, float);
+		CONNECT_PORT(PORT_ENV_RES_ATT, env_res_params.att, float);
+		CONNECT_PORT(PORT_ENV_RES_HOLD, env_res_params.hold, float);
+		CONNECT_PORT(PORT_ENV_RES_DEC, env_res_params.dec, float);
+		CONNECT_PORT(PORT_ENV_RES_SUS, env_res_params.sus, float);
+		CONNECT_PORT(PORT_ENV_RES_REL, env_res_params.rel, float);
+		CONNECT_PORT(PORT_ENV_RES_MOD, env_res_params.mod, float);
+		CONNECT_PORT(PORT_LFO_RES_DEL, lfo_res_params.del, float);
+		CONNECT_PORT(PORT_LFO_RES_ATT, lfo_res_params.att, float);
+		CONNECT_PORT(PORT_LFO_RES_SPD, lfo_res_params.spd, float);
+		CONNECT_PORT(PORT_LFO_RES_SHAPE, lfo_res_params.shape, float);
+		CONNECT_PORT(PORT_LFO_RES_MOD, lfo_res_params.mod, float);
+		CONNECT_PORT(PORT_LFO_RES_OP, lfo_res_params.op, float);
 		END_CONNECT_PORTS();
 		return;
 	// Calculate osc index of osc-specific ports
-	} else if (port < TRIPOSC_OSC2_VOL) {
+	} else if (port < PORT_OSC2_VOL) {
 		oscidx = 0;
 		oscport = port;
-	} else if (port < TRIPOSC_OSC3_VOL) {
+	} else if (port < PORT_OSC3_VOL) {
 		oscidx = 1;
-		oscport = port - (TRIPOSC_OSC2_VOL - TRIPOSC_OSC1_VOL);
+		oscport = port - (PORT_OSC2_VOL - PORT_OSC1_VOL);
 	} else {
 		oscidx = 2;
-		oscport = port - (TRIPOSC_OSC3_VOL - TRIPOSC_OSC1_VOL);
+		oscport = port - (PORT_OSC3_VOL - PORT_OSC1_VOL);
 	}
 
 	// Now connect an osc-specific port
 	BEGIN_CONNECT_PORTS(oscport);
-	CONNECT_PORT(TRIPOSC_OSC1_VOL, units[oscidx].vol_port, float);
-	CONNECT_PORT(TRIPOSC_OSC1_PAN, units[oscidx].pan_port, float);
-	CONNECT_PORT(TRIPOSC_OSC1_DETUNE_COARSE, units[oscidx].detune_coarse_port, float);
-	CONNECT_PORT(TRIPOSC_OSC1_DETUNE_FINE_L, units[oscidx].detune_fine_l_port, float);
-	CONNECT_PORT(TRIPOSC_OSC1_DETUNE_FINE_R, units[oscidx].detune_fine_r_port, float);
-	CONNECT_PORT(TRIPOSC_OSC1_PHASE_OFFSET, units[oscidx].phase_offset_port, float);
-	CONNECT_PORT(TRIPOSC_OSC1_PHASE_DETUNE, units[oscidx].phase_detune_port, float);
-	CONNECT_PORT(TRIPOSC_OSC1_PHASE_RANDOM, units[oscidx].phase_random_port, float);
-	CONNECT_PORT(TRIPOSC_OSC1_WAVE_SHAPE, units[oscidx].wave_shape_port, float);
-	CONNECT_PORT(TRIPOSC_OSC1_OSC2_MOD, units[oscidx].modulation_port, float);
+	CONNECT_PORT(PORT_OSC1_VOL, units[oscidx].vol_port, float);
+	CONNECT_PORT(PORT_OSC1_PAN, units[oscidx].pan_port, float);
+	CONNECT_PORT(PORT_OSC1_DETUNE_COARSE, units[oscidx].detune_coarse_port, float);
+	CONNECT_PORT(PORT_OSC1_DETUNE_FINE_L, units[oscidx].detune_fine_l_port, float);
+	CONNECT_PORT(PORT_OSC1_DETUNE_FINE_R, units[oscidx].detune_fine_r_port, float);
+	CONNECT_PORT(PORT_OSC1_PHASE_OFFSET, units[oscidx].phase_offset_port, float);
+	CONNECT_PORT(PORT_OSC1_PHASE_DETUNE, units[oscidx].phase_detune_port, float);
+	CONNECT_PORT(PORT_OSC1_PHASE_RANDOM, units[oscidx].phase_random_port, float);
+	CONNECT_PORT(PORT_OSC1_WAVE_SHAPE, units[oscidx].wave_shape_port, float);
+	CONNECT_PORT(PORT_OSC1_OSC2_MOD, units[oscidx].modulation_port, float);
 	END_CONNECT_PORTS();
 }
 

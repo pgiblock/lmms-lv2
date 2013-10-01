@@ -1,0 +1,667 @@
+@prefix atom:   <http://lv2plug.in/ns/ext/atom#> .
+@prefix doap:   <http://usefulinc.com/ns/doap#> .
+@prefix foaf:   <http://xmlns.com/foaf/0.1/> .
+@prefix lv2:    <http://lv2plug.in/ns/lv2core#> .
+@prefix lv2midi: <http://lv2plug.in/ns/ext/midi#> .
+@prefix param:  <http://lv2plug.in/ns/ext/parameters#> .
+@prefix pg:     <http://lv2plug.in/ns/ext/port-groups#> .
+@prefix rdf:    <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs:   <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix units:  <http://lv2plug.in/ns/extensions/units#> .
+@prefix urid:   <http://lv2plug.in/ns/ext/urid#> .
+
+<http://pgiblock.net/ns/std_instrument#env_vol>
+	a param:EnvelopeControls ,
+	  pg:InputGroup ;
+	lv2:name "Volume Envelope" ;
+	lv2:symbol "env_vol" .
+
+<http://pgiblock.net/ns/std_instrument#lfo_vol>
+	a param:OscillatorControls ,
+	  param:EnvelopeControls,
+	  pg:InputGroup ;
+	lv2:name "Volume LFO" ;
+	lv2:symbol "lfo_vol" .
+
+<http://pgiblock.net/ns/std_instrument#filter>
+	a param:EnvelopeControls ,
+	  pg:InputGroup ;
+	lv2:name "Filter" ;
+	lv2:symbol "filter" .
+
+<http://pgiblock.net/ns/std_instrument#env_cut>
+	a param:EnvelopeControls ,
+	  pg:InputGroup ;
+	lv2:name "Cutoff Envelope" ;
+	lv2:symbol "env_cut" .
+
+<http://pgiblock.net/ns/std_instrument#env_res>
+	a param:EnvelopeControls ,
+	  pg:InputGroup ;
+	lv2:name "Resonance Envelope" ;
+	lv2:symbol "env_res" .
+
+<http://pgiblock.net/ns/std_instrument#lfo_cut>
+	a param:OscillatorControls ,
+	  pg:InputGroup ;
+	lv2:name "Cutoff LFO" ;
+	lv2:symbol "lfo_cut" .
+
+<http://pgiblock.net/ns/std_instrument#lfo_res>
+	a param:OscillatorControls ,
+	  pg:InputGroup ;
+	lv2:name "Resonance LFO" ;
+	lv2:symbol "lfo_res" .
+
+<http://pgiblock.net/ns/instrument>
+	a lv2:Plugin ;
+	rdfs:seeAlso <instrument.ttl> .
+
+<http://pgiblock.net/ns/std_instrument>
+	a <http://pgiblock.net/ns/instrument> ;
+
+	# Volume Envelope
+	lv2:port [
+		a lv2:InputPort ,
+		  lv2:ControlPort ;
+		lv2:index 3 ;
+		lv2:symbol "env_vol_del" ;
+		lv2:name "Volume Envelope Delay" ;
+		lv2:default 0.0 ;
+		lv2:minimum 0.0 ;
+		lv2:maximum 5.0 ;
+		units:unit units:s ;
+		lv2:designation param:delay ;
+		pg:group <http://pgiblock.net/ns/std_instrument#env_vol>
+	] ,	[
+		a lv2:InputPort ,
+		  lv2:ControlPort ;
+		lv2:index 4 ;
+		lv2:symbol "env_vol_att" ;
+		lv2:name "Volume Envelope Attack" ;
+		lv2:default 0.0 ;
+		lv2:minimum 0.0 ;
+		lv2:maximum 5.0 ;
+		units:unit units:s ;
+		lv2:designation param:attack ;
+		pg:group <http://pgiblock.net/ns/std_instrument#env_vol>
+	] ,	[
+		a lv2:InputPort ,
+		  lv2:ControlPort ;
+		lv2:index 5 ;
+		lv2:symbol "env_vol_hold" ;
+		lv2:name "Volume Envelope Hold" ;
+		lv2:default 0.5 ;
+		lv2:minimum 0.0 ;
+		lv2:maximum 5.0 ;
+		units:unit units:s ;
+		lv2:designation param:hold ;
+		pg:group <http://pgiblock.net/ns/std_instrument#env_vol>
+	] ,	[
+		a lv2:InputPort ,
+		  lv2:ControlPort ;
+		lv2:index 6 ;
+		lv2:symbol "env_vol_dec" ;
+		lv2:name "Volume Envelope Decay" ;
+		lv2:default 0.5 ;
+		lv2:minimum 0.0 ;
+		lv2:maximum 5.0 ;
+		units:unit units:s ;
+		lv2:designation param:decay ;
+		pg:group <http://pgiblock.net/ns/std_instrument#env_vol>
+	] ,	[
+		a lv2:InputPort ,
+		  lv2:ControlPort ;
+		lv2:index 7 ;
+		lv2:symbol "env_vol_sus" ;
+		lv2:name "Volume Envelope Sustain" ;
+		lv2:default 0.5 ;
+		lv2:minimum 0.0 ;
+		lv2:maximum 1.0 ;
+		lv2:designation param:sustain ;
+		pg:group <http://pgiblock.net/ns/std_instrument#env_vol>
+	] ,	[
+		a lv2:InputPort ,
+		  lv2:ControlPort ;
+		lv2:index 8 ;
+		lv2:symbol "env_vol_rel" ;
+		lv2:name "Volume Envelope Release" ;
+		lv2:default 0.1 ;
+		lv2:minimum 0.0 ;
+		lv2:maximum 5.0 ;
+		units:unit units:s ;
+		lv2:designation param:release ;
+		pg:group <http://pgiblock.net/ns/std_instrument#env_vol>
+	] ,	[
+		a lv2:InputPort ,
+		  lv2:ControlPort ;
+		lv2:index 9 ;
+		lv2:symbol "env_vol_mod" ;
+		lv2:name "Volume Envelope Modulation" ;
+		lv2:default 0.0 ;
+		lv2:minimum -1.0 ;
+		lv2:maximum 1.0 ;
+		pg:group <http://pgiblock.net/ns/std_instrument#env_vol>
+	] ;
+
+
+	# Volume LFO
+	lv2:port [
+		a lv2:InputPort ,
+		  lv2:ControlPort ;
+		lv2:index 10 ;
+		lv2:symbol "lfo_vol_del" ;
+		lv2:name "Volume LFO Delay" ;
+		lv2:default 0.0 ;
+		lv2:minimum 0.0 ;
+		lv2:maximum 20.0 ;
+		lv2:designation param:delay ;
+		pg:group <http://pgiblock.net/ns/std_instrument#lfo_vol>
+	] ,	[
+		a lv2:InputPort ,
+		  lv2:ControlPort ;
+		lv2:index 11 ;
+		lv2:symbol "lfo_vol_att" ;
+		lv2:name "Volume LFO Attack" ;
+		lv2:default 0.0 ;
+		lv2:minimum 0.0 ;
+		lv2:maximum 20.0 ;
+		lv2:designation param:attack ;
+		pg:group <http://pgiblock.net/ns/std_instrument#lfo_vol>
+	] ,	[
+		a lv2:InputPort ,
+		  lv2:ControlPort ;
+		lv2:index 12 ;
+		lv2:symbol "lfo_vol_spd" ;
+		lv2:name "Volume LFO Speed" ;
+		lv2:default 2.0;
+		lv2:minimum 0.01;
+		lv2:maximum 20;
+		lv2:designation param:frequency ;
+		pg:group <http://pgiblock.net/ns/std_instrument#lfo_vol>
+	] ,	[
+		a lv2:InputPort ,
+		  lv2:ControlPort ;
+		lv2:index 13 ;
+		lv2:symbol "lfo_vol_shape" ;
+		lv2:name "Volume LFO Shape" ;
+		lv2:portProperty lv2:enumeration;
+		lv2:default 0.0 ;
+		lv2:scalePoint [
+			rdfs:label "Sine" ;
+			rdf:value 0.0
+		] ,	[
+			rdfs:label "Triangle" ;
+			rdf:value 1.0
+		] ,	[
+			rdfs:label "Saw" ;
+			rdf:value 2.0
+		] ,	[
+			rdfs:label "Square" ;
+			rdf:value 3.0
+		] ;
+		lv2:designation param:waveform ;
+		pg:group <http://pgiblock.net/ns/std_instrument#lfo_vol>
+	] ,	[
+		a lv2:InputPort ,
+		  lv2:ControlPort ;
+		lv2:index 14 ;
+		lv2:symbol "lfo_vol_mod" ;
+		lv2:name "Volume LFO Modulation" ;
+		lv2:default 0.0 ;
+		lv2:minimum -1.0 ;
+		lv2:maximum 1.0 ;
+		lv2:designation param:amplitude ;
+		pg:group <http://pgiblock.net/ns/std_instrument#lfo_vol>
+	] ,	[
+		a lv2:InputPort ,
+		  lv2:ControlPort ;
+		lv2:index 15 ;
+		lv2:symbol "lfo_vol_op" ;
+		lv2:name "Volume LFO Operation" ;
+		lv2:portProperty lv2:enumeration;
+		lv2:default 0.0 ;
+		lv2:scalePoint [
+			rdfs:label "Mix" ;
+			rdf:value 0.0
+		] ,	[
+			rdfs:label "Modulate ENV" ;
+			rdf:value 1.0
+		] ;
+		pg:group <http://pgiblock.net/ns/std_instrument#lfo_vol>
+	] ;
+
+
+
+	# Filter settings
+	lv2:port [
+		a lv2:InputPort ,
+		  lv2:ControlPort ;
+		lv2:index 16 ;
+		lv2:symbol "filter_enabled" ;
+		lv2:name "Filter enabled" ;
+		lv2:portProperty lv2:toggled ;
+		lv2:default 0 ;
+		pg:group <http://pgiblock.net/ns/std_instrument#filter>
+	] ,	[
+		a lv2:InputPort ,
+		  lv2:ControlPort ;
+		lv2:index 17 ;
+		lv2:symbol "filter_type" ;
+		lv2:name "Filter type" ;
+		lv2:portProperty lv2:enumeration;
+		lv2:default 1 ;
+		lv2:scalePoint [
+			rdfs:label "LowPass" ;
+			rdf:value 0
+		], [
+			rdfs:label "HiPass" ;
+			rdf:value 1
+		], [
+			rdfs:label "BandPass csg" ;
+			rdf:value 2
+		], [
+			rdfs:label "BandPass czpg" ;
+			rdf:value 3
+		], [
+			rdfs:label "Notch" ;
+			rdf:value 4
+		], [
+			rdfs:label "Allpass" ;
+			rdf:value 5
+		], [
+			rdfs:label "Moog" ;
+			rdf:value 6
+		], [
+			rdfs:label "2x LowPass" ;
+			rdf:value 7
+		], [
+			rdfs:label "RC LowPass 12dB" ;
+			rdf:value 8
+		], [
+			rdfs:label "RC BandPass 12dB" ;
+			rdf:value 9
+		], [
+			rdfs:label "RC HighPass 12dB" ;
+			rdf:value 10
+		], [
+			rdfs:label "RC LowPass 24dB" ;
+			rdf:value 11
+		], [
+			rdfs:label "RC BandPass 24dB" ;
+			rdf:value 12
+		], [
+			rdfs:label "RC HighPass 24dB" ;
+			rdf:value 13
+		], [
+			rdfs:label "Vocal Formant Filter" ;
+			rdf:value 14
+		] ;
+		pg:group <http://pgiblock.net/ns/std_instrument#filter>
+	] ,	[
+		a lv2:InputPort ,
+		  lv2:ControlPort ;
+		lv2:index 18 ;
+		lv2:symbol "filter_cut" ;
+		lv2:name "Cutoff frequency" ;
+		lv2:default 14000.0 ;
+		lv2:minimum 1.0 ;
+		lv2:maximum 14000.0 ;
+		lv2:designation pg:cutoffFrequency ;
+		pg:group <http://pgiblock.net/ns/std_instrument#filter>
+	] ,	[
+		a lv2:InputPort ,
+		  lv2:ControlPort ;
+		lv2:index 19 ;
+		lv2:symbol "filter_res" ;
+		lv2:name "Q/Resonance" ;
+		lv2:default 0.5 ;
+		lv2:minimum 0.01 ;
+		lv2:maximum 10.0 ;
+		lv2:designation pg:resonance ;
+		pg:group <http://pgiblock.net/ns/std_instrument#filter>
+	] ;
+
+
+	# Cutoff Envelope
+	lv2:port [
+		a lv2:InputPort ,
+		  lv2:ControlPort ;
+		lv2:index 20 ;
+		lv2:symbol "env_cut_del" ;
+		lv2:name "Cutoff Envelope Delay" ;
+		lv2:default 0.0 ;
+		lv2:minimum 0.0 ;
+		lv2:maximum 5.0 ;
+		units:unit units:s ;
+		lv2:designation param:delay ;
+		pg:group <http://pgiblock.net/ns/std_instrument#env_cut>
+	] ,	[
+		a lv2:InputPort ,
+		  lv2:ControlPort ;
+		lv2:index 21 ;
+		lv2:symbol "env_cut_att" ;
+		lv2:name "Cutoff Envelope Attack" ;
+		lv2:default 0.0 ;
+		lv2:minimum 0.0 ;
+		lv2:maximum 5.0 ;
+		units:unit units:s ;
+		lv2:designation param:attack ;
+		pg:group <http://pgiblock.net/ns/std_instrument#env_cut>
+	] ,	[
+		a lv2:InputPort ,
+		  lv2:ControlPort ;
+		lv2:index 22 ;
+		lv2:symbol "env_cut_hold" ;
+		lv2:name "Cutoff Envelope Hold" ;
+		lv2:default 0.5 ;
+		lv2:minimum 0.0 ;
+		lv2:maximum 5.0 ;
+		units:unit units:s ;
+		lv2:designation param:hold ;
+		pg:group <http://pgiblock.net/ns/std_instrument#env_cut>
+	] ,	[
+		a lv2:InputPort ,
+		  lv2:ControlPort ;
+		lv2:index 23 ;
+		lv2:symbol "env_cut_dec" ;
+		lv2:name "Cutoff Envelope Decay" ;
+		lv2:default 0.5 ;
+		lv2:minimum 0.0 ;
+		lv2:maximum 5.0 ;
+		units:unit units:s ;
+		lv2:designation param:decay ;
+		pg:group <http://pgiblock.net/ns/std_instrument#env_cut>
+	] ,	[
+		a lv2:InputPort ,
+		  lv2:ControlPort ;
+		lv2:index 24 ;
+		lv2:symbol "env_cut_sus" ;
+		lv2:name "Cutoff Envelope Sustain" ;
+		lv2:default 0.5 ;
+		lv2:minimum 0.0 ;
+		lv2:maximum 1.0 ;
+		lv2:designation param:sustain ;
+		pg:group <http://pgiblock.net/ns/std_instrument#env_cut>
+	] ,	[
+		a lv2:InputPort ,
+		  lv2:ControlPort ;
+		lv2:index 25 ;
+		lv2:symbol "env_cut_rel" ;
+		lv2:name "Cutoff Envelope Release" ;
+		lv2:default 0.1 ;
+		lv2:minimum 0.0 ;
+		lv2:maximum 5.0 ;
+		units:unit units:s ;
+		lv2:designation param:release ;
+		pg:group <http://pgiblock.net/ns/std_instrument#env_cut>
+	] ,	[
+		a lv2:InputPort ,
+		  lv2:ControlPort ;
+		lv2:index 26 ;
+		lv2:symbol "env_cut_mod" ;
+		lv2:name "Cutoff Envelope Modulation" ;
+		lv2:default 0.0 ;
+		lv2:minimum -1.0 ;
+		lv2:maximum 1.0 ;
+		pg:group <http://pgiblock.net/ns/std_instrument#env_cut>
+	] ;
+
+
+	# Cutoff LFO
+	lv2:port [
+		a lv2:InputPort ,
+		  lv2:ControlPort ;
+		lv2:index 27 ;
+		lv2:symbol "lfo_cut_del" ;
+		lv2:name "Cutoff LFO Delay" ;
+		lv2:default 0.0 ;
+		lv2:minimum 0.0 ;
+		lv2:maximum 20.0 ;
+		lv2:designation param:delay ;
+		pg:group <http://pgiblock.net/ns/std_instrument#lfo_cut>
+	] ,	[
+		a lv2:InputPort ,
+		  lv2:ControlPort ;
+		lv2:index 28 ;
+		lv2:symbol "lfo_cut_att" ;
+		lv2:name "Cutoff LFO Attack" ;
+		lv2:default 0.0 ;
+		lv2:minimum 0.0 ;
+		lv2:maximum 20.0 ;
+		lv2:designation param:attack ;
+		pg:group <http://pgiblock.net/ns/std_instrument#lfo_cut>
+	] ,	[
+		a lv2:InputPort ,
+		  lv2:ControlPort ;
+		lv2:index 29 ;
+		lv2:symbol "lfo_cut_spd" ;
+		lv2:name "Cutoff LFO Speed" ;
+		lv2:default 2.0;
+		lv2:minimum 0.01;
+		lv2:maximum 20;
+		lv2:designation param:frequency ;
+		pg:group <http://pgiblock.net/ns/std_instrument#lfo_cut>
+	] ,	[
+		a lv2:InputPort ,
+		  lv2:ControlPort ;
+		lv2:index 30 ;
+		lv2:symbol "lfo_cut_shape" ;
+		lv2:name "Cutoff LFO Shape" ;
+		lv2:portProperty lv2:enumeration;
+		lv2:default 0.0 ;
+		lv2:scalePoint [
+			rdfs:label "Sine" ;
+			rdf:value 0.0
+		] ,	[
+			rdfs:label "Triangle" ;
+			rdf:value 1.0
+		] ,	[
+			rdfs:label "Saw" ;
+			rdf:value 2.0
+		] ,	[
+			rdfs:label "Square" ;
+			rdf:value 3.0
+		] ;
+		lv2:designation param:waveform ;
+		pg:group <http://pgiblock.net/ns/std_instrument#lfo_cut>
+	] ,	[
+		a lv2:InputPort ,
+		  lv2:ControlPort ;
+		lv2:index 31 ;
+		lv2:symbol "lfo_cut_mod" ;
+		lv2:name "Cutoff LFO Modulation" ;
+		lv2:default 0.0 ;
+		lv2:minimum -1.0 ;
+		lv2:maximum 1.0 ;
+		pg:group <http://pgiblock.net/ns/std_instrument#lfo_cut>
+	] ,	[
+		a lv2:InputPort ,
+		  lv2:ControlPort ;
+		lv2:index 32 ;
+		lv2:symbol "lfo_cut_op" ;
+		lv2:name "Cutoff LFO Operation" ;
+		lv2:portProperty lv2:enumeration;
+		lv2:default 0.0 ;
+		lv2:scalePoint [
+			rdfs:label "Mix" ;
+			rdf:value 0.0
+		] ,	[
+			rdfs:label "Modulate ENV" ;
+			rdf:value 1.0
+		] ;
+		pg:group <http://pgiblock.net/ns/std_instrument#lfo_cut>
+	] ;
+
+
+	# Resonance Envelope
+	lv2:port [
+		a lv2:InputPort ,
+		  lv2:ControlPort ;
+		lv2:index 33 ;
+		lv2:symbol "env_res_del" ;
+		lv2:name "Resonance Envelope Delay" ;
+		lv2:default 0.0 ;
+		lv2:minimum 0.0 ;
+		lv2:maximum 5.0 ;
+		units:unit units:s ;
+		lv2:designation param:delay ;
+		pg:group <http://pgiblock.net/ns/std_instrument#env_res>
+	] ,	[
+		a lv2:InputPort ,
+		  lv2:ControlPort ;
+		lv2:index 34 ;
+		lv2:symbol "env_res_att" ;
+		lv2:name "Resonance Envelope Attack" ;
+		lv2:default 0.0 ;
+		lv2:minimum 0.0 ;
+		lv2:maximum 5.0 ;
+		units:unit units:s ;
+		lv2:designation param:attack ;
+		pg:group <http://pgiblock.net/ns/std_instrument#env_res>
+	] ,	[
+		a lv2:InputPort ,
+		  lv2:ControlPort ;
+		lv2:index 35 ;
+		lv2:symbol "env_res_hold" ;
+		lv2:name "Resonance Envelope Hold" ;
+		lv2:default 0.5 ;
+		lv2:minimum 0.0 ;
+		lv2:maximum 5.0 ;
+		units:unit units:s ;
+		lv2:designation param:hold ;
+		pg:group <http://pgiblock.net/ns/std_instrument#env_res>
+	] ,	[
+		a lv2:InputPort ,
+		  lv2:ControlPort ;
+		lv2:index 36 ;
+		lv2:symbol "env_res_dec" ;
+		lv2:name "Resonance Envelope Decay" ;
+		lv2:default 0.5 ;
+		lv2:minimum 0.0 ;
+		lv2:maximum 5.0 ;
+		units:unit units:s ;
+		lv2:designation param:decay ;
+		pg:group <http://pgiblock.net/ns/std_instrument#env_res>
+	] ,	[
+		a lv2:InputPort ,
+		  lv2:ControlPort ;
+		lv2:index 37 ;
+		lv2:symbol "env_res_sus" ;
+		lv2:name "Resonance Envelope Sustain" ;
+		lv2:default 0.5 ;
+		lv2:minimum 0.0 ;
+		lv2:maximum 1.0 ;
+		lv2:designation param:sustain ;
+		pg:group <http://pgiblock.net/ns/std_instrument#env_res>
+	] ,	[
+		a lv2:InputPort ,
+		  lv2:ControlPort ;
+		lv2:index 38 ;
+		lv2:symbol "env_res_rel" ;
+		lv2:name "Resonance Envelope Release" ;
+		lv2:default 0.1 ;
+		lv2:minimum 0.0 ;
+		lv2:maximum 5.0 ;
+		units:unit units:s ;
+		lv2:designation param:release ;
+		pg:group <http://pgiblock.net/ns/std_instrument#env_res>
+	] ,	[
+		a lv2:InputPort ,
+		  lv2:ControlPort ;
+		lv2:index 39 ;
+		lv2:symbol "env_res_mod" ;
+		lv2:name "Resonance Envelope Modulation" ;
+		lv2:default 0.0 ;
+		lv2:minimum -1.0 ;
+		lv2:maximum 1.0 ;
+		pg:group <http://pgiblock.net/ns/std_instrument#env_res>
+	] ;
+
+
+
+	# Resonance LFO
+	lv2:port [
+		a lv2:InputPort ,
+		  lv2:ControlPort ;
+		lv2:index 40 ;
+		lv2:symbol "lfo_res_del" ;
+		lv2:name "Resonance LFO Delay" ;
+		lv2:default 0.0 ;
+		lv2:minimum 0.0 ;
+		lv2:maximum 20.0 ;
+		lv2:designation param:delay ;
+		pg:group <http://pgiblock.net/ns/std_instrument#lfo_res>
+	] ,	[
+		a lv2:InputPort ,
+		  lv2:ControlPort ;
+		lv2:index 41 ;
+		lv2:symbol "lfo_res_att" ;
+		lv2:name "Resonance LFO Attack" ;
+		lv2:default 0.0 ;
+		lv2:minimum 0.0 ;
+		lv2:maximum 20.0 ;
+		lv2:designation param:attack ;
+		pg:group <http://pgiblock.net/ns/std_instrument#lfo_res>
+	] ,	[
+		a lv2:InputPort ,
+		  lv2:ControlPort ;
+		lv2:index 42 ;
+		lv2:symbol "lfo_res_spd" ;
+		lv2:name "Resonance LFO Speed" ;
+		lv2:default 2.0;
+		lv2:minimum 0.01;
+		lv2:maximum 20;
+		lv2:designation param:frequency ;
+		pg:group <http://pgiblock.net/ns/std_instrument#lfo_res>
+	] ,	[
+		a lv2:InputPort ,
+		  lv2:ControlPort ;
+		lv2:index 43 ;
+		lv2:symbol "lfo_res_shape" ;
+		lv2:name "Resonance LFO Shape" ;
+		lv2:portProperty lv2:enumeration;
+		lv2:default 0.0 ;
+		lv2:scalePoint [
+			rdfs:label "Sine" ;
+			rdf:value 0.0
+		] ,	[
+			rdfs:label "Triangle" ;
+			rdf:value 1.0
+		] ,	[
+			rdfs:label "Saw" ;
+			rdf:value 2.0
+		] ,	[
+			rdfs:label "Square" ;
+			rdf:value 3.0
+		] ;
+		lv2:designation param:waveform ;
+		pg:group <http://pgiblock.net/ns/std_instrument#lfo_res>
+	] ,	[
+		a lv2:InputPort ,
+		  lv2:ControlPort ;
+		lv2:index 44 ;
+		lv2:symbol "lfo_res_mod" ;
+		lv2:name "Resonance LFO Modulation" ;
+		lv2:default 0.0 ;
+		lv2:minimum -1.0 ;
+		lv2:maximum 1.0 ;
+		lv2:designation param:amplitude ;
+		pg:group <http://pgiblock.net/ns/std_instrument#lfo_res>
+	] ,	[
+		a lv2:InputPort ,
+		  lv2:ControlPort ;
+		lv2:index 45 ;
+		lv2:symbol "lfo_res_op" ;
+		lv2:name "Resonance LFO Operation" ;
+		lv2:portProperty lv2:enumeration;
+		lv2:default 0.0 ;
+		lv2:scalePoint [
+			rdfs:label "Mix" ;
+			rdf:value 0.0
+		] ,	[
+			rdfs:label "Modulate ENV" ;
+			rdf:value 1.0
+		] ;
+		pg:group <http://pgiblock.net/ns/std_instrument#lfo_res>
+	] .

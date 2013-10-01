@@ -1,4 +1,5 @@
-#include <malloc.h>
+#include <stdlib.h>
+#include <stdio.h>
 
 #include "lfo.h"
 #include "lmms_math.h"

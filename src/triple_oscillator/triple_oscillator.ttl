@@ -10,116 +10,16 @@
 @prefix units:  <http://lv2plug.in/ns/extensions/units#> .
 @prefix urid:   <http://lv2plug.in/ns/ext/urid#> .
 
-<http://pgiblock.net/plugins/triple-oscillator#out>
-	a pg:StereoGroup ,
-	  pg:OutputGroup ;
-	lv2:name "Output" ;
-	lv2:symbol "out" .
-
-<http://pgiblock.net/plugins/triple-oscillator#osc1>
-	a param:OscillatorControls ,
-	  pg:InputGroup ;
-	lv2:name "Oscillator 1" ;
-	lv2:symbol "osc1" .
-
-<http://pgiblock.net/plugins/triple-oscillator#osc2>
-	a param:OscillatorControls ,
-	  pg:InputGroup ;
-	lv2:name "Oscillator 2" ;
-	lv2:symbol "osc2" .
-
-<http://pgiblock.net/plugins/triple-oscillator#osc3>
-	a param:OscillatorControls ,
-	  pg:InputGroup ;
-	lv2:name "Oscillator 3" ;
-	lv2:symbol "osc3" .
-
-<http://pgiblock.net/plugins/triple-oscillator#env_vol>
-	a param:EnvelopeControls ,
-	  pg:InputGroup ;
-	lv2:name "Volume Envelope" ;
-	lv2:symbol "env_vol" .
-
-<http://pgiblock.net/plugins/triple-oscillator#lfo_vol>
-	a param:OscillatorControls ,
-	  param:EnvelopeControls,
-	  pg:InputGroup ;
-	lv2:name "Volume LFO" ;
-	lv2:symbol "lfo_vol" .
-
-<http://pgiblock.net/plugins/triple-oscillator#filter>
-	a param:EnvelopeControls ,
-	  pg:InputGroup ;
-	lv2:name "Filter" ;
-	lv2:symbol "filter" .
-
-<http://pgiblock.net/plugins/triple-oscillator#env_cut>
-	a param:EnvelopeControls ,
-	  pg:InputGroup ;
-	lv2:name "Cutoff Envelope" ;
-	lv2:symbol "env_cut" .
-
-<http://pgiblock.net/plugins/triple-oscillator#env_res>
-	a param:EnvelopeControls ,
-	  pg:InputGroup ;
-	lv2:name "Resonance Envelope" ;
-	lv2:symbol "env_res" .
-
-<http://pgiblock.net/plugins/triple-oscillator#lfo_cut>
-	a param:OscillatorControls ,
-	  pg:InputGroup ;
-	lv2:name "Cutoff LFO" ;
-	lv2:symbol "lfo_cut" .
-
-<http://pgiblock.net/plugins/triple-oscillator#lfo_res>
-	a param:OscillatorControls ,
-	  pg:InputGroup ;
-	lv2:name "Resonance LFO" ;
-	lv2:symbol "lfo_res" .
-
-
 <http://pgiblock.net/plugins/triple-oscillator>
 	a lv2:Plugin ;
+
 	doap:name "Triple Oscillator" ;
-	doap:license <http://opensource.org/licenses/isc> ;
-	lv2:requiredFeature urid:map ;
-	lv2:optionalFeature lv2:hardRTCapable ;
-
-	lv2:extensionData <http://lv2plug.in/ns/ext/state#Interface> ;
-
-	# Instrument I/O
-	lv2:port [
-		a lv2:InputPort ,
-		  atom:AtomPort ;
-		atom:bufferType atom:Sequence ;
-		atom:supports lv2midi:MidiEvent ;
-		lv2:index 0 ;
-		lv2:symbol "control" ;
-		lv2:name "Control"
-	] , [
-		a lv2:AudioPort ,
-		  lv2:OutputPort ;
-		lv2:index 1 ;
-		lv2:symbol "out_l" ;
-		lv2:name "Out Left" ;
-		lv2:designation pg:left ;
-		pg:group <http://pgiblock.net/plugins/triple-oscillator#out>
-	] , [
-		a lv2:AudioPort ,
-		  lv2:OutputPort ;
-		lv2:index 2 ;
-		lv2:symbol "out_r" ;
-		lv2:name "Out Right" ;
-		lv2:designation pg:right ;
-		pg:group <http://pgiblock.net/plugins/triple-oscillator#out>
-	] ;
-	
 
 	# Oscillator 1
 	lv2:port [
 		a lv2:InputPort ,
 		  lv2:ControlPort ;
-		lv2:index 3 ;
+		lv2:index 0 ;
 		lv2:symbol "osc1_vol" ;
 		lv2:name "Osc 1 Volume" ;
 		lv2:default 100.0 ;
@@ -141,7 +41,7 @@
 	] ,	[
 		a lv2:InputPort ,
 		  lv2:ControlPort ;
-		lv2:index 4 ;
+		lv2:index 1 ;
 		lv2:symbol "osc1_pan" ;
 		lv2:name "Osc 1 Panning" ;
 		lv2:default 0.0 ;
@@ -162,7 +62,7 @@
 	] ,	[
 		a lv2:InputPort ,
 		  lv2:ControlPort ;
-		lv2:index 5 ;
+		lv2:index 2 ;
 		lv2:symbol "osc1_detune_coarse" ;
 		lv2:name "Osc 1 Coarse Detuning" ;
 		lv2:default 0.0 ;
@@ -173,7 +73,7 @@
 	] ,	[
 		a lv2:InputPort ,
 		  lv2:ControlPort ;
-		lv2:index 6 ;
+		lv2:index 3 ;
 		lv2:symbol "osc1_detune_fine_l" ;
 		lv2:name "Osc 1 Fine Detuning Left" ;
 		lv2:default 0.0 ;
@@ -184,7 +84,7 @@
 	] ,	[
 		a lv2:InputPort ,
 		  lv2:ControlPort ;
-		lv2:index 7 ;
+		lv2:index 4 ;
 		lv2:symbol "osc1_detune_fine_r" ;
 		lv2:name "Osc 1 Fine Detuning Right" ;
 		lv2:default 0.0 ;
@@ -195,7 +95,7 @@
 	] ,	[
 		a lv2:InputPort ,
 		  lv2:ControlPort ;
-		lv2:index 8 ;
+		lv2:index 5 ;
 		lv2:symbol "osc1_phase_offset" ;
 		lv2:name "Osc 1 Phase-offset" ;
 		lv2:default 0.0 ;
@@ -206,7 +106,7 @@
 	] ,	[
 		a lv2:InputPort ,
 		  lv2:ControlPort ;
-		lv2:index 9 ;
+		lv2:index 6 ;
 		lv2:symbol "osc1_phase_detune" ;
 		lv2:name "Osc 1 Stereo Phase-detuning" ;
 		lv2:default 0.0 ;
@@ -217,7 +117,7 @@
 	] ,	[
 		a lv2:InputPort ,
 		  lv2:ControlPort ;
-		lv2:index 10 ;
+		lv2:index 7 ;
 		lv2:symbol "osc1_phase_random" ;
 		lv2:name "Osc 1 Phase Randomness" ;
 		lv2:default 0.0 ;
@@ -228,7 +128,7 @@
 	] ,	[
 		a lv2:InputPort ,
 		  lv2:ControlPort ;
-		lv2:index 11 ;
+		lv2:index 8 ;
 		lv2:symbol "osc1_wave_shape" ;
 		lv2:name "Osc 1 Wave Shape" ;
 		lv2:portProperty lv2:enumeration;
@@ -260,7 +160,7 @@
 	] ,	[
 		a lv2:InputPort ,
 		  lv2:ControlPort ;
-		lv2:index 12 ;
+		lv2:index 9 ;
 		lv2:symbol "osc1_osc2_mod" ;
 		lv2:name "Osc 1 + Osc 2 Modulation" ;
 		lv2:portProperty lv2:enumeration;
@@ -289,7 +189,7 @@
 	lv2:port [
 		a lv2:InputPort ,
 		  lv2:ControlPort ;
-		lv2:index 13 ;
+		lv2:index 10 ;
 		lv2:symbol "osc2_vol" ;
 		lv2:name "Osc 2 Volume" ;
 		lv2:default 100.0 ;
@@ -311,7 +211,7 @@
 	] ,	[
 		a lv2:InputPort ,
 		  lv2:ControlPort ;
-		lv2:index 14 ;
+		lv2:index 11 ;
 		lv2:symbol "osc2_pan" ;
 		lv2:name "Osc 2 Panning" ;
 		lv2:default 0.0 ;
@@ -332,7 +232,7 @@
 	] ,	[
 		a lv2:InputPort ,
 		  lv2:ControlPort ;
-		lv2:index 15 ;
+		lv2:index 12 ;
 		lv2:symbol "osc2_detune_coarse" ;
 		lv2:name "Osc 2 Coarse Detuning" ;
 		lv2:default -12.0 ;
@@ -343,7 +243,7 @@
 	] ,	[
 		a lv2:InputPort ,
 		  lv2:ControlPort ;
-		lv2:index 16 ;
+		lv2:index 13 ;
 		lv2:symbol "osc2_detune_fine_l" ;
 		lv2:name "Osc 2 Fine Detuning Left" ;
 		lv2:default 0.0 ;
@@ -354,7 +254,7 @@
 	] ,	[
 		a lv2:InputPort ,
 		  lv2:ControlPort ;
-		lv2:index 17 ;
+		lv2:index 14 ;
 		lv2:symbol "osc2_detune_fine_r" ;
 		lv2:name "Osc 2 Fine Detuning Right" ;
 		lv2:default 0.0 ;
@@ -365,7 +265,7 @@
 	] ,	[
 		a lv2:InputPort ,
 		  lv2:ControlPort ;
-		lv2:index 18 ;
+		lv2:index 15 ;
 		lv2:symbol "osc2_phase_offset" ;
 		lv2:name "Osc 2 Phase-offset" ;
 		lv2:default 0.0 ;
@@ -376,7 +276,7 @@
 	] ,	[
 		a lv2:InputPort ,
 		  lv2:ControlPort ;
-		lv2:index 19 ;
+		lv2:index 16 ;
 		lv2:symbol "osc2_phase_detune" ;
 		lv2:name "Osc 2 Stereo Phase-detuning" ;
 		lv2:default 0.0 ;
@@ -387,7 +287,7 @@
 	] ,	[
 		a lv2:InputPort ,
 		  lv2:ControlPort ;
-		lv2:index 20 ;
+		lv2:index 17 ;
 		lv2:symbol "osc2_phase_random" ;
 		lv2:name "Osc 2 Phase Randomness" ;
 		lv2:default 0.0 ;
@@ -398,7 +298,7 @@
 	] ,	[
 		a lv2:InputPort ,
 		  lv2:ControlPort ;
-		lv2:index 21 ;
+		lv2:index 18 ;
 		lv2:symbol "osc2_wave_shape" ;
 		lv2:name "Osc 2 Wave Shape" ;
 		lv2:portProperty lv2:enumeration;
@@ -430,7 +330,7 @@
 	] ,	[
 		a lv2:InputPort ,
 		  lv2:ControlPort ;
-		lv2:index 22 ;
+		lv2:index 19 ;
 		lv2:symbol "osc2_osc3_mod" ;
 		lv2:name "Osc 2 + Osc 3 Modulation" ;
 		lv2:portProperty lv2:enumeration;
@@ -459,7 +359,7 @@
 	lv2:port [
 		a lv2:InputPort ,
 		  lv2:ControlPort ;
-		lv2:index 23 ;
+		lv2:index 20 ;
 		lv2:symbol "osc3_vol" ;
 		lv2:name "Osc 3 Volume" ;
 		lv2:default 100.0 ;
@@ -481,7 +381,7 @@
 	] ,	[
 		a lv2:InputPort ,
 		  lv2:ControlPort ;
-		lv2:index 24 ;
+		lv2:index 21 ;
 		lv2:symbol "osc3_pan" ;
 		lv2:name "Osc 3 Panning" ;
 		lv2:default 0.0 ;
@@ -502,7 +402,7 @@
 	] ,	[
 		a lv2:InputPort ,
 		  lv2:ControlPort ;
-		lv2:index 25 ;
+		lv2:index 22 ;
 		lv2:symbol "osc3_detune_coarse" ;
 		lv2:name "Osc 3 Coarse Detuning" ;
 		lv2:default -24.0 ;
@@ -513,7 +413,7 @@
 	] ,	[
 		a lv2:InputPort ,
 		  lv2:ControlPort ;
-		lv2:index 26 ;
+		lv2:index 23 ;
 		lv2:symbol "osc3_detune_fine_l" ;
 		lv2:name "Osc 3 Fine Detuning Left" ;
 		lv2:default 0.0 ;
@@ -524,7 +424,7 @@
 	] ,	[
 		a lv2:InputPort ,
 		  lv2:ControlPort ;
-		lv2:index 27 ;
+		lv2:index 24 ;
 		lv2:symbol "osc3_detune_fine_r" ;
 		lv2:name "Osc 3 Fine Detuning Right" ;
 		lv2:default 0.0 ;
@@ -535,7 +435,7 @@
 	] ,	[
 		a lv2:InputPort ,
 		  lv2:ControlPort ;
-		lv2:index 28 ;
+		lv2:index 25 ;
 		lv2:symbol "osc3_phase_offset" ;
 		lv2:name "Osc 3 Phase-offset" ;
 		lv2:default 0.0 ;
@@ -546,7 +446,7 @@
 	] ,	[
 		a lv2:InputPort ,
 		  lv2:ControlPort ;
-		lv2:index 29 ;
+		lv2:index 26 ;
 		lv2:symbol "osc3_phase_detune" ;
 		lv2:name "Osc 3 Stereo Phase-detuning" ;
 		lv2:default 0.0 ;
@@ -557,7 +457,7 @@
 	] ,	[
 		a lv2:InputPort ,
 		  lv2:ControlPort ;
-		lv2:index 30 ;
+		lv2:index 27 ;
 		lv2:symbol "osc3_phase_random" ;
 		lv2:name "Osc 3 Phase Randomness" ;
 		lv2:default 0.0 ;
@@ -568,7 +468,7 @@
 	] ,	[
 		a lv2:InputPort ,
 		  lv2:ControlPort ;
-		lv2:index 31 ;
+		lv2:index 28 ;
 		lv2:symbol "osc3_wave_shape" ;
 		lv2:name "Osc 3 Wave Shape" ;
 		lv2:portProperty lv2:enumeration;
@@ -597,611 +497,4 @@
 		] ;
 		lv2:designation param:waveform ;
 		pg:group <http://pgiblock.net/plugins/triple-oscillator#osc3>
-	] ;
-
-
-	# Volume Envelope
-	lv2:port [
-		a lv2:InputPort ,
-		  lv2:ControlPort ;
-		lv2:index 32 ;
-		lv2:symbol "env_vol_del" ;
-		lv2:name "Volume Envelope Delay" ;
-		lv2:default 0.0 ;
-		lv2:minimum 0.0 ;
-		lv2:maximum 5.0 ;
-		units:unit units:s ;
-		lv2:designation param:delay ;
-		pg:group <http://pgiblock.net/plugins/triple-oscillator#env_vol>
-	] ,	[
-		a lv2:InputPort ,
-		  lv2:ControlPort ;
-		lv2:index 33 ;
-		lv2:symbol "env_vol_att" ;
-		lv2:name "Volume Envelope Attack" ;
-		lv2:default 0.0 ;
-		lv2:minimum 0.0 ;
-		lv2:maximum 5.0 ;
-		units:unit units:s ;
-		lv2:designation param:attack ;
-		pg:group <http://pgiblock.net/plugins/triple-oscillator#env_vol>
-	] ,	[
-		a lv2:InputPort ,
-		  lv2:ControlPort ;
-		lv2:index 34 ;
-		lv2:symbol "env_vol_hold" ;
-		lv2:name "Volume Envelope Hold" ;
-		lv2:default 0.5 ;
-		lv2:minimum 0.0 ;
-		lv2:maximum 5.0 ;
-		units:unit units:s ;
-		lv2:designation param:hold ;
-		pg:group <http://pgiblock.net/plugins/triple-oscillator#env_vol>
-	] ,	[
-		a lv2:InputPort ,
-		  lv2:ControlPort ;
-		lv2:index 35 ;
-		lv2:symbol "env_vol_dec" ;
-		lv2:name "Volume Envelope Decay" ;
-		lv2:default 0.5 ;
-		lv2:minimum 0.0 ;
-		lv2:maximum 5.0 ;
-		units:unit units:s ;
-		lv2:designation param:decay ;
-		pg:group <http://pgiblock.net/plugins/triple-oscillator#env_vol>
-	] ,	[
-		a lv2:InputPort ,
-		  lv2:ControlPort ;
-		lv2:index 36 ;
-		lv2:symbol "env_vol_sus" ;
-		lv2:name "Volume Envelope Sustain" ;
-		lv2:default 0.5 ;
-		lv2:minimum 0.0 ;
-		lv2:maximum 1.0 ;
-		lv2:designation param:sustain ;
-		pg:group <http://pgiblock.net/plugins/triple-oscillator#env_vol>
-	] ,	[
-		a lv2:InputPort ,
-		  lv2:ControlPort ;
-		lv2:index 37 ;
-		lv2:symbol "env_vol_rel" ;
-		lv2:name "Volume Envelope Release" ;
-		lv2:default 0.1 ;
-		lv2:minimum 0.0 ;
-		lv2:maximum 5.0 ;
-		units:unit units:s ;
-		lv2:designation param:release ;
-		pg:group <http://pgiblock.net/plugins/triple-oscillator#env_vol>
-	] ,	[
-		a lv2:InputPort ,
-		  lv2:ControlPort ;
-		lv2:index 38 ;
-		lv2:symbol "env_vol_mod" ;
-		lv2:name "Volume Envelope Modulation" ;
-		lv2:default 0.0 ;
-		lv2:minimum -1.0 ;
-		lv2:maximum 1.0 ;
-		pg:group <http://pgiblock.net/plugins/triple-oscillator#env_vol>
-	] ;
-
-
-	# Volume LFO
-	lv2:port [
-		a lv2:InputPort ,
-		  lv2:ControlPort ;
-		lv2:index 39 ;
-		lv2:symbol "lfo_vol_del" ;
-		lv2:name "Volume LFO Delay" ;
-		lv2:default 0.0 ;
-		lv2:minimum 0.0 ;
-		lv2:maximum 20.0 ;
-		lv2:designation param:delay ;
-		pg:group <http://pgiblock.net/plugins/triple-oscillator#lfo_vol>
-	] ,	[
-		a lv2:InputPort ,
-		  lv2:ControlPort ;
-		lv2:index 40 ;
-		lv2:symbol "lfo_vol_att" ;
-		lv2:name "Volume LFO Attack" ;
-		lv2:default 0.0 ;
-		lv2:minimum 0.0 ;
-		lv2:maximum 20.0 ;
-		lv2:designation param:attack ;
-		pg:group <http://pgiblock.net/plugins/triple-oscillator#lfo_vol>
-	] ,	[
-		a lv2:InputPort ,
-		  lv2:ControlPort ;
-		lv2:index 41 ;
-		lv2:symbol "lfo_vol_spd" ;
-		lv2:name "Volume LFO Speed" ;
-		lv2:default 2.0;
-		lv2:minimum 0.01;
-		lv2:maximum 20;
-		lv2:designation param:frequency ;
-		pg:group <http://pgiblock.net/plugins/triple-oscillator#lfo_vol>
-	] ,	[
-		a lv2:InputPort ,
-		  lv2:ControlPort ;
-		lv2:index 42 ;
-		lv2:symbol "lfo_vol_shape" ;
-		lv2:name "Volume LFO Shape" ;
-		lv2:portProperty lv2:enumeration;
-		lv2:default 0.0 ;
-		lv2:scalePoint [
-			rdfs:label "Sine" ;
-			rdf:value 0.0
-		] ,	[
-			rdfs:label "Triangle" ;
-			rdf:value 1.0
-		] ,	[
-			rdfs:label "Saw" ;
-			rdf:value 2.0
-		] ,	[
-			rdfs:label "Square" ;
-			rdf:value 3.0
-		] ;
-		lv2:designation param:waveform ;
-		pg:group <http://pgiblock.net/plugins/triple-oscillator#lfo_vol>
-	] ,	[
-		a lv2:InputPort ,
-		  lv2:ControlPort ;
-		lv2:index 43 ;
-		lv2:symbol "lfo_vol_mod" ;
-		lv2:name "Volume LFO Modulation" ;
-		lv2:default 0.0 ;
-		lv2:minimum -1.0 ;
-		lv2:maximum 1.0 ;
-		lv2:designation param:amplitude ;
-		pg:group <http://pgiblock.net/plugins/triple-oscillator#lfo_vol>
-	] ,	[
-		a lv2:InputPort ,
-		  lv2:ControlPort ;
-		lv2:index 44 ;
-		lv2:symbol "lfo_vol_op" ;
-		lv2:name "Volume LFO Operation" ;
-		lv2:portProperty lv2:enumeration;
-		lv2:default 0.0 ;
-		lv2:scalePoint [
-			rdfs:label "Mix" ;
-			rdf:value 0.0
-		] ,	[
-			rdfs:label "Modulate ENV" ;
-			rdf:value 1.0
-		] ;
-		pg:group <http://pgiblock.net/plugins/triple-oscillator#lfo_vol>
-	] ;
-
-
-
-	# Filter settings
-	lv2:port [
-		a lv2:InputPort ,
-		  lv2:ControlPort ;
-		lv2:index 45 ;
-		lv2:symbol "filter_enabled" ;
-		lv2:name "Filter enabled" ;
-		lv2:portProperty lv2:toggled ;
-		lv2:default 0 ;
-		pg:group <http://pgiblock.net/plugins/triple-oscillator#filter>
-	] ,	[
-		a lv2:InputPort ,
-		  lv2:ControlPort ;
-		lv2:index 46 ;
-		lv2:symbol "filter_type" ;
-		lv2:name "Filter type" ;
-		lv2:portProperty lv2:enumeration;
-		lv2:default 1 ;
-		lv2:scalePoint [
-			rdfs:label "LowPass" ;
-			rdf:value 0
-		], [
-			rdfs:label "HiPass" ;
-			rdf:value 1
-		], [
-			rdfs:label "BandPass csg" ;
-			rdf:value 2
-		], [
-			rdfs:label "BandPass czpg" ;
-			rdf:value 3
-		], [
-			rdfs:label "Notch" ;
-			rdf:value 4
-		], [
-			rdfs:label "Allpass" ;
-			rdf:value 5
-		], [
-			rdfs:label "Moog" ;
-			rdf:value 6
-		], [
-			rdfs:label "2x LowPass" ;
-			rdf:value 7
-		], [
-			rdfs:label "RC LowPass 12dB" ;
-			rdf:value 8
-		], [
-			rdfs:label "RC BandPass 12dB" ;
-			rdf:value 9
-		], [
-			rdfs:label "RC HighPass 12dB" ;
-			rdf:value 10
-		], [
-			rdfs:label "RC LowPass 24dB" ;
-			rdf:value 11
-		], [
-			rdfs:label "RC BandPass 24dB" ;
-			rdf:value 12
-		], [
-			rdfs:label "RC HighPass 24dB" ;
-			rdf:value 13
-		], [
-			rdfs:label "Vocal Formant Filter" ;
-			rdf:value 14
-		] ;
-		pg:group <http://pgiblock.net/plugins/triple-oscillator#filter>
-	] ,	[
-		a lv2:InputPort ,
-		  lv2:ControlPort ;
-		lv2:index 47 ;
-		lv2:symbol "filter_cut" ;
-		lv2:name "Cutoff frequency" ;
-		lv2:default 14000.0 ;
-		lv2:minimum 1.0 ;
-		lv2:maximum 14000.0 ;
-		lv2:designation pg:cutoffFrequency ;
-		pg:group <http://pgiblock.net/plugins/triple-oscillator#filter>
-	] ,	[
-		a lv2:InputPort ,
-		  lv2:ControlPort ;
-		lv2:index 48 ;
-		lv2:symbol "filter_res" ;
-		lv2:name "Q/Resonance" ;
-		lv2:default 0.5 ;
-		lv2:minimum 0.01 ;
-		lv2:maximum 10.0 ;
-		lv2:designation pg:resonance ;
-		pg:group <http://pgiblock.net/plugins/triple-oscillator#filter>
-	] ;
-
-
-	# Cutoff Envelope
-	lv2:port [
-		a lv2:InputPort ,
-		  lv2:ControlPort ;
-		lv2:index 49 ;
-		lv2:symbol "env_cut_del" ;
-		lv2:name "Cutoff Envelope Delay" ;
-		lv2:default 0.0 ;
-		lv2:minimum 0.0 ;
-		lv2:maximum 5.0 ;
-		units:unit units:s ;
-		lv2:designation param:delay ;
-		pg:group <http://pgiblock.net/plugins/triple-oscillator#env_cut>
-	] ,	[
-		a lv2:InputPort ,
-		  lv2:ControlPort ;
-		lv2:index 50 ;
-		lv2:symbol "env_cut_att" ;
-		lv2:name "Cutoff Envelope Attack" ;
-		lv2:default 0.0 ;
-		lv2:minimum 0.0 ;
-		lv2:maximum 5.0 ;
-		units:unit units:s ;
-		lv2:designation param:attack ;
-		pg:group <http://pgiblock.net/plugins/triple-oscillator#env_cut>
-	] ,	[
-		a lv2:InputPort ,
-		  lv2:ControlPort ;
-		lv2:index 51 ;
-		lv2:symbol "env_cut_hold" ;
-		lv2:name "Cutoff Envelope Hold" ;
-		lv2:default 0.5 ;
-		lv2:minimum 0.0 ;
-		lv2:maximum 5.0 ;
-		units:unit units:s ;
-		lv2:designation param:hold ;
-		pg:group <http://pgiblock.net/plugins/triple-oscillator#env_cut>
-	] ,	[
-		a lv2:InputPort ,
-		  lv2:ControlPort ;
-		lv2:index 52 ;
-		lv2:symbol "env_cut_dec" ;
-		lv2:name "Cutoff Envelope Decay" ;
-		lv2:default 0.5 ;
-		lv2:minimum 0.0 ;
-		lv2:maximum 5.0 ;
-		units:unit units:s ;
-		lv2:designation param:decay ;
-		pg:group <http://pgiblock.net/plugins/triple-oscillator#env_cut>
-	] ,	[
-		a lv2:InputPort ,
-		  lv2:ControlPort ;
-		lv2:index 53 ;
-		lv2:symbol "env_cut_sus" ;
-		lv2:name "Cutoff Envelope Sustain" ;
-		lv2:default 0.5 ;
-		lv2:minimum 0.0 ;
-		lv2:maximum 1.0 ;
-		lv2:designation param:sustain ;
-		pg:group <http://pgiblock.net/plugins/triple-oscillator#env_cut>
-	] ,	[
-		a lv2:InputPort ,
-		  lv2:ControlPort ;
-		lv2:index 54 ;
-		lv2:symbol "env_cut_rel" ;
-		lv2:name "Cutoff Envelope Release" ;
-		lv2:default 0.1 ;
-		lv2:minimum 0.0 ;
-		lv2:maximum 5.0 ;
-		units:unit units:s ;
-		lv2:designation param:release ;
-		pg:group <http://pgiblock.net/plugins/triple-oscillator#env_cut>
-	] ,	[
-		a lv2:InputPort ,
-		  lv2:ControlPort ;
-		lv2:index 55 ;
-		lv2:symbol "env_cut_mod" ;
-		lv2:name "Cutoff Envelope Modulation" ;
-		lv2:default 0.0 ;
-		lv2:minimum -1.0 ;
-		lv2:maximum 1.0 ;
-		pg:group <http://pgiblock.net/plugins/triple-oscillator#env_cut>
-	] ;
-
-
-	# Cutoff LFO
-	lv2:port [
-		a lv2:InputPort ,
-		  lv2:ControlPort ;
-		lv2:index 56 ;
-		lv2:symbol "lfo_cut_del" ;
-		lv2:name "Cutoff LFO Delay" ;
-		lv2:default 0.0 ;
-		lv2:minimum 0.0 ;
-		lv2:maximum 20.0 ;
-		lv2:designation param:delay ;
-		pg:group <http://pgiblock.net/plugins/triple-oscillator#lfo_cut>
-	] ,	[
-		a lv2:InputPort ,
-		  lv2:ControlPort ;
-		lv2:index 57 ;
-		lv2:symbol "lfo_cut_att" ;
-		lv2:name "Cutoff LFO Attack" ;
-		lv2:default 0.0 ;
-		lv2:minimum 0.0 ;
-		lv2:maximum 20.0 ;
-		lv2:designation param:attack ;
-		pg:group <http://pgiblock.net/plugins/triple-oscillator#lfo_cut>
-	] ,	[
-		a lv2:InputPort ,
-		  lv2:ControlPort ;
-		lv2:index 58 ;
-		lv2:symbol "lfo_cut_spd" ;
-		lv2:name "Cutoff LFO Speed" ;
-		lv2:default 2.0;
-		lv2:minimum 0.01;
-		lv2:maximum 20;
-		lv2:designation param:frequency ;
-		pg:group <http://pgiblock.net/plugins/triple-oscillator#lfo_cut>
-	] ,	[
-		a lv2:InputPort ,
-		  lv2:ControlPort ;
-		lv2:index 59 ;
-		lv2:symbol "lfo_cut_shape" ;
-		lv2:name "Cutoff LFO Shape" ;
-		lv2:portProperty lv2:enumeration;
-		lv2:default 0.0 ;
-		lv2:scalePoint [
-			rdfs:label "Sine" ;
-			rdf:value 0.0
-		] ,	[
-			rdfs:label "Triangle" ;
-			rdf:value 1.0
-		] ,	[
-			rdfs:label "Saw" ;
-			rdf:value 2.0
-		] ,	[
-			rdfs:label "Square" ;
-			rdf:value 3.0
-		] ;
-		lv2:designation param:waveform ;
-		pg:group <http://pgiblock.net/plugins/triple-oscillator#lfo_cut>
-	] ,	[
-		a lv2:InputPort ,
-		  lv2:ControlPort ;
-		lv2:index 60 ;
-		lv2:symbol "lfo_cut_mod" ;
-		lv2:name "Cutoff LFO Modulation" ;
-		lv2:default 0.0 ;
-		lv2:minimum -1.0 ;
-		lv2:maximum 1.0 ;
-		pg:group <http://pgiblock.net/plugins/triple-oscillator#lfo_cut>
-	] ,	[
-		a lv2:InputPort ,
-		  lv2:ControlPort ;
-		lv2:index 61 ;
-		lv2:symbol "lfo_cut_op" ;
-		lv2:name "Cutoff LFO Operation" ;
-		lv2:portProperty lv2:enumeration;
-		lv2:default 0.0 ;
-		lv2:scalePoint [
-			rdfs:label "Mix" ;
-			rdf:value 0.0
-		] ,	[
-			rdfs:label "Modulate ENV" ;
-			rdf:value 1.0
-		] ;
-		pg:group <http://pgiblock.net/plugins/triple-oscillator#lfo_cut>
-	] ;
-
-
-	# Resonance Envelope
-	lv2:port [
-		a lv2:InputPort ,
-		  lv2:ControlPort ;
-		lv2:index 62 ;
-		lv2:symbol "env_res_del" ;
-		lv2:name "Resonance Envelope Delay" ;
-		lv2:default 0.0 ;
-		lv2:minimum 0.0 ;
-		lv2:maximum 5.0 ;
-		units:unit units:s ;
-		lv2:designation param:delay ;
-		pg:group <http://pgiblock.net/plugins/triple-oscillator#env_res>
-	] ,	[
-		a lv2:InputPort ,
-		  lv2:ControlPort ;
-		lv2:index 63 ;
-		lv2:symbol "env_res_att" ;
-		lv2:name "Resonance Envelope Attack" ;
-		lv2:default 0.0 ;
-		lv2:minimum 0.0 ;
-		lv2:maximum 5.0 ;
-		units:unit units:s ;
-		lv2:designation param:attack ;
-		pg:group <http://pgiblock.net/plugins/triple-oscillator#env_res>
-	] ,	[
-		a lv2:InputPort ,
-		  lv2:ControlPort ;
-		lv2:index 64 ;
-		lv2:symbol "env_res_hold" ;
-		lv2:name "Resonance Envelope Hold" ;
-		lv2:default 0.5 ;
-		lv2:minimum 0.0 ;
-		lv2:maximum 5.0 ;
-		units:unit units:s ;
-		lv2:designation param:hold ;
-		pg:group <http://pgiblock.net/plugins/triple-oscillator#env_res>
-	] ,	[
-		a lv2:InputPort ,
-		  lv2:ControlPort ;
-		lv2:index 65 ;
-		lv2:symbol "env_res_dec" ;
-		lv2:name "Resonance Envelope Decay" ;
-		lv2:default 0.5 ;
-		lv2:minimum 0.0 ;
-		lv2:maximum 5.0 ;
-		units:unit units:s ;
-		lv2:designation param:decay ;
-		pg:group <http://pgiblock.net/plugins/triple-oscillator#env_res>
-	] ,	[
-		a lv2:InputPort ,
-		  lv2:ControlPort ;
-		lv2:index 66 ;
-		lv2:symbol "env_res_sus" ;
-		lv2:name "Resonance Envelope Sustain" ;
-		lv2:default 0.5 ;
-		lv2:minimum 0.0 ;
-		lv2:maximum 1.0 ;
-		lv2:designation param:sustain ;
-		pg:group <http://pgiblock.net/plugins/triple-oscillator#env_res>
-	] ,	[
-		a lv2:InputPort ,
-		  lv2:ControlPort ;
-		lv2:index 67 ;
-		lv2:symbol "env_res_rel" ;
-		lv2:name "Resonance Envelope Release" ;
-		lv2:default 0.1 ;
-		lv2:minimum 0.0 ;
-		lv2:maximum 5.0 ;
-		units:unit units:s ;
-		lv2:designation param:release ;
-		pg:group <http://pgiblock.net/plugins/triple-oscillator#env_res>
-	] ,	[
-		a lv2:InputPort ,
-		  lv2:ControlPort ;
-		lv2:index 68 ;
-		lv2:symbol "env_res_mod" ;
-		lv2:name "Resonance Envelope Modulation" ;
-		lv2:default 0.0 ;
-		lv2:minimum -1.0 ;
-		lv2:maximum 1.0 ;
-		pg:group <http://pgiblock.net/plugins/triple-oscillator#env_res>
-	] ;
-
-
-
-	# Resonance LFO
-	lv2:port [
-		a lv2:InputPort ,
-		  lv2:ControlPort ;
-		lv2:index 69 ;
-		lv2:symbol "lfo_res_del" ;
-		lv2:name "Resonance LFO Delay" ;
-		lv2:default 0.0 ;
-		lv2:minimum 0.0 ;
-		lv2:maximum 20.0 ;
-		lv2:designation param:delay ;
-		pg:group <http://pgiblock.net/plugins/triple-oscillator#lfo_res>
-	] ,	[
-		a lv2:InputPort ,
-		  lv2:ControlPort ;
-		lv2:index 70 ;
-		lv2:symbol "lfo_res_att" ;
-		lv2:name "Resonance LFO Attack" ;
-		lv2:default 0.0 ;
-		lv2:minimum 0.0 ;
-		lv2:maximum 20.0 ;
-		lv2:designation param:attack ;
-		pg:group <http://pgiblock.net/plugins/triple-oscillator#lfo_res>
-	] ,	[
-		a lv2:InputPort ,
-		  lv2:ControlPort ;
-		lv2:index 71 ;
-		lv2:symbol "lfo_res_spd" ;
-		lv2:name "Resonance LFO Speed" ;
-		lv2:default 2.0;
-		lv2:minimum 0.01;
-		lv2:maximum 20;
-		lv2:designation param:frequency ;
-		pg:group <http://pgiblock.net/plugins/triple-oscillator#lfo_res>
-	] ,	[
-		a lv2:InputPort ,
-		  lv2:ControlPort ;
-		lv2:index 72 ;
-		lv2:symbol "lfo_res_shape" ;
-		lv2:name "Resonance LFO Shape" ;
-		lv2:portProperty lv2:enumeration;
-		lv2:default 0.0 ;
-		lv2:scalePoint [
-			rdfs:label "Sine" ;
-			rdf:value 0.0
-		] ,	[
-			rdfs:label "Triangle" ;
-			rdf:value 1.0
-		] ,	[
-			rdfs:label "Saw" ;
-			rdf:value 2.0
-		] ,	[
-			rdfs:label "Square" ;
-			rdf:value 3.0
-		] ;
-		lv2:designation param:waveform ;
-		pg:group <http://pgiblock.net/plugins/triple-oscillator#lfo_res>
-	] ,	[
-		a lv2:InputPort ,
-		  lv2:ControlPort ;
-		lv2:index 73 ;
-		lv2:symbol "lfo_res_mod" ;
-		lv2:name "Resonance LFO Modulation" ;
-		lv2:default 0.0 ;
-		lv2:minimum -1.0 ;
-		lv2:maximum 1.0 ;
-		lv2:designation param:amplitude ;
-		pg:group <http://pgiblock.net/plugins/triple-oscillator#lfo_res>
-	] ,	[
-		a lv2:InputPort ,
-		  lv2:ControlPort ;
-		lv2:index 74 ;
-		lv2:symbol "lfo_res_op" ;
-		lv2:name "Resonance LFO Operation" ;
-		lv2:portProperty lv2:enumeration;
-		lv2:default 0.0 ;
-		lv2:scalePoint [
-			rdfs:label "Mix" ;
-			rdf:value 0.0
-		] ,	[
-			rdfs:label "Modulate ENV" ;
-			rdf:value 1.0
-		] ;
-		pg:group <http://pgiblock.net/plugins/triple-oscillator#lfo_res>
 	] .

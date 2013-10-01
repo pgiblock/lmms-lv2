@@ -1,0 +1,52 @@
+@prefix atom:   <http://lv2plug.in/ns/ext/atom#> .
+@prefix doap:   <http://usefulinc.com/ns/doap#> .
+@prefix foaf:   <http://xmlns.com/foaf/0.1/> .
+@prefix lv2:    <http://lv2plug.in/ns/lv2core#> .
+@prefix lv2midi: <http://lv2plug.in/ns/ext/midi#> .
+@prefix param:  <http://lv2plug.in/ns/ext/parameters#> .
+@prefix pg:     <http://lv2plug.in/ns/ext/port-groups#> .
+@prefix rdf:    <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs:   <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix units:  <http://lv2plug.in/ns/extensions/units#> .
+@prefix urid:   <http://lv2plug.in/ns/ext/urid#> .
+
+<http://pgiblock.net/ns/instrument#out>
+	a pg:StereoGroup ,
+	  pg:OutputGroup ;
+	lv2:name "Output" ;
+	lv2:symbol "out" .
+
+<http://pgiblock.net/ns/instrument>
+	a lv2:Plugin ;
+	doap:license <http://opensource.org/licenses/isc> ;
+	lv2:requiredFeature urid:map ;
+	lv2:optionalFeature lv2:hardRTCapable ;
+
+	lv2:extensionData <http://lv2plug.in/ns/ext/state#Interface> ;
+
+	# Instrument I/O
+	lv2:port [
+		a lv2:InputPort ,
+		  atom:AtomPort ;
+		atom:bufferType atom:Sequence ;
+		atom:supports lv2midi:MidiEvent ;
+		lv2:index 0 ;
+		lv2:symbol "control" ;
+		lv2:name "Control"
+	] , [
+		a lv2:AudioPort ,
+		  lv2:OutputPort ;
+		lv2:index 1 ;
+		lv2:symbol "out_l" ;
+		lv2:name "Out Left" ;
+		lv2:designation pg:left ;
+		pg:group <http://pgiblock.net/ns/instrument#out>
+	] , [
+		a lv2:AudioPort ,
+		  lv2:OutputPort ;
+		lv2:index 2 ;
+		lv2:symbol "out_r" ;
+		lv2:name "Out Right" ;
+		lv2:designation pg:right ;
+		pg:group <http://pgiblock.net/ns/instrument#out>
+	] .

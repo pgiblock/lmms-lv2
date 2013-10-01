@@ -79,7 +79,7 @@ def configure(conf):
 
     conf.write_config_header('src/config.h')
 
-    conf.recurse('3rdparty')
+    conf.recurse('3rdparty src')
 
 
 def build(bld):

@@ -3,6 +3,8 @@ import os
 import shutil
 from waflib import Logs
 
+def configure(conf):
+    conf.env.append_value('PLUGINS', 'envelope_generator')
 
 def build(bld):
     # TODO Remove this redundant installdir calculation

@@ -5,7 +5,7 @@ import re
 from waflib import Logs
 
 def build(bld):
-
+    return	
     # FIXME: Actually handle dependencies in src/wscript.
     # We shouldn't need to pull in transients...
     bld.program(source='test_oscillator.c',
